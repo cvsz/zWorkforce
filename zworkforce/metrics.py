@@ -1,0 +1,4 @@
+def prometheus(db):
+    o=db.overview(); lines=["# HELP zworkforce_active_tasks Active tasks.","# TYPE zworkforce_active_tasks gauge",f"zworkforce_active_tasks {o['active_tasks']}","# HELP zworkforce_tasks_24h Tasks created in last 24h.","# TYPE zworkforce_tasks_24h gauge",f"zworkforce_tasks_24h {o['tasks_24h']}","# HELP zworkforce_success_rate_24h Success percentage.","# TYPE zworkforce_success_rate_24h gauge",f"zworkforce_success_rate_24h {o['success_rate']}","# HELP zworkforce_credits_24h Credits used in last 24h.","# TYPE zworkforce_credits_24h gauge",f"zworkforce_credits_24h {o['credits_24h']}"]
+    for r in o["model_mix"]: lines += [f'zworkforce_model_turns_24h{{tier="{r["tier"]}"}} {r["turns"]}',f'zworkforce_model_credits_24h{{tier="{r["tier"]}"}} {r["cost"]}']
+    return "\n".join(lines)+"\n"
