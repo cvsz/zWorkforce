@@ -77,8 +77,8 @@ public sealed class ApiClientTests
 
         Assert.Equal(HttpMethod.Post, handler.LastRequest!.Method);
         Assert.Equal("fixed-key", handler.LastRequest.Headers.GetValues("Idempotency-Key").Single());
-        Assert.Equal("application/json", handler.LastRequest.Content!.Headers.ContentType!.MediaType);
-        Assert.Contains("researcher", await handler.LastRequest.Content.ReadAsStringAsync());
+        Assert.Equal("application/json", handler.LastContentType);
+        Assert.Contains("researcher", handler.LastBody ?? string.Empty);
     }
 
     [Fact]
@@ -128,11 +128,17 @@ public sealed class ApiClientTests
     private sealed class RecordingHandler(Func<HttpRequestMessage, HttpResponseMessage> responder) : HttpMessageHandler
     {
         public HttpRequestMessage? LastRequest { get; private set; }
+        public string? LastBody { get; private set; }
+        public string? LastContentType { get; private set; }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             LastRequest = request;
-            return Task.FromResult(responder(request));
+            LastBody = request.Content is null
+                ? null
+                : await request.Content.ReadAsStringAsync(cancellationToken);
+            LastContentType = request.Content?.Headers.ContentType?.MediaType;
+            return responder(request);
         }
     }
 }
