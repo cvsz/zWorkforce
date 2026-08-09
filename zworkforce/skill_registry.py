@@ -20,18 +20,17 @@ def _host_allowed(host: str, allow_hosts: tuple[str, ...]) -> bool:
     return any(host == suffix.lower().rstrip(".") or host.endswith("." + suffix.lower().rstrip(".")) for suffix in allow_hosts)
 
 
-def _public_host(host: str) -> bool:
+def _assert_public_host(host: str) -> None:
     try:
-        infos = socket.getaddrinfo(host, None, type=socket.SOCK_STREAM)
-    except OSError:
-        return False
+        infos = socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
+    except OSError as exc:
+        raise SkillRegistryError("skill registry host cannot be resolved") from exc
     if not infos:
-        return False
+        raise SkillRegistryError("skill registry host cannot be resolved")
     for info in infos:
         addr = ipaddress.ip_address(info[4][0])
         if addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_multicast or addr.is_reserved or addr.is_unspecified:
-            return False
-    return True
+            raise SkillRegistryError("skill registry host resolves to a non-public address")
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -53,12 +52,16 @@ class RemoteSkillRegistry:
             raise SkillRegistryError("skill registry URL must be HTTPS without userinfo")
         if not self.allow_hosts or not _host_allowed(parts.hostname, self.allow_hosts):
             raise SkillRegistryError("skill registry host is not allowlisted")
-        if not _public_host(parts.hostname):
-            raise SkillRegistryError("skill registry host does not resolve to public addresses")
         return urllib.parse.urlunsplit(parts)
 
-    def _fetch_json(self, url: str) -> dict[str, Any]:
+    def _network_validate(self, url: str) -> str:
         current = self._validate_url(url)
+        parts = urllib.parse.urlsplit(current)
+        _assert_public_host(parts.hostname or "")
+        return current
+
+    def _fetch_json(self, url: str) -> dict[str, Any]:
+        current = self._network_validate(url)
         opener = urllib.request.build_opener(_NoRedirect())
         for _ in range(5):
             req = urllib.request.Request(current, headers={"Accept": "application/json", "User-Agent": "zWorkforce-skill-registry/3"})
@@ -69,7 +72,7 @@ class RemoteSkillRegistry:
                     location = exc.headers.get("Location", "")
                     if not location:
                         raise SkillRegistryError("skill registry redirect missing Location") from exc
-                    current = self._validate_url(urllib.parse.urljoin(current, location))
+                    current = self._network_validate(urllib.parse.urljoin(current, location))
                     continue
                 raise SkillRegistryError(f"skill registry returned HTTP {exc.code}") from exc
             except OSError as exc:
