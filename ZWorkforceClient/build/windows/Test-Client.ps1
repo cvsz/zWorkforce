@@ -90,7 +90,7 @@ if ($LaunchSmoke) {
         if ($null -ne $certificate) {
             Write-Host "Trusting the temporary package certificate for this smoke check."
             $quotedCertificatePath = '"' + $certificate.FullName + '"'
-            Invoke-Certutil @("-user", "-f", "-addstore", "Root", $quotedCertificatePath)
+            Invoke-Certutil @("-user", "-f", "-addstore", "TrustedPeople", $quotedCertificatePath)
             $importedCertificateThumbprint = $certificate.Thumbprint
         }
 
@@ -136,7 +136,7 @@ if ($LaunchSmoke) {
         }
         if ($null -ne $importedCertificateThumbprint) {
             try {
-                Invoke-Certutil @("-user", "-delstore", "Root", $importedCertificateThumbprint)
+                Invoke-Certutil @("-user", "-delstore", "TrustedPeople", $importedCertificateThumbprint)
             } catch {
                 Write-Warning "Could not remove the temporary package certificate: $($_.Exception.Message)"
             }
