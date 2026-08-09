@@ -35,15 +35,16 @@ try {
         Remove-Item -Force -ErrorAction SilentlyContinue
 
     $manifestText = [Text.Encoding]::UTF8.GetString($originalManifestBytes)
+    $identityPattern = '(<Identity\b[^>]*\bVersion=")[^"]+(")'
+    if (-not [regex]::Match($manifestText, $identityPattern).Success) {
+        throw "Could not locate the package Identity Version in $manifestPath."
+    }
     $versionedManifest = [regex]::Replace(
         $manifestText,
-        '(<Identity\b[^>]*\bVersion=")[^"]+(")',
+        $identityPattern,
         ('${1}' + $packageVersion + '${2}'),
         1
     )
-    if ($versionedManifest -eq $manifestText) {
-        throw "Could not locate the package Identity Version in $manifestPath."
-    }
     [IO.File]::WriteAllText($manifestPath, $versionedManifest, [Text.UTF8Encoding]::new($false))
 
     $certificate = New-SelfSignedCertificate `
