@@ -1,12 +1,20 @@
-.PHONY: run test check doctor docker-build
-run:
-	python -m zworkforce serve
+.PHONY: test check doctor serve worker docker-build
+
 test:
-	python -m unittest discover -s tests -v
+	PYTHONPATH=. python -m unittest discover -s tests -v
+
 check:
 	python -m compileall -q zworkforce tests
-	python -m unittest discover -s tests -v
+	PYTHONPATH=. python -m unittest discover -s tests -v
+
 doctor:
-	python -m zworkforce doctor
+	PYTHONPATH=. python -m zworkforce doctor
+
+serve:
+	PYTHONPATH=. python -m zworkforce serve
+
+worker:
+	PYTHONPATH=. python -m zworkforce worker
+
 docker-build:
-	docker build -t zworkforce:local .
+	docker build -t zworkforce:2.0.0 .

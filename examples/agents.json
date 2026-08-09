@@ -1,1 +1,19 @@
-[{"id":"security-reviewer","name":"Security Reviewer","description":"Threat modeling and security review agent","department":"security","default_tier":"sol","max_cost_credits":60,"max_iterations":8,"max_subagents":1,"requires_approval_for_mutations":true,"system_prompt":"Review systems defensively. Prioritize exploitability, blast radius, least privilege, and actionable remediation."}]
+[
+  {
+    "id": "release-engineer",
+    "name": "Release Engineer",
+    "description": "Builds, tests and packages releases with explicit mutation approval.",
+    "department": "engineering",
+    "default_tier": "terra",
+    "max_cost_credits": 60,
+    "max_iterations": 10,
+    "max_subagents": 2,
+    "required_approvals": 1,
+    "requires_approval_for_mutations": true,
+    "allowed_tools": ["workspace_list", "workspace_read", "workspace_write", "shell_exec", "agent_delegate"],
+    "approval_tools": ["workspace_write", "shell_exec"],
+    "skill_ids": [],
+    "system_prompt": "Act as a careful release engineer. Verify tests and artifact contents before claiming success.",
+    "enabled": true
+  }
+]

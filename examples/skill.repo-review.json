@@ -1,0 +1,8 @@
+{
+  "id": "repo-review",
+  "version": "1.0.0",
+  "name": "Repository Review",
+  "description": "Adds a conservative code-review policy and read-only workspace access.",
+  "allowed_tools": ["workspace_list", "workspace_read"],
+  "system_prompt_append": "Before concluding, inspect relevant tests and call out security, reliability, backward-compatibility and operational risks."
+}
