@@ -50,14 +50,15 @@ def main() -> int:
     if f"zworkforce:{expected}" not in compose:
         fail(f"compose.yaml does not reference zworkforce:{expected}")
 
+    canonical_k8s_tag = f"v{expected}"
     k8s = list((ROOT / "deploy" / "kubernetes").rglob("*.yaml"))
     image_refs = []
     for path in k8s:
         text = path.read_text(encoding="utf-8")
         image_refs.extend(re.findall(r"ghcr\.io/cvsz/zworkforce:([^\s\"']+)", text))
-    stale = sorted({tag for tag in image_refs if tag != expected})
+    stale = sorted({tag for tag in image_refs if tag != canonical_k8s_tag})
     if stale:
-        fail(f"Kubernetes image tags are inconsistent: {stale}")
+        fail(f"Kubernetes image tags are inconsistent; expected {canonical_k8s_tag}: {stale}")
     if not image_refs:
         fail("no Kubernetes zWorkforce image reference found")
 
@@ -68,9 +69,11 @@ def main() -> int:
         ROOT / "docs" / "PRODUCTION-READINESS.md",
         ROOT / "docs" / "DISASTER-RECOVERY.md",
         ROOT / "docs" / "RELEASE.md",
+        ROOT / "docs" / "SECRET-MANAGEMENT.md",
         ROOT / "scripts" / "backup-postgres.sh",
         ROOT / "scripts" / "restore-postgres.sh",
         ROOT / "scripts" / "smoke-test.sh",
+        ROOT / "scripts" / "generate_sbom.py",
     ]
     missing = [str(path.relative_to(ROOT)) for path in required if not path.exists()]
     if missing:
