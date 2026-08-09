@@ -1,7 +1,8 @@
 # Identity
 
 ## API keys
-Persistent API keys support viewer/operator/admin/superadmin roles and scopes. Only the digest is stored.
+Persistent API keys support viewer/operator/admin/superadmin roles and scopes. Only a salted
+PBKDF2-HMAC-SHA256 verifier is stored; legacy SHA-256 records are upgraded after successful use.
 
 ## Native OIDC
 

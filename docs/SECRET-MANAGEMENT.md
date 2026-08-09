@@ -31,6 +31,20 @@ Runtime secret references can use:
 
 Prefer workload identity and short-lived credentials over static cloud access keys.
 
+## CLI-generated API keys
+
+Create a persistent API key with:
+
+```bash
+zworkforce key-create --name automation --role operator --scopes workforce:read
+```
+
+The command writes the one-time plaintext secret to a newly created mode-0600 file under
+`$ZWORKFORCE_DATA_DIR/api-keys/` and prints only non-sensitive metadata, including the file path.
+Use `--secret-file PATH` to choose a different destination; existing files are never overwritten.
+The database stores a salted PBKDF2-HMAC-SHA256 verifier, not the plaintext secret. Move the file
+into the approved secret-management boundary and remove local copies after registration.
+
 ## Kubernetes
 
 `deploy/kubernetes/secret.example.yaml` is a schema/example only. Do not commit a populated copy.

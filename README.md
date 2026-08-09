@@ -84,6 +84,16 @@ python -m zworkforce serve
 
 Open `http://localhost:9569`. Development bootstrap credentials are not for production.
 
+### Create a persistent API key
+
+```bash
+zworkforce key-create --name automation --role operator --scopes workforce:read
+```
+
+The one-time secret is stored in a new mode-0600 file under `$ZWORKFORCE_DATA_DIR/api-keys/`;
+the CLI prints metadata and the file path, never the secret. Use `--secret-file PATH` for an
+explicit destination. Existing secret files are not overwritten.
+
 ## Production Compose — PostgreSQL
 
 ```bash

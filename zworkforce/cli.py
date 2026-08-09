@@ -89,11 +89,12 @@ def parser() -> argparse.ArgumentParser:
     tenant.add_argument("id")
     tenant.add_argument("--name", default="")
 
-    key = sub.add_parser("key-create", help="Create an API key and print its secret once")
+    key = sub.add_parser("key-create", help="Create an API key and store its one-time secret in a protected file")
     key.add_argument("--tenant", default="")
     key.add_argument("--name", required=True)
     key.add_argument("--role", choices=["viewer", "operator", "admin", "superadmin"], default="viewer")
     key.add_argument("--scopes", default="*")
+    key.add_argument("--secret-file", default="", help="Write the one-time secret to this new mode-0600 file")
 
     verify = sub.add_parser("audit-verify", help="Verify the tenant audit hash chain")
     verify.add_argument("--tenant", default="")
@@ -211,6 +212,35 @@ def _safe_database_target(db) -> str:
     return urlunsplit((parts.scheme, netloc, parts.path, parts.query, ""))
 
 
+def _write_secret_file(path: Path, secret: str) -> Path:
+    path = path.expanduser()
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        descriptor = os.open(path, flags, 0o600)
+    except FileExistsError:
+        raise ValueError(f"secret file already exists: {path}") from None
+    try:
+        if hasattr(os, "fchmod"):
+            os.fchmod(descriptor, 0o600)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            descriptor = -1
+            handle.write(secret + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+    except Exception:
+        if descriptor >= 0:
+            os.close(descriptor)
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            pass
+        raise
+    return path
+
+
 def main(argv=None):
     args = parser().parse_args(argv)
     cmd = args.command or "serve"
@@ -255,8 +285,15 @@ def main(argv=None):
         if cmd == "key-create":
             tenant_id = _tenant(args, settings); db.ensure_tenant(tenant_id)
             key_id, secret = auth.create_key(tenant_id, args.name, args.role, [x.strip() for x in args.scopes.split(",") if x.strip()])
-            print(json.dumps({"id": key_id, "tenant_id": tenant_id, "name": args.name, "role": args.role, "secret": secret,
-                              "warning": "Store this secret now; it is not retrievable later."}, indent=2)); return 0
+            secret_path = Path(args.secret_file).expanduser() if args.secret_file else settings.data_dir / "api-keys" / f"{key_id}.secret"
+            try:
+                _write_secret_file(secret_path, secret)
+            except Exception:
+                db.revoke_api_key(tenant_id, key_id)
+                raise
+            print(json.dumps({"id": key_id, "tenant_id": tenant_id, "name": args.name, "role": args.role,
+                              "secret_file": str(secret_path),
+                              "warning": "Store or move this mode-0600 file; the secret is not printed or retrievable later."}, indent=2)); return 0
         if cmd == "audit-verify":
             result = db.verify_audit_chain(_tenant(args, settings)); print(json.dumps(result, indent=2)); return 0 if result["ok"] else 1
         if cmd == "skill-sign":
