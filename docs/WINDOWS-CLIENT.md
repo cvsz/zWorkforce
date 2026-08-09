@@ -1,0 +1,140 @@
+# zWorkforce Windows 11 client
+
+`ZWorkforceClient` is a native C# WinUI 3 packaged desktop client for the
+existing zWorkforce REST control plane. It does not run workers, providers, or
+model calls locally. API keys, tenant authorization, policy, approvals, and
+durable state remain server-side.
+
+## Supported environment
+
+The checked-in client targets Windows 11 22H2/build 22621 or later and uses:
+
+- .NET 10 SDK;
+- Visual Studio 2026 with the **WinUI application development** workload;
+- Windows SDK 10.0.26100.0 or newer;
+- stable Windows App SDK 2.3.1 through NuGet;
+- Developer Mode enabled for local package deployment and launch;
+- Git for Windows; GitHub CLI is optional for repository operations.
+
+Microsoft's current setup guidance is the source of truth for machine
+installation:
+
+- [WinUI setup overview](https://learn.microsoft.com/windows/apps/get-started/winui-get-started-overview)
+- [Create a WinUI 3 app](https://learn.microsoft.com/windows/apps/windows-app-sdk/set-up-your-development-environment)
+- [Windows App SDK downloads](https://learn.microsoft.com/windows/apps/windows-app-sdk/downloads)
+- [Windows SDK component IDs](https://learn.microsoft.com/visualstudio/install/workload-component-id-vs-build-tools)
+
+From an elevated PowerShell prompt, the supported automated setup is:
+
+```powershell
+winget configure -f https://aka.ms/winui-config
+```
+
+The repository audit script does not install anything unless `-Install` is
+explicitly supplied:
+
+```powershell
+Set-Location .\ZWorkforceClient
+.\build\windows\Install-Prerequisites.ps1 -CheckOnly
+.\build\windows\Install-Prerequisites.ps1 -Install
+```
+
+After setup, restart the terminal/Visual Studio and verify:
+
+```powershell
+dotnet --version
+dotnet new list winui
+```
+
+## Build and test
+
+From the repository root on Windows:
+
+```powershell
+Set-Location .\ZWorkforceClient
+.\build\windows\Build-Client.ps1 -Configuration Release -Platform x64
+.\build\windows\Test-Client.ps1 -Configuration Release
+.\build\windows\Package-Client.ps1 -Configuration Release -Platform x64
+```
+
+The project is a packaged app. The normal local launch path is Visual Studio
+F5, which builds, signs with the development certificate, registers the MSIX,
+and launches it. The scripted smoke path is:
+
+```powershell
+.\build\windows\Test-Client.ps1 -Configuration Release -LaunchSmoke
+```
+
+The smoke check proves that the packaged launch process stays alive; it does
+not claim a live server connection. Use the Connection page to connect to a
+server after launch.
+
+## Connect to a local server
+
+Start zWorkforce in the repository's normal development environment:
+
+```bash
+python -m pip install .
+python -m zworkforce doctor
+python -m zworkforce serve
+```
+
+Then enter the following in the Windows client:
+
+```text
+Server URL: http://localhost:9569
+Tenant ID:  default
+API key:    the server-generated API key
+```
+
+The client first checks `/health` and `/ready`, then calls the authenticated
+`/api/v1/*` routes with `Authorization: Bearer ...` and `X-Tenant-ID`. Writes
+include an `Idempotency-Key`. A server error displays its request ID when one
+is returned.
+
+## Credentials and privacy
+
+- API keys are held in memory only for the active session.
+- When **Remember** is selected, the key is stored in Windows
+  `PasswordVault`/Credential Manager under a server-and-tenant-specific entry.
+- The base URL, tenant ID, and theme are stored in packaged application local
+  settings; the API key is not.
+- Logs, diagnostics, issue reports, and screenshots must not contain API keys,
+  bearer tokens, or private tenant data.
+- Use HTTPS for every non-local server. Plain HTTP is intended only for local
+  development.
+
+## Project layout
+
+```text
+ZWorkforceClient/
+  src/ZWorkforceClient.Core/       platform-neutral REST client
+  src/ZWorkforceClient/            packaged WinUI 3 shell and pages
+  tests/ZWorkforceClient.Core.Tests/ API contract tests without a live server
+  build/windows/                   PowerShell environment/build/package tools
+```
+
+The core service covers the documented health, overview, tasks, agents,
+workflow, evaluation, memory, artifact, FinOps/SLO, identity, audit, and
+provider route groups. The UI exposes operator pages and delegates every
+authorization decision to the server.
+
+## GitHub checks
+
+`.github/workflows/windows-client.yml` runs on Windows for client changes. It
+audits the runner, restores, builds, tests, packages, and runs the launch
+smoke check. The workflow uploads MSIX artifacts on success and `bin`/`obj`
+diagnostics on failure.
+
+Require the **Windows client / build-test-package** check in branch protection
+alongside the existing Python CI, security, CodeQL, and dependency checks.
+Release automation should publish the MSIX only from a protected version tag
+after the Windows check is green.
+
+## Package signing
+
+Local builds use a development certificate suitable for sideloading on the
+developer machine. A production release must use the organization's trusted
+MSIX signing identity or Microsoft Store signing. Never commit a private
+certificate, password, API key, or signing token. The package output is under
+`ZWorkforceClient/out/` and is intentionally ignored by Git.

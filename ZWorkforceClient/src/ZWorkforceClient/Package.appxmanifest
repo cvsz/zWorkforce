@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  IgnorableNamespaces="uap">
+  <Identity Name="cvsz.ZWorkforceClient" Publisher="CN=cvsz" Version="1.0.0.0" />
+  <Properties>
+    <DisplayName>zWorkforce Client</DisplayName>
+    <PublisherDisplayName>cvsz</PublisherDisplayName>
+    <Description>Windows 11 operator client for zWorkforce</Description>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.22621.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+  <Applications>
+    <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="$targetentrypoint$">
+      <uap:VisualElements
+        AppListEntry="none"
+        DisplayName="zWorkforce Client"
+        Description="Windows 11 operator client for zWorkforce"
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png" />
+    </Application>
+  </Applications>
+</Package>

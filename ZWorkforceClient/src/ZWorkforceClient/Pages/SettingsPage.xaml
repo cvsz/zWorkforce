@@ -1,0 +1,29 @@
+<Page
+    x:Class="ZWorkforceClient.Pages.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer>
+        <StackPanel MaxWidth="720" Padding="{ThemeResource PagePaddingThickness}" Spacing="18">
+            <StackPanel Spacing="4"><TextBlock Text="CLIENT" Style="{StaticResource CaptionTextBlockStyle}" /><TextBlock Text="Settings" Style="{StaticResource TitleTextBlockStyle}" /></StackPanel>
+            <InfoBar x:Name="SettingsInfo" IsOpen="False" IsClosable="False" />
+            <Border Padding="20" CornerRadius="12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="Connection" Style="{StaticResource SubtitleTextBlockStyle}" />
+                    <TextBlock x:Name="ConnectionText" Text="Not connected" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="8"><Button Content="Disconnect" Click="OnDisconnectClick" /><Button Content="Forget saved API key" Click="OnForgetClick" /></StackPanel>
+                </StackPanel>
+            </Border>
+            <Border Padding="20" CornerRadius="12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="Appearance" Style="{StaticResource SubtitleTextBlockStyle}" />
+                    <ComboBox x:Name="ThemeBox" Header="Theme" SelectedValuePath="Tag" SelectionChanged="OnThemeChanged" AutomationProperties.Name="Application theme">
+                        <ComboBoxItem Content="System default" Tag="system" />
+                        <ComboBoxItem Content="Light" Tag="light" />
+                        <ComboBoxItem Content="Dark" Tag="dark" />
+                    </ComboBox>
+                </StackPanel>
+            </Border>
+            <TextBlock Text="zWorkforce Client 1.0.0 · API keys remain server-side and are stored locally only in Windows Credential Manager when you opt in." TextWrapping="Wrap" Opacity="0.7" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

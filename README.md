@@ -84,6 +84,13 @@ python -m zworkforce serve
 
 Open `http://localhost:9569`. Development bootstrap credentials are not for production.
 
+### Windows 11 client
+
+The native Windows 11 operator client is under [`ZWorkforceClient/`](ZWorkforceClient/).
+It connects to the existing REST control plane; setup, packaged build, secure
+credential storage, and GitHub Windows CI are documented in
+[`docs/WINDOWS-CLIENT.md`](docs/WINDOWS-CLIENT.md).
+
 ### Create a persistent API key
 
 ```bash

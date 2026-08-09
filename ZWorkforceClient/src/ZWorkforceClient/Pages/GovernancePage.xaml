@@ -1,0 +1,16 @@
+<Page
+    x:Class="ZWorkforceClient.Pages.GovernancePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Padding="{ThemeResource PagePaddingThickness}" RowSpacing="14">
+        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+        <Grid ColumnSpacing="12"><StackPanel Spacing="4"><TextBlock Text="CONTROL" Style="{StaticResource CaptionTextBlockStyle}" /><TextBlock Text="Governance and economics" Style="{StaticResource TitleTextBlockStyle}" /></StackPanel><Button Grid.Column="1" Content="Refresh" Click="OnRefreshClick" /></Grid>
+        <InfoBar Grid.Row="1" x:Name="GovernanceInfo" IsOpen="False" IsClosable="False" />
+        <TabView Grid.Row="2">
+            <TabViewItem Header="Policies"><ListView x:Name="PoliciesList" /></TabViewItem>
+            <TabViewItem Header="Budgets"><ListView x:Name="BudgetsList" /></TabViewItem>
+            <TabViewItem Header="SLO"><ListView x:Name="SloList" /></TabViewItem>
+            <TabViewItem Header="Audit"><ListView x:Name="AuditList" /></TabViewItem>
+        </TabView>
+    </Grid>
+</Page>

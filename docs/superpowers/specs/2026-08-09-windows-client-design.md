@@ -116,7 +116,7 @@ Repository layout:
 ZWorkforceClient/
   ZWorkforceClient.sln
   src/
-    ZWorkforceClient.Core/       # net8.0, platform-neutral API/domain code
+    ZWorkforceClient.Core/       # net10.0, platform-neutral API/domain code
     ZWorkforceClient/            # packaged WinUI 3 app
   tests/
     ZWorkforceClient.Core.Tests/ # contract and service tests
@@ -146,7 +146,7 @@ credential/settings integration. The supported build host is Windows 11 with:
 - Visual Studio 2022/2026 with the WinUI application development workload;
 - a supported .NET SDK (the project targets .NET 8 for the current Windows App
   SDK baseline);
-- Windows SDK 10.0.19041.0 or later;
+- Windows SDK 10.0.26100.0 or later;
 - Windows App SDK/WinUI 3 tooling installed by the workload;
 - Developer Mode enabled for local deployment/debugging;
 - Git and optionally GitHub CLI for repository/release operations.
@@ -157,6 +157,7 @@ WinUI template, and Developer Mode. It does not write server credentials.
 `build/windows/Build-Client.ps1`, `Test-Client.ps1`, and
 `Package-Client.ps1` make the local workflow repeatable.
 
+The project targets the current .NET 10 SDK and stable Windows App SDK 2.3.1.
 The current Linux agent cannot compile or launch WinUI. GitHub Actions on
 `windows-latest` is therefore the authoritative Windows build/launch check;
 the local agent will still validate source structure, YAML, scripts, and the

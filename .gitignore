@@ -7,6 +7,12 @@ __pycache__/
 venv/
 dist/
 build/
+!ZWorkforceClient/build/
+!ZWorkforceClient/build/windows/
+!ZWorkforceClient/build/windows/*.ps1
+ZWorkforceClient/**/bin/
+ZWorkforceClient/**/obj/
+ZWorkforceClient/out/
 *.egg-info/
 data/
 workspace/
