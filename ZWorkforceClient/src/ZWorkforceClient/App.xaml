@@ -4,9 +4,9 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Microsoft.UI.Xaml.Controls">
     <Application.Resources>
-        <controls:XamlControlsResources />
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <controls:XamlControlsResources />
                 <ResourceDictionary Source="ms-appx:///Styles/ThemeResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
