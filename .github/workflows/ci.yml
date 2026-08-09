@@ -13,7 +13,7 @@ jobs:
         python: ["3.12", "3.13", "3.14"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
@@ -55,7 +55,7 @@ jobs:
     env:
       ZWORKFORCE_TEST_POSTGRES_URL: postgresql://zworkforce:zworkforce@127.0.0.1:5432/zworkforce_ci
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -67,7 +67,7 @@ jobs:
   release-integrity:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -118,7 +118,7 @@ jobs:
   container:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v3
       - name: Build hardened image
         run: docker build --build-arg VERSION=3.0.0 -t zworkforce:ci .
@@ -126,7 +126,7 @@ jobs:
   security-invariants:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: No shell=True in runtime
         run: '! grep -R --line-number --include="*.py" "shell=True" zworkforce'
       - name: No provider secrets in static assets
