@@ -1,14 +1,56 @@
 services:
-  zworkforce:
+  api:
     build: .
-    image: zworkforce:1.0.0
-    restart: unless-stopped
-    env_file: [.env]
-    ports: ["9569:9569"]
-    volumes: ["zworkforce-data:/var/lib/zworkforce","./workspace:/workspace"]
+    image: zworkforce:2.0.0
+    command: ["serve"]
+    ports:
+      - "9569:9569"
+    environment:
+      ZWORKFORCE_ENV: production
+      ZWORKFORCE_API_KEYS: ${ZWORKFORCE_API_KEYS:?set ZWORKFORCE_API_KEYS}
+      ZWORKFORCE_EMBEDDED_WORKERS: "0"
+      ZWORKFORCE_PROVIDER: ${ZWORKFORCE_PROVIDER:-mock}
+      ZWORKFORCE_PROVIDER_BASE_URL: ${ZWORKFORCE_PROVIDER_BASE_URL:-https://api.openai.com/v1}
+      ZWORKFORCE_PROVIDER_API_KEY: ${ZWORKFORCE_PROVIDER_API_KEY:-}
+      ZWORKFORCE_PROVIDERS_JSON: ${ZWORKFORCE_PROVIDERS_JSON:-}
+      ZWORKFORCE_HTTP_ALLOWLIST: ${ZWORKFORCE_HTTP_ALLOWLIST:-}
+      ZWORKFORCE_SHELL_ENABLED: ${ZWORKFORCE_SHELL_ENABLED:-false}
+      ZWORKFORCE_SKILL_SIGNING_KEY: ${ZWORKFORCE_SKILL_SIGNING_KEY:-}
+    volumes:
+      - zworkforce-data:/data
+      - ./workspace:/workspace
+    read_only: true
+    tmpfs: [/tmp]
     security_opt: ["no-new-privileges:true"]
     cap_drop: ["ALL"]
+    restart: unless-stopped
+
+  worker:
+    image: zworkforce:2.0.0
+    build: .
+    command: ["worker", "--id", "docker-worker-1"]
+    environment:
+      ZWORKFORCE_ENV: production
+      ZWORKFORCE_API_KEYS: ${ZWORKFORCE_API_KEYS:?set ZWORKFORCE_API_KEYS}
+      ZWORKFORCE_EMBEDDED_WORKERS: "0"
+      ZWORKFORCE_PROVIDER: ${ZWORKFORCE_PROVIDER:-mock}
+      ZWORKFORCE_PROVIDER_BASE_URL: ${ZWORKFORCE_PROVIDER_BASE_URL:-https://api.openai.com/v1}
+      ZWORKFORCE_PROVIDER_API_KEY: ${ZWORKFORCE_PROVIDER_API_KEY:-}
+      ZWORKFORCE_PROVIDERS_JSON: ${ZWORKFORCE_PROVIDERS_JSON:-}
+      ZWORKFORCE_HTTP_ALLOWLIST: ${ZWORKFORCE_HTTP_ALLOWLIST:-}
+      ZWORKFORCE_SHELL_ENABLED: ${ZWORKFORCE_SHELL_ENABLED:-false}
+      ZWORKFORCE_SKILL_SIGNING_KEY: ${ZWORKFORCE_SKILL_SIGNING_KEY:-}
+    volumes:
+      - zworkforce-data:/data
+      - ./workspace:/workspace
     read_only: true
-    tmpfs: ["/tmp:size=64m,mode=1777"]
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   zworkforce-data:

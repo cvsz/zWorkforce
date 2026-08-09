@@ -1,83 +1,460 @@
+from __future__ import annotations
+
 from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
-import json,mimetypes,re
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import json
+import mimetypes
 from pathlib import Path
+import re
+import time
+import urllib.parse
+import uuid
+from typing import Any
+
+from . import __version__
 from .metrics import prometheus
+from .security import AuthManager, RateLimiter, redact, resolve_tenant
+from .skills import SkillError, validate_manifest, verify_manifest
+from .tools import TOOL_DEFINITIONS
+
+AGENT_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{1,62}$")
+REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
+
+
 class App:
-    def __init__(self,settings,db,engine,auth): self.settings,self.db,self.engine,self.auth=settings,db,engine,auth; self.static=Path(__file__).parent/"static"
+    def __init__(self, settings, db, engine, auth: AuthManager, provider):
+        self.settings = settings
+        self.db = db
+        self.engine = engine
+        self.auth = auth
+        self.provider = provider
+        self.static = Path(__file__).parent / "static"
+        self.rate_limiter = RateLimiter(settings.api_rate_limit_per_minute)
+        self.auth_rate_limiter = RateLimiter(max(60, settings.api_rate_limit_per_minute * 2))
+
     def handler(self):
-        app=self
+        app = self
+
         class Handler(BaseHTTPRequestHandler):
-            server_version="zWorkforce/1.0"
-            def log_message(self,fmt,*args): print(json.dumps({"event":"http","client":self.client_address[0],"message":fmt%args},separators=(",",":")),flush=True)
-            def _json(self,status,data):
-                payload=json.dumps(data,ensure_ascii=False,separators=(",",":"),default=str).encode(); self.send_response(status); self.send_header("Content-Type","application/json; charset=utf-8"); self.send_header("Content-Length",str(len(payload))); self.send_header("Cache-Control","no-store"); self.send_header("X-Content-Type-Options","nosniff"); self.end_headers(); self.wfile.write(payload)
-            def _body(self):
-                try: n=int(self.headers.get("Content-Length","0"))
-                except ValueError: raise ValueError("invalid Content-Length")
-                if n<=0:return {}
-                if n>app.settings.max_request_bytes: raise ValueError("request body too large")
-                try:return json.loads(self.rfile.read(n))
-                except json.JSONDecodeError as exc: raise ValueError("invalid JSON") from exc
-            def _principal(self,role):
-                p=app.auth.authenticate(self.headers.get("Authorization"),self.headers.get("X-API-Key"))
-                if not app.auth.require(p,role): self._json(HTTPStatus.UNAUTHORIZED if p is None else HTTPStatus.FORBIDDEN,{"error":"authentication or role requirement failed"}); return None
-                return p
-            def _static(self,name):
-                p=app.static/name
-                if not p.is_file(): self.send_error(404); return
-                data=p.read_bytes(); self.send_response(200); self.send_header("Content-Type",mimetypes.guess_type(name)[0] or "application/octet-stream"); self.send_header("Content-Length",str(len(data))); self.send_header("Cache-Control","public,max-age=300"); self.send_header("X-Content-Type-Options","nosniff"); self.end_headers(); self.wfile.write(data)
-            def do_GET(self):
-                path=self.path.split("?",1)[0]
-                if path=="/": return self._static("index.html")
-                if path in {"/app.js","/styles.css"}: return self._static(path[1:])
-                if path=="/health": return self._json(200,{"status":"ok","version":"1.0.0"})
-                if path=="/ready": return self._json(200,{"status":"ready","provider":app.settings.provider})
-                if path=="/metrics":
-                    if not self._principal("viewer"): return
-                    data=prometheus(app.db).encode(); self.send_response(200); self.send_header("Content-Type","text/plain; version=0.0.4"); self.send_header("Content-Length",str(len(data))); self.end_headers(); self.wfile.write(data); return
-                if not self._principal("viewer"): return
-                if path=="/api/v1/overview": return self._json(200,app.db.overview())
-                if path=="/api/v1/agents": return self._json(200,{"items":app.db.list_agents()})
-                if path=="/api/v1/tasks": return self._json(200,{"items":app.db.list_tasks()})
-                if path=="/api/v1/audit": return self._json(200,{"items":app.db.list_audit()})
-                if path=="/api/v1/budgets": return self._json(200,{"items":app.db.list_budgets()})
-                if path=="/api/v1/models": return self._json(200,{"tiers":[{"tier":t,"model":app.settings.model_for_tier(t),"rate":app.settings.rates[t].__dict__} for t in ("luna","terra","sol")]})
-                m=re.fullmatch(r"/api/v1/tasks/([0-9a-f-]+)",path)
-                if m:
-                    t=app.db.get_task(m.group(1)); return self._json(200,t) if t else self._json(404,{"error":"task not found"})
-                return self._json(404,{"error":"not found"})
-            def do_POST(self):
-                path=self.path.split("?",1)[0]
+            server_version = f"zWorkforce/{__version__}"
+
+            def setup(self):
+                super().setup()
+                rid = self.headers.get("X-Request-ID", "") if hasattr(self, "headers") else ""
+                self.request_id = rid if REQUEST_ID_RE.fullmatch(rid) else uuid.uuid4().hex
+                self._cors_origin = ""
+
+            def log_message(self, fmt, *args):
+                print(json.dumps({"event": "http", "request_id": getattr(self, "request_id", ""), "client": self.client_address[0], "message": fmt % args}, separators=(",", ":")), flush=True)
+
+            def _prepare(self):
+                rid = self.headers.get("X-Request-ID", "")
+                self.request_id = rid if REQUEST_ID_RE.fullmatch(rid) else uuid.uuid4().hex
+                origin = self.headers.get("Origin", "")
+                self._cors_origin = origin if origin and origin in app.settings.cors_origins else ""
+
+            def _security_headers(self, cache_control: str = "no-store"):
+                self.send_header("Cache-Control", cache_control)
+                self.send_header("X-Content-Type-Options", "nosniff")
+                self.send_header("X-Frame-Options", "DENY")
+                self.send_header("Referrer-Policy", "no-referrer")
+                self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+                self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'")
+                self.send_header("X-Request-ID", self.request_id)
+                if self._cors_origin:
+                    self.send_header("Access-Control-Allow-Origin", self._cors_origin)
+                    self.send_header("Vary", "Origin")
+
+            def _json(self, status: int, data: Any, headers: dict[str, str] | None = None):
+                payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"), default=str).encode("utf-8")
+                self.send_response(status)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(payload)))
+                self._security_headers()
+                for k, v in (headers or {}).items():
+                    self.send_header(k, v)
+                self.end_headers()
+                self.wfile.write(payload)
+
+            def _error(self, status: int, code: str, message: str, details: Any = None):
+                body = {"error": {"code": code, "message": message}, "request_id": self.request_id}
+                if details is not None and app.settings.env != "production":
+                    body["error"]["details"] = details
+                return self._json(status, body)
+
+            def _body(self) -> dict[str, Any]:
+                raw_length = self.headers.get("Content-Length", "0")
                 try:
-                    if path=="/api/v1/tasks":
-                        p=self._principal("operator");
-                        if not p:return
-                        b=self._body(); t,created=app.engine.submit(str(b.get("agent_id","")),str(b.get("prompt","")),bool(b.get("mutating",False)),b.get("tier_override"),idempotency_key=self.headers.get("Idempotency-Key"),actor=p.name); return self._json(201 if created else 200,t)
-                    if path=="/api/v1/agents":
-                        p=self._principal("admin");
-                        if not p:return
-                        b=self._body(); aid=str(b.get("id",""))
-                        if not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,62}",aid): raise ValueError("agent id must be a DNS-like slug")
-                        if b.get("default_tier","terra") not in {"luna","terra","sol"}: raise ValueError("invalid default_tier")
-                        a=app.db.upsert_agent(b); app.db.audit(p.name,"agent.upsert","agent",a["id"]); return self._json(200,a)
-                    if path=="/api/v1/budgets":
-                        p=self._principal("admin");
-                        if not p:return
-                        b=self._body(); st=str(b.get("scope_type","")); period=str(b.get("period","")); sid=str(b.get("scope_id","")); limit=float(b.get("limit_credits",0))
-                        if st not in {"global","department","agent"} or period not in {"daily","monthly"} or not sid: raise ValueError("invalid budget")
-                        app.db.set_budget(st,sid,period,limit); app.db.audit(p.name,"budget.set","budget",f"{st}:{sid}:{period}",{"limit_credits":limit}); return self._json(200,{"ok":True})
-                    m=re.fullmatch(r"/api/v1/tasks/([0-9a-f-]+)/(approve|cancel)",path)
-                    if m:
-                        p=self._principal("operator");
-                        if not p:return
-                        return self._json(200,app.engine.approve(m.group(1),p.name) if m.group(2)=="approve" else app.engine.cancel(m.group(1),p.name))
-                    return self._json(404,{"error":"not found"})
-                except (ValueError,TypeError) as exc: return self._json(400,{"error":str(exc)})
-                except Exception as exc: return self._json(500,{"error":"internal server error","detail":str(exc) if app.settings.env!="production" else None})
+                    n = int(raw_length)
+                except ValueError as exc:
+                    raise ValueError("invalid Content-Length") from exc
+                if n < 0 or n > app.settings.max_request_bytes:
+                    raise ValueError("request body too large")
+                if n == 0:
+                    return {}
+                content_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+                if content_type != "application/json":
+                    raise ValueError("Content-Type must be application/json")
+                try:
+                    data = json.loads(self.rfile.read(n))
+                except json.JSONDecodeError as exc:
+                    raise ValueError("invalid JSON") from exc
+                if not isinstance(data, dict):
+                    raise ValueError("JSON body must be an object")
+                return data
+
+            def _principal(self, role: str, scope: str | None = None):
+                allowed, retry_after = app.auth_rate_limiter.allow(f"auth:{self.client_address[0]}")
+                if not allowed:
+                    self._json(HTTPStatus.TOO_MANY_REQUESTS, {"error": {"code": "auth_rate_limited", "message": "authentication rate limit exceeded"}, "request_id": self.request_id}, {"Retry-After": str(retry_after)})
+                    return None, True
+                proxy_headers = {k: self.headers.get(k, "") for k in ("X-Forwarded-User", "X-Forwarded-Role", "X-Forwarded-Tenant", "X-Forwarded-Scopes", "X-ZWorkforce-Proxy-Signature", "X-ZWorkforce-Proxy-Timestamp")}
+                principal = app.auth.authenticate(self.headers.get("Authorization"), self.headers.get("X-API-Key"), proxy_headers)
+                if not app.auth.require(principal, role, scope):
+                    self._error(HTTPStatus.UNAUTHORIZED if principal is None else HTTPStatus.FORBIDDEN, "auth_failed", "authentication, role, or scope requirement failed")
+                    return None, True
+                key = f"{principal.key_id}:{self.client_address[0]}"
+                allowed, retry_after = app.rate_limiter.allow(key)
+                if not allowed:
+                    self._json(HTTPStatus.TOO_MANY_REQUESTS, {"error": {"code": "rate_limited", "message": "API rate limit exceeded"}, "request_id": self.request_id}, {"Retry-After": str(retry_after)})
+                    return None, True
+                try:
+                    tenant_id = resolve_tenant(principal, self.headers.get("X-Tenant-ID"))
+                except ValueError as exc:
+                    self._error(400, "invalid_tenant", str(exc))
+                    return None, True
+                if not app.db.get_tenant(tenant_id):
+                    self._error(404, "tenant_not_found", "tenant not found")
+                    return None, True
+                return (principal, tenant_id), None
+
+            def _static(self, name: str):
+                path = app.static / name
+                if not path.is_file():
+                    return self._error(404, "not_found", "not found")
+                data = path.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", mimetypes.guess_type(name)[0] or "application/octet-stream")
+                self.send_header("Content-Length", str(len(data)))
+                self._security_headers("public,max-age=300")
+                self.end_headers()
+                self.wfile.write(data)
+
+            def _query(self):
+                return urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query, keep_blank_values=False)
+
+            def do_OPTIONS(self):
+                self._prepare()
+                origin = self.headers.get("Origin", "")
+                if not origin or origin not in app.settings.cors_origins:
+                    return self._error(403, "cors_denied", "origin is not allowed")
+                self.send_response(204)
+                self.send_header("Access-Control-Allow-Origin", origin)
+                self.send_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+                self.send_header("Access-Control-Allow-Headers", "Authorization,Content-Type,Idempotency-Key,X-API-Key,X-Request-ID,X-Tenant-ID")
+                self.send_header("Access-Control-Max-Age", "600")
+                self.send_header("Vary", "Origin")
+                self._security_headers()
+                self.end_headers()
+
+            def do_GET(self):
+                self._prepare()
+                path = urllib.parse.urlsplit(self.path).path
+                try:
+                    if path == "/":
+                        return self._static("index.html")
+                    if path in {"/app.js", "/styles.css"}:
+                        return self._static(path[1:])
+                    if path == "/health":
+                        return self._json(200, {"status": "ok", "version": __version__})
+                    if path == "/ready":
+                        ready = app.db.ready() and any(item["available"] for item in app.provider.models())
+                        return self._json(200 if ready else 503, {"status": "ready" if ready else "not_ready", "database": app.db.ready(), "providers": [{"name": p["name"], "available": p["available"]} for p in app.provider.models()]})
+                    if path == "/metrics":
+                        ctx, response = self._principal("viewer", "metrics:read")
+                        if response:
+                            return response
+                        _, tenant_id = ctx
+                        data = prometheus(app.db, tenant_id).encode("utf-8")
+                        self.send_response(200)
+                        self.send_header("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
+                        self.send_header("Content-Length", str(len(data)))
+                        self._security_headers()
+                        self.end_headers()
+                        self.wfile.write(data)
+                        return
+                    return self._get_api(path)
+                except ValueError as exc:
+                    return self._error(400, "invalid_request", str(exc))
+                except Exception as exc:
+                    return self._error(500, "internal_error", "internal server error", str(exc))
+
+            def _get_api(self, path: str):
+                q = self._query()
+                if path == "/api/v1/tenants":
+                    ctx, response = self._principal("superadmin", "tenant:read")
+                    if response:
+                        return response
+                    return self._json(200, {"items": app.db.list_tenants()})
+                if path == "/api/v1/audit/verify":
+                    ctx, response = self._principal("admin", "audit:verify")
+                    if response:
+                        return response
+                    _, tenant_id = ctx
+                    return self._json(200, app.db.verify_audit_chain(tenant_id))
+                if path == "/api/v1/audit":
+                    ctx, response = self._principal("admin", "audit:read")
+                    if response:
+                        return response
+                    _, tenant_id = ctx
+                    return self._json(200, {"items": app.db.list_audit(tenant_id, _intq(q, "limit", 100), _intq(q, "offset", 0))})
+                if path == "/api/v1/api-keys":
+                    ctx, response = self._principal("admin", "key:read")
+                    if response:
+                        return response
+                    _, tenant_id = ctx
+                    return self._json(200, {"items": app.db.list_api_keys(tenant_id)})
+                if path == "/api/v1/tool-events":
+                    ctx, response = self._principal("admin", "audit:read")
+                    if response:
+                        return response
+                    _, tenant_id = ctx
+                    return self._json(200, {"items": app.db.list_tool_events(tenant_id, _strq(q, "task_id") or None, _intq(q, "limit", 100))})
+
+                ctx, response = self._principal("viewer", "workforce:read")
+                if response:
+                    return response
+                _, tenant_id = ctx
+                if path == "/api/v1/overview":
+                    return self._json(200, app.db.overview(tenant_id))
+                if path == "/api/v1/agents":
+                    return self._json(200, {"items": app.db.list_agents(tenant_id)})
+                if path == "/api/v1/tasks":
+                    status = _strq(q, "status")
+                    agent_id = _strq(q, "agent_id")
+                    return self._json(200, {"items": app.db.list_tasks(tenant_id, _intq(q, "limit", 100), _intq(q, "offset", 0), status, agent_id)})
+                if path == "/api/v1/budgets":
+                    return self._json(200, {"items": app.db.list_budgets(tenant_id)})
+                if path == "/api/v1/providers":
+                    return self._json(200, {"items": app.provider.models()})
+                if path == "/api/v1/models":
+                    return self._json(200, {"tiers": [{"tier": tier, "rate": app.settings.rates[tier].__dict__, "provider_preview": dict(zip(("provider", "model"), app.provider.preview(tier)))} for tier in ("luna", "terra", "sol")]})
+                if path == "/api/v1/recommendations":
+                    return self._json(200, {"items": app.db.recommendations(tenant_id, _intq(q, "days", 7))})
+                if path == "/api/v1/memories":
+                    query = _strq(q, "q")
+                    items = app.db.search_memories(tenant_id, query, limit=_intq(q, "limit", 50)) if query else app.db.list_memories(tenant_id, _intq(q, "limit", 100))
+                    return self._json(200, {"items": items})
+                if path == "/api/v1/skills":
+                    return self._json(200, {"items": app.db.list_skills(tenant_id)})
+                if path == "/api/v1/tools":
+                    return self._json(200, {"items": [{"name": name, "mutating": bool(defn["mutating"]), "description": defn["schema"]["function"]["description"]} for name, defn in TOOL_DEFINITIONS.items()]})
+                match = re.fullmatch(r"/api/v1/tasks/([0-9a-f-]+)(?:/(events|approvals))?", path)
+                if match:
+                    task_id, suffix = match.group(1), match.group(2)
+                    task = app.db.get_task(tenant_id, task_id)
+                    if not task:
+                        return self._error(404, "task_not_found", "task not found")
+                    if suffix == "events":
+                        return self._json(200, {"items": app.db.list_task_events(tenant_id, task_id)})
+                    if suffix == "approvals":
+                        return self._json(200, {"items": app.db.list_approvals(tenant_id, task_id)})
+                    return self._json(200, task)
+                return self._error(404, "not_found", "not found")
+
+            def do_POST(self):
+                self._prepare()
+                path = urllib.parse.urlsplit(self.path).path
+                try:
+                    if path == "/api/v1/tenants":
+                        ctx, response = self._principal("superadmin", "tenant:write")
+                        if response:
+                            return response
+                        principal, _ = ctx
+                        body = self._body()
+                        tenant_id = str(body.get("id", "")).strip().lower()
+                        from .security import TENANT_RE
+                        if not TENANT_RE.fullmatch(tenant_id):
+                            raise ValueError("tenant id must be a DNS-like slug")
+                        tenant = app.db.ensure_tenant(tenant_id, str(body.get("name") or tenant_id))
+                        app.db.audit(tenant_id, principal.name, "tenant.create", "tenant", tenant_id)
+                        return self._json(201, tenant)
+                    if path == "/api/v1/api-keys":
+                        ctx, response = self._principal("admin", "key:write")
+                        if response:
+                            return response
+                        principal, tenant_id = ctx
+                        body = self._body()
+                        target_tenant = str(body.get("tenant_id") or tenant_id)
+                        if target_tenant != tenant_id and principal.role != "superadmin":
+                            return self._error(403, "cross_tenant_denied", "only superadmin can create keys for another tenant")
+                        role = str(body.get("role", "viewer"))
+                        if role == "superadmin" and principal.role != "superadmin":
+                            return self._error(403, "role_escalation_denied", "only superadmin can create a superadmin key")
+                        key_id, secret = app.auth.create_key(target_tenant, str(body.get("name", "")), role, [str(x) for x in body.get("scopes", ["*"])])
+                        app.db.audit(target_tenant, principal.name, "api_key.create", "api_key", key_id, {"name": body.get("name"), "role": role})
+                        return self._json(201, {"id": key_id, "secret": secret, "warning": "This secret is returned once. Store it securely."})
+
+                    task_action = re.fullmatch(r"/api/v1/tasks/([0-9a-f-]+)/(approve|reject|cancel|retry)", path)
+                    if task_action:
+                        ctx, response = self._principal("operator", "task:write")
+                        if response:
+                            return response
+                        principal, tenant_id = ctx
+                        body = self._body()
+                        task_id, action = task_action.group(1), task_action.group(2)
+                        if action == "approve":
+                            result = app.engine.approve(tenant_id, task_id, principal.name, str(body.get("comment", "")))
+                        elif action == "reject":
+                            result = app.engine.reject(tenant_id, task_id, principal.name, str(body.get("comment", "")))
+                        elif action == "cancel":
+                            result = app.engine.cancel(tenant_id, task_id, principal.name)
+                        else:
+                            result = app.engine.retry(tenant_id, task_id, principal.name)
+                        return self._json(200, result)
+
+                    key_revoke = re.fullmatch(r"/api/v1/api-keys/([0-9a-f-]+)/revoke", path)
+                    if key_revoke:
+                        ctx, response = self._principal("admin", "key:write")
+                        if response:
+                            return response
+                        principal, tenant_id = ctx
+                        ok = app.db.revoke_api_key(tenant_id, key_revoke.group(1))
+                        if not ok:
+                            return self._error(404, "key_not_found", "API key not found")
+                        app.db.audit(tenant_id, principal.name, "api_key.revoke", "api_key", key_revoke.group(1))
+                        return self._json(200, {"ok": True})
+
+                    if path == "/api/v1/tasks":
+                        ctx, response = self._principal("operator", "task:write")
+                        if response:
+                            return response
+                        principal, tenant_id = ctx
+                        body = self._body()
+                        task, created = app.engine.submit(
+                            tenant_id,
+                            str(body.get("agent_id", "")),
+                            str(body.get("prompt", "")),
+                            actor=principal.name,
+                            mutating=bool(body.get("mutating", False)),
+                            tier_override=body.get("tier_override"),
+                            idempotency_key=self.headers.get("Idempotency-Key"),
+                            priority=int(body.get("priority", 0)),
+                            success_criteria=body.get("success_criteria"),
+                            max_attempts=body.get("max_attempts"),
+                        )
+                        return self._json(201 if created else 200, task)
+                    if path == "/api/v1/agents":
+                        ctx, response = self._principal("admin", "agent:write")
+                        if response:
+                            return response
+                        principal, tenant_id = ctx
+                        body = self._body()
+                        _validate_agent(body)
+                        agent = app.db.upsert_agent(tenant_id, body)
+                        app.db.audit(tenant_id, principal.name, "agent.upsert", "agent", agent["id"], {"department": agent["department"], "default_tier": agent["default_tier"]})
+                        return self._json(200, agent)
+                    if path == "/api/v1/budgets":
+                        ctx, response = self._principal("admin", "budget:write")
+                        if response:
+                            return response
+                        principal, tenant_id = ctx
+                        body = self._body()
+                        scope_type = str(body.get("scope_type", ""))
+                        period = str(body.get("period", ""))
+                        scope_id = str(body.get("scope_id", ""))
+                        limit = float(body.get("limit_credits", 0))
+                        if scope_type not in {"global", "department", "agent"} or period not in {"daily", "monthly"} or not scope_id or limit < 0:
+                            raise ValueError("invalid budget")
+                        app.db.set_budget(tenant_id, scope_type, scope_id, period, limit)
+                        app.db.audit(tenant_id, principal.name, "budget.set", "budget", f"{scope_type}:{scope_id}:{period}", {"limit_credits": limit})
+                        return self._json(200, {"ok": True})
+                    if path == "/api/v1/memories":
+                        ctx, response = self._principal("operator", "memory:write")
+                        if response:
+                            return response
+                        principal, tenant_id = ctx
+                        body = self._body()
+                        title, content = str(body.get("title", "")).strip(), str(body.get("content", ""))
+                        if not title or not content:
+                            raise ValueError("memory title and content are required")
+                        memory = app.db.put_memory(tenant_id, str(body.get("agent_id")) if body.get("agent_id") else None, title, content, [str(x) for x in body.get("tags", [])], principal.name, body.get("id"))
+                        app.db.audit(tenant_id, principal.name, "memory.put", "memory", memory["id"], {"title": title[:200], "agent_id": memory.get("agent_id")})
+                        return self._json(201, memory)
+                    if path == "/api/v1/skills":
+                        ctx, response = self._principal("admin", "skill:write")
+                        if response:
+                            return response
+                        principal, tenant_id = ctx
+                        body = self._body()
+                        manifest = body.get("manifest")
+                        if not isinstance(manifest, dict):
+                            raise ValueError("manifest must be an object")
+                        validate_manifest(manifest)
+                        signature = str(body.get("signature", ""))
+                        if not verify_manifest(manifest, signature, app.settings.skill_signing_key, app.settings.env == "production"):
+                            raise ValueError("skill signature is invalid or required")
+                        skill = app.db.upsert_skill(tenant_id, manifest, signature, principal.name, bool(body.get("enabled", True)))
+                        app.db.audit(tenant_id, principal.name, "skill.upsert", "skill", manifest["id"], {"version": manifest["version"]})
+                        return self._json(201, skill)
+                    return self._error(404, "not_found", "not found")
+                except (ValueError, TypeError, SkillError) as exc:
+                    return self._error(400, "invalid_request", str(exc))
+                except Exception as exc:
+                    return self._error(500, "internal_error", "internal server error", str(exc))
+
         return Handler
-def serve(app):
-    server=ThreadingHTTPServer((app.settings.host,app.settings.port),app.handler()); print(f"zWorkforce 1.0.0 listening on http://{app.settings.host}:{app.settings.port}",flush=True)
-    try: server.serve_forever(poll_interval=.25)
-    except KeyboardInterrupt: pass
-    finally: server.server_close(); app.engine.shutdown()
+
+
+def serve(app: App):
+    app.engine.recover()
+    workers = app.engine.start_workers()
+    server = ThreadingHTTPServer((app.settings.host, app.settings.port), app.handler())
+    server.daemon_threads = True
+    print(f"zWorkforce {__version__} listening on http://{app.settings.host}:{app.settings.port} (embedded_workers={workers})", flush=True)
+    try:
+        server.serve_forever(poll_interval=.25)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.shutdown()
+        server.server_close()
+        app.engine.shutdown()
+
+
+def _intq(query: dict[str, list[str]], key: str, default: int) -> int:
+    try:
+        return int((query.get(key) or [str(default)])[0])
+    except ValueError:
+        raise ValueError(f"query parameter {key} must be an integer")
+
+
+def _strq(query: dict[str, list[str]], key: str) -> str:
+    return str((query.get(key) or [""])[0]).strip()
+
+
+def _validate_agent(body: dict[str, Any]) -> None:
+    agent_id = str(body.get("id", ""))
+    if not AGENT_ID_RE.fullmatch(agent_id):
+        raise ValueError("agent id must be a DNS-like slug")
+    if not str(body.get("name", "")).strip():
+        raise ValueError("agent name is required")
+    if body.get("default_tier", "terra") not in {"luna", "terra", "sol"}:
+        raise ValueError("invalid default_tier")
+    for field, minimum, maximum in (("max_iterations", 1, 64), ("max_subagents", 0, 16), ("required_approvals", 0, 3)):
+        value = int(body.get(field, minimum))
+        if value < minimum or value > maximum:
+            raise ValueError(f"{field} must be between {minimum} and {maximum}")
+    if float(body.get("max_cost_credits", 0)) < 0:
+        raise ValueError("max_cost_credits cannot be negative")
+    allowed = body.get("allowed_tools", [])
+    approval = body.get("approval_tools", [])
+    skills = body.get("skill_ids", [])
+    if not isinstance(allowed, list) or any(str(x) not in TOOL_DEFINITIONS for x in allowed):
+        raise ValueError("allowed_tools contains an unknown tool")
+    if not isinstance(approval, list) or any(str(x) not in TOOL_DEFINITIONS for x in approval):
+        raise ValueError("approval_tools contains an unknown tool")
+    if not set(map(str, approval)).issubset(set(map(str, allowed))):
+        raise ValueError("approval_tools must be a subset of allowed_tools")
+    if not isinstance(skills, list) or any(not isinstance(x, str) for x in skills):
+        raise ValueError("skill_ids must be an array of strings")

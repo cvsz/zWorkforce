@@ -1,12 +1,10 @@
-# AGENTS.md
+# Repository Agent Instructions
 
-Maintain zWorkforce as a secure, bounded AI workforce runtime.
-
-- Run `make check` before merge.
-- Never expose provider secrets to browser clients.
-- Agent loops must have explicit iteration/spend/sub-agent ceilings.
-- New file/network/process tools must be deny-by-default where appropriate and have boundary tests.
-- State-changing API routes require authorization and audit.
-- Preserve task idempotency.
-- Keep model IDs configurable.
-- Update security/architecture docs for material behavior changes.
+- Preserve server-side provider credentials; never place credentials in static assets or model-visible configuration.
+- Keep model/tool execution bounded by iterations, attempts, delegation depth, output size and budget.
+- Every mutating capability must be deny-by-default and have an explicit policy/approval boundary.
+- Every tenant-scoped query must include `tenant_id` or derive it from a stored tenant-scoped task.
+- Queue claims and idempotency changes require transactions.
+- Add tests for security, state-machine and migration behavior with every runtime change.
+- Do not weaken SSRF/path/shell controls for convenience; add explicit configuration gates instead.
+- Runtime code supports Python 3.12+ and avoids mandatory external dependencies unless architectural value justifies them.

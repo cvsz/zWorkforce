@@ -1,0 +1,14 @@
+.git
+.github
+.env
+.venv
+__pycache__
+*.pyc
+*.pyo
+data
+workspace
+tests
+dist
+build
+*.egg-info
+.DS_Store
