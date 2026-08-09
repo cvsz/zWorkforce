@@ -49,13 +49,13 @@ public sealed class ApiClientTests
     [Fact]
     public async Task Public_health_does_not_require_credentials()
     {
-        var handler = new RecordingHandler(_ => JsonResponse("{\"status\":\"ok\",\"version\":\"3.0.1\"}"));
+        var handler = new RecordingHandler(_ => JsonResponse("{\"status\":\"ok\",\"version\":\"3.0.2\"}"));
         var client = new ApiClient(new HttpClient(handler), new ConnectionSettings("http://localhost:9569", ""));
 
         var health = await client.GetHealthAsync();
 
         Assert.Equal("ok", health.Status);
-        Assert.Equal("3.0.1", health.Version);
+        Assert.Equal("3.0.2", health.Version);
         Assert.Null(handler.LastRequest!.Headers.Authorization);
         Assert.DoesNotContain("X-Tenant-ID", handler.LastRequest.Headers.Select(x => x.Key));
     }

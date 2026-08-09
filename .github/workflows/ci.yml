@@ -85,7 +85,7 @@ jobs:
           data=json.load(open('/tmp/zworkforce.cdx.json'))
           assert data['bomFormat']=='CycloneDX'
           assert data['metadata']['component']['name']=='zworkforce'
-          assert data['metadata']['component']['version']=='3.0.1'
+          assert data['metadata']['component']['version']=='3.0.2'
           PY
       - name: Exercise deployment smoke script
         shell: bash
@@ -106,7 +106,7 @@ jobs:
         env:
           ZWORKFORCE_POSTGRES_PASSWORD: ci-only-password
           ZWORKFORCE_API_KEYS: ci-only-key:superadmin:default:bootstrap:*
-          ZWORKFORCE_IMAGE: ghcr.io/cvsz/zworkforce:v3.0.1
+          ZWORKFORCE_IMAGE: ghcr.io/cvsz/zworkforce:v3.0.2
         run: docker compose config -q
       - name: Verify release workflow capabilities
         run: |
@@ -121,7 +121,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
       - name: Build hardened image
-        run: docker build --build-arg VERSION=3.0.1 -t zworkforce:ci .
+        run: docker build --build-arg VERSION=3.0.2 -t zworkforce:ci .
 
   security-invariants:
     runs-on: ubuntu-latest
@@ -133,6 +133,6 @@ jobs:
         run: '! grep -R --line-number -E "API_KEY|provider_api_key|Authorization: Bearer" zworkforce/static'
       - name: Verify v3 source and no recovery workflow
         run: |
-          test "$(python -c 'import zworkforce; print(zworkforce.__version__)')" = "3.0.1"
+          test "$(python -c 'import zworkforce; print(zworkforce.__version__)')" = "3.0.2"
           test ! -e .github/workflows/v3-rematerialize.yml
           test ! -e .github/workflows/v3-materialize.yml

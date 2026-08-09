@@ -19,9 +19,19 @@ docker compose up -d --build
 For an immutable published release, set `ZWORKFORCE_IMAGE` and do not rebuild on the production host:
 
 ```bash
-export ZWORKFORCE_IMAGE=ghcr.io/cvsz/zworkforce:v3.0.1
+export ZWORKFORCE_IMAGE=ghcr.io/cvsz/zworkforce:v3.0.2
 docker compose pull
 docker compose up -d --no-build
+```
+
+The production control-plane hostname for this deployment is
+`https://zwf.zeaz.dev`. The Cloudflare Tunnel must route that exact hostname
+to the API origin at `http://127.0.0.1:9569`; keep the API bound to the
+loopback/network boundary and do not publish PostgreSQL or worker ports.
+After the origin is running, verify the public path with:
+
+```bash
+ZWORKFORCE_BASE_URL=https://zwf.zeaz.dev bash scripts/smoke-test.sh
 ```
 
 Use `.env.production.example` as a field inventory only; replace all placeholders and keep the real environment file outside Git.
@@ -39,7 +49,7 @@ Use `.env.production.example` as a field inventory only; replace all placeholder
 - non-root/read-only/capability-drop security contexts;
 - workspace/artifact PVCs;
 - default-deny network policy;
-- immutable `v3.0.1` GHCR image references for this release.
+- immutable `v3.0.2` GHCR image references for this release.
 
 ```bash
 kubectl apply -k deploy/kubernetes
@@ -71,7 +81,7 @@ After every deployment:
 
 ```bash
 zworkforce doctor
-ZWORKFORCE_BASE_URL=https://your-zworkforce.example bash scripts/smoke-test.sh
+ZWORKFORCE_BASE_URL=https://zwf.zeaz.dev bash scripts/smoke-test.sh
 ```
 
 If the smoke path requires API authentication, also set `ZWORKFORCE_API_KEY`.

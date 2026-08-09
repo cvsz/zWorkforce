@@ -65,7 +65,7 @@ script temporarily applies the version to the package manifest and restores
 the source file before it exits:
 
 ```powershell
-.\build\windows\Package-Client.ps1 -Configuration Release -Platform x64 -Version 3.0.1
+.\build\windows\Package-Client.ps1 -Configuration Release -Platform x64 -Version 3.0.2
 ```
 
 The project is a packaged app. The normal IDE launch path is Visual Studio F5,
@@ -110,6 +110,17 @@ The client first checks `/health` and `/ready`, then calls the authenticated
 `/api/v1/*` routes with `Authorization: Bearer ...` and `X-Tenant-ID`. Writes
 include an `Idempotency-Key`. A server error displays its request ID when one
 is returned.
+
+For the deployed Workforce control plane, use:
+
+```text
+Server URL: https://zwf.zeaz.dev
+Tenant ID:  the assigned tenant
+API key:    the operator API key
+```
+
+The public hostname must be served through HTTPS. The client refuses to send
+credentials to non-local HTTP endpoints.
 
 ## Credentials and privacy
 

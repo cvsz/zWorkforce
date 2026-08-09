@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.0.2 — 2026-08-09
+
+### Windows client and operations
+- Added the packaged Windows 11 operator client with complete REST service-layer route coverage.
+- Enforced HTTPS for non-local client connections and protected API-key transport.
+- Made MSIX smoke-test certificate trust cleanup deterministic and verified.
+- Documented `https://zwf.zeaz.dev` as the production Workforce control-plane endpoint.
+
 ## 3.0.1 — 2026-08-09
 
 ### Security and reliability

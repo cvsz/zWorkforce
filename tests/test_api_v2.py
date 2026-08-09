@@ -29,7 +29,7 @@ class ApiV2Tests(unittest.TestCase):
     def test_health_is_public(self):
         with urllib.request.urlopen(self.base+"/health",timeout=5) as r:
             data=json.loads(r.read())
-            self.assertEqual(data["version"],"3.0.1")
+            self.assertEqual(data["version"],"3.0.2")
             self.assertEqual(r.headers["X-Frame-Options"],"DENY")
 
     def test_header_values_strip_response_splitting_bytes(self):

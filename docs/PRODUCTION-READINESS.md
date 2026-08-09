@@ -81,6 +81,7 @@ Production is ready only when all of the following are true:
 2. Release artifacts, checksums, SBOM and provenance exist for the exact tag.
 3. PostgreSQL backup and restore have been demonstrated in a non-production environment; a fresh production database or separately approved data-migration record exists.
 4. `zworkforce doctor` succeeds with production-equivalent configuration.
-5. `scripts/smoke-test.sh` succeeds through the production ingress path.
+5. `scripts/smoke-test.sh` succeeds through the `https://zwf.zeaz.dev`
+   production ingress path.
 6. Identity, policy, secret, egress and observability reviews are signed off by the operator.
 7. Rollback and incident contacts are documented and tested.
