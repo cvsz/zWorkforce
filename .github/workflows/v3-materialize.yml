@@ -1,0 +1,92 @@
+name: Materialize v3 source
+on:
+  push:
+    branches: [feat/v3-complete-platform]
+permissions:
+  contents: write
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    env:
+      STAGED_TREE_SHA: 5c1b096b0ebf17471c747d557c98c5363cdeb231
+      BUNDLE_SHA256: 6ef67e2bcebfda8f93dbfb9cd5459b01c697a4ecf1a7b47fec850a4c1889278d
+      BUNDLE_B64_LENGTH: '111448'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch and materialize verified source from staged Git objects
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          python - <<'PY'
+          import base64, hashlib, io, json, os, pathlib, re, shutil, tarfile, urllib.request
+
+          repo = os.environ['REPOSITORY']
+          token = os.environ['GH_TOKEN']
+          tree_sha = os.environ['STAGED_TREE_SHA']
+          expected_sha = os.environ['BUNDLE_SHA256']
+          expected_len = int(os.environ['BUNDLE_B64_LENGTH'])
+          headers = {'Authorization': f'Bearer {token}', 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'}
+
+          def api(path):
+              req = urllib.request.Request(f'https://api.github.com/repos/{repo}/{path}', headers=headers)
+              with urllib.request.urlopen(req, timeout=30) as resp:
+                  return json.load(resp)
+
+          tree = api(f'git/trees/{tree_sha}?recursive=1')['tree']
+          entries = {item['path']: item for item in tree if item.get('type') == 'blob'}
+          wanted = [f'.v3bundle/part-{i:03d}' for i in range(8)]
+          for i in range(8, 18):
+              wanted.extend(f'.v3bundle/part-{i:03d}-{j:02d}' for j in range(3))
+          wanted.extend(['.v3bundle/part-018-00', '.v3bundle/part-018-01'])
+          if len(wanted) != 40:
+              raise SystemExit(f'internal whitelist error: {len(wanted)}')
+          missing = [p for p in wanted if p not in entries]
+          if missing:
+              raise SystemExit(f'missing staged bundle entries: {missing}')
+
+          pieces = []
+          for path in wanted:
+              blob = api(f"git/blobs/{entries[path]['sha']}")
+              if blob.get('encoding') != 'base64':
+                  raise SystemExit(f'unexpected blob encoding for {path}')
+              pieces.append(base64.b64decode(blob['content']).decode('ascii'))
+          encoded = ''.join(pieces)
+          if len(encoded) != expected_len:
+              raise SystemExit(f'unexpected encoded length: {len(encoded)} != {expected_len}')
+          raw = base64.b64decode(encoded, validate=True)
+          actual_sha = hashlib.sha256(raw).hexdigest()
+          if actual_sha != expected_sha:
+              raise SystemExit(f'bundle checksum mismatch: {actual_sha} != {expected_sha}')
+
+          root = pathlib.Path('.')
+          with tarfile.open(fileobj=io.BytesIO(raw), mode='r:gz') as tf:
+              members = tf.getmembers()
+              for member in members:
+                  path = pathlib.PurePosixPath(member.name)
+                  if path.is_absolute() or '..' in path.parts:
+                      raise SystemExit(f'unsafe archive path: {member.name}')
+                  if member.islnk() or member.issym():
+                      raise SystemExit(f'archive links are not allowed: {member.name}')
+              tf.extractall(root, filter='data')
+          pathlib.Path('.github/workflows/v3-materialize.yml').unlink()
+          PY
+      - name: Validate materialized tree
+        run: |
+          test "$(python -c 'import zworkforce; print(zworkforce.__version__)')" = "3.0.0"
+          python -m compileall -q zworkforce tests
+          node --check zworkforce/static/app.js
+          python - <<'PY'
+          import json, pathlib
+          for p in pathlib.Path('examples').glob('*.json'):
+              json.loads(p.read_text())
+          print('materialized source validation passed')
+          PY
+      - name: Commit materialized source
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "chore: materialize zWorkforce v3 source"
+          git push
