@@ -129,10 +129,10 @@ public sealed class ApiClientTests
     {
         public HttpRequestMessage? LastRequest { get; private set; }
 
-        protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             LastRequest = request;
-            return responder(request);
+            return Task.FromResult(responder(request));
         }
     }
 }
