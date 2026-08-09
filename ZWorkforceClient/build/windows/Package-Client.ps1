@@ -31,8 +31,8 @@ New-Item -ItemType Directory -Force -Path $output | Out-Null
 $certificate = $null
 $originalManifestBytes = [IO.File]::ReadAllBytes($manifestPath)
 try {
-    Get-ChildItem -LiteralPath $output -File -Include "*.msix", "*.msixbundle", "*.cer", "*.sha256" -ErrorAction SilentlyContinue |
-        Remove-Item -Force -ErrorAction SilentlyContinue
+    Get-ChildItem -LiteralPath $output -Force -ErrorAction SilentlyContinue |
+        Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
     $manifestText = [Text.Encoding]::UTF8.GetString($originalManifestBytes)
     $identityPattern = '(<Identity\b[^>]*\bVersion=")[^"]+(")'
@@ -88,18 +88,39 @@ finally {
     Remove-Item -LiteralPath $pfxPath -Force -ErrorAction SilentlyContinue
 }
 
-$packages = @(Get-ChildItem -Path $root -Recurse -File -Include *.msix,*.msixbundle,*.cer | Where-Object { $_.FullName -notmatch '\\obj\\' })
-if ($packages.Count -eq 0) {
-    throw "The publish completed without producing an MSIX artifact."
+$package = Get-ChildItem -LiteralPath $output -Recurse -File -ErrorAction SilentlyContinue |
+    Where-Object {
+        $_.Extension -in @(".msix", ".msixbundle") -and
+        $_.FullName -notmatch '\\obj\\' -and
+        $_.Name -match ("_" + [regex]::Escape($packageVersion) + "_")
+    } |
+    Sort-Object LastWriteTimeUtc |
+    Select-Object -Last 1
+if ($null -eq $package) {
+    throw "The publish completed without producing an MSIX artifact for version $packageVersion."
 }
 
-foreach ($package in $packages) {
-    $destination = Join-Path $output $package.Name
-    if ([IO.Path]::GetFullPath($package.FullName) -ne [IO.Path]::GetFullPath($destination)) {
-        Copy-Item -LiteralPath $package.FullName -Destination $destination -Force
-    }
+$certificateSource = Get-ChildItem -LiteralPath $package.Directory.FullName -File -Filter "*.cer" -ErrorAction SilentlyContinue |
+    Where-Object BaseName -eq $package.BaseName |
+    Select-Object -First 1
+if ($null -eq $certificateSource) {
+    $certificateSource = Get-Item -LiteralPath $cerPath
+}
+
+$packageDestination = Join-Path $output $package.Name
+if ([IO.Path]::GetFullPath($package.FullName) -ne [IO.Path]::GetFullPath($packageDestination)) {
+    Copy-Item -LiteralPath $package.FullName -Destination $packageDestination -Force
+}
+$certificateDestination = Join-Path $output $certificateSource.Name
+if ([IO.Path]::GetFullPath($certificateSource.FullName) -ne [IO.Path]::GetFullPath($certificateDestination)) {
+    Copy-Item -LiteralPath $certificateSource.FullName -Destination $certificateDestination -Force
+}
+if ([IO.Path]::GetFullPath($certificateSource.FullName) -ne [IO.Path]::GetFullPath($cerPath)) {
+    Remove-Item -LiteralPath $cerPath -Force -ErrorAction SilentlyContinue
 }
 
 Write-Host "Windows client package artifacts:"
 Write-Host "  Package version: $packageVersion"
-$packages | ForEach-Object { Write-Host "  $($_.FullName)" }
+Get-ChildItem -LiteralPath $output -File |
+    Where-Object { $_.Extension -in @(".msix", ".msixbundle", ".cer") } |
+    ForEach-Object { Write-Host "  $($_.FullName)" }

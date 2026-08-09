@@ -56,10 +56,18 @@ function Invoke-Certutil([string[]]$Arguments) {
     $process = Start-Process -FilePath "certutil.exe" -ArgumentList $Arguments -NoNewWindow -PassThru
     if (-not $process.WaitForExit(60 * 1000)) {
         $process.Kill()
-        throw "certutil.exe timed out while updating the current-user certificate store."
+        throw "certutil.exe timed out while updating the machine certificate store."
     }
     if ($process.ExitCode -ne 0) {
         throw "certutil.exe failed with exit code $($process.ExitCode)."
+    }
+}
+
+function Assert-Administrator {
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = [Security.Principal.WindowsPrincipal]::new($identity)
+    if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        throw "The packaged launch smoke check requires an elevated PowerShell session because it temporarily trusts the MSIX certificate in the machine Trusted People store."
     }
 }
 
@@ -67,6 +75,7 @@ function Invoke-Certutil([string[]]$Arguments) {
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 if ($LaunchSmoke) {
+    Assert-Administrator
     $packageDirectory = Join-Path $root "out\$Configuration-x64"
     $package = Get-ChildItem -LiteralPath $packageDirectory -File -Filter "*.msix" |
         Sort-Object LastWriteTimeUtc |

@@ -69,9 +69,9 @@ jobs:
         with:
           name: zworkforce-client-${{ github.run_number }}
           path: |
-            ZWorkforceClient/out/**/*.msix
-            ZWorkforceClient/out/**/*.msixbundle
-            ZWorkforceClient/out/**/*.cer
+            ZWorkforceClient/out/*/*.msix
+            ZWorkforceClient/out/*/*.msixbundle
+            ZWorkforceClient/out/*/*.cer
           if-no-files-found: error
           retention-days: 14
 

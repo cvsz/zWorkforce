@@ -78,6 +78,12 @@ is:
 .\build\windows\Test-Client.ps1 -Configuration Release -LaunchSmoke
 ```
 
+Run that command from an elevated PowerShell session. The smoke check
+temporarily adds the test certificate to the machine `Trusted People` store so
+Windows package deployment can validate it, then removes the certificate and
+package in its cleanup phase. Visual Studio F5 uses its normal development
+certificate path.
+
 The smoke check proves that the packaged launch process stays alive; it does
 not claim a live server connection. Use the Connection page to connect to a
 server after launch.
