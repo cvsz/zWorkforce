@@ -110,6 +110,88 @@ public sealed class ApiClientTests
         Assert.Equal("primary", ready.Providers[0].Name);
     }
 
+    [Fact]
+    public async Task Agent_template_instantiation_uses_the_documented_route_and_idempotency()
+    {
+        var handler = new RecordingHandler(_ => JsonResponse("{\"id\":\"agent-1\"}", HttpStatusCode.Created));
+        var client = CreateClient(handler);
+
+        await client.InstantiateAgentTemplateAsync(
+            "research-template",
+            new JsonObject { ["agent_id"] = "researcher" },
+            "instantiate-key");
+
+        Assert.Equal(HttpMethod.Post, handler.LastRequest!.Method);
+        Assert.Equal("/api/v1/agent-templates/research-template/instantiate", handler.LastRequest.RequestUri!.AbsolutePath);
+        Assert.Equal("instantiate-key", handler.LastRequest.Headers.GetValues("Idempotency-Key").Single());
+    }
+
+    [Fact]
+    public async Task Evaluation_tick_uses_the_documented_route_and_idempotency()
+    {
+        var handler = new RecordingHandler(_ => JsonResponse("{\"processed\":1}"));
+        var client = CreateClient(handler);
+
+        await client.RunEvaluationTickAsync("evaluation-key");
+
+        Assert.Equal(HttpMethod.Post, handler.LastRequest!.Method);
+        Assert.Equal("/api/v1/evaluation-tick", handler.LastRequest.RequestUri!.AbsolutePath);
+        Assert.Equal("evaluation-key", handler.LastRequest.Headers.GetValues("Idempotency-Key").Single());
+    }
+
+    [Fact]
+    public async Task Api_key_revoke_uses_the_documented_route_and_idempotency()
+    {
+        var handler = new RecordingHandler(_ => JsonResponse("{\"ok\":true}"));
+        var client = CreateClient(handler);
+
+        await client.RevokeApiKeyAsync("key-42", "revoke-key");
+
+        Assert.Equal(HttpMethod.Post, handler.LastRequest!.Method);
+        Assert.Equal("/api/v1/api-keys/key-42/revoke", handler.LastRequest.RequestUri!.AbsolutePath);
+        Assert.Equal("revoke-key", handler.LastRequest.Headers.GetValues("Idempotency-Key").Single());
+    }
+
+    [Fact]
+    public async Task Every_documented_mutating_collection_has_a_service_wrapper()
+    {
+        var handler = new RecordingHandler(_ => JsonResponse("{\"ok\":true}"));
+        var client = CreateClient(handler);
+        var body = new JsonObject { ["id"] = "example" };
+
+        var routes = new (string Expected, Func<Task<JsonObject>> Call)[]
+        {
+            ("/api/v1/agents", () => client.CreateOrUpdateAgentAsync(body)),
+            ("/api/v1/agent-templates", () => client.CreateOrUpdateAgentTemplateAsync(body)),
+            ("/api/v1/policies", () => client.CreateOrUpdatePolicyAsync(body)),
+            ("/api/v1/tasks", () => client.CreateTaskAsync(body)),
+            ("/api/v1/budgets", () => client.SetBudgetAsync(body)),
+            ("/api/v1/memories", () => client.CreateMemoryAsync(body)),
+            ("/api/v1/skills", () => client.CreateSkillAsync(body)),
+            ("/api/v1/workflows", () => client.CreateOrUpdateWorkflowAsync(body)),
+            ("/api/v1/workflow-runs", () => client.StartWorkflowRunAsync(body)),
+            ("/api/v1/schedules", () => client.CreateScheduleAsync(body)),
+            ("/api/v1/event-rules", () => client.CreateEventRuleAsync(body)),
+            ("/api/v1/events", () => client.EmitEventAsync(body)),
+            ("/api/v1/evaluation-suites", () => client.CreateEvaluationSuiteAsync(body)),
+            ("/api/v1/evaluation-runs", () => client.StartEvaluationRunAsync(body)),
+            ("/api/v1/artifacts", () => client.CreateArtifactAsync(body)),
+            ("/api/v1/slo", () => client.SetSloPolicyAsync(body)),
+            ("/api/v1/economics", () => client.SetEconomicsAsync(body)),
+            ("/api/v1/tenants", () => client.CreateTenantAsync(body)),
+            ("/api/v1/api-keys", () => client.CreateApiKeyAsync(body))
+        };
+
+        foreach (var route in routes)
+        {
+            await route.Call();
+
+            Assert.Equal(HttpMethod.Post, handler.LastRequest!.Method);
+            Assert.Equal(route.Expected, handler.LastRequest.RequestUri!.AbsolutePath);
+            Assert.True(handler.LastRequest.Headers.Contains("Idempotency-Key"));
+        }
+    }
+
     private static ApiClient CreateClient(RecordingHandler handler)
     {
         return new ApiClient(
