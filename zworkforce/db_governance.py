@@ -81,13 +81,6 @@ class GovernanceMixin:
             ).fetchall()
             return self._rows(rows)
 
-    def upgrade_api_key_hash(self, key_id: str, verifier: str) -> bool:
-        with self.connection() as c:
-            return bool(c.execute(
-                "UPDATE api_keys2 SET key_hash=? WHERE id=? AND disabled=0",
-                (verifier, key_id),
-            ).rowcount)
-
     def touch_api_key(self, key_id: str) -> None:
         now = datetime.now(timezone.utc)
         cutoff = (now - timedelta(minutes=1)).isoformat(timespec="seconds")

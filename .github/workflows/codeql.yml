@@ -45,10 +45,8 @@ jobs:
         include:
         - language: actions
           build-mode: none
-          suppression-pack: ""
         - language: python
           build-mode: none
-          suppression-pack: codeql/python-queries:AlertSuppression.ql
         # CodeQL supports the following values keywords for 'language': 'actions', 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'rust', 'swift'
         # Use `c-cpp` to analyze code written in C, C++ or both
         # Use 'java-kotlin' to analyze code written in Java, Kotlin or both
@@ -73,7 +71,6 @@ jobs:
       with:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
-        packs: ${{ matrix.suppression-pack }}
         # If you wish to specify custom queries, you can do so here or in a config file.
         # By default, queries listed here will override any specified in a config file.
         # Prefix the list here with "+" to use these queries and those in the config file.

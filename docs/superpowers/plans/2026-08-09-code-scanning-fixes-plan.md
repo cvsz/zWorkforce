@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Resolve every open CodeQL alert on `main` while preserving tenant isolation, API-key compatibility, SQLite/PostgreSQL behavior, and one-time secret handling.
+**Goal:** Resolve every open CodeQL alert on `main` while preserving tenant isolation, SQLite/PostgreSQL behavior, and one-time secret handling. Existing unsalted API-key records require rotation.
 
-**Architecture:** Keep the existing `api_keys2.key_hash` text column but store new API-key verifiers as self-describing salted PBKDF2-HMAC-SHA256 records. Authentication will inspect bounded active repository rows, verify with constant-time comparison, and transparently upgrade legacy SHA-256 rows after a successful match. All response-header values will pass through explicit CR/LF sanitization and fixed static MIME mappings. The CLI will persist generated secrets in a mode-0600 file and print only non-sensitive metadata.
+**Architecture:** Keep the existing `api_keys2.key_hash` text column but store API-key verifiers as self-describing salted PBKDF2-HMAC-SHA256 records. Authentication will inspect bounded active repository rows and verify with constant-time comparison; legacy unsalted SHA-256 rows require key recreation/rotation and are not accepted. All response-header values will pass through explicit CR/LF sanitization and fixed static MIME mappings. The CLI will persist generated secrets in a mode-0600 file and print only non-sensitive metadata.
 
 **Tech Stack:** Python 3.12–3.14, stdlib `http.server`, SQLite/PostgreSQL repository methods, `unittest`, GitHub CodeQL.
 
@@ -21,11 +21,11 @@
 
 ## Files and Responsibilities
 
-- Modify `zworkforce/security.py`: PBKDF2 verifier creation, legacy verification/upgrade boundary, constant-time authentication, and a documented compatibility boundary.
-- Modify `zworkforce/db_governance.py`: repository methods for bounded active-key lookup and hash upgrade; make bootstrap upserts stable by key identity rather than a randomized verifier.
+- Modify `zworkforce/security.py`: PBKDF2 verifier creation, explicit legacy-verifier rejection, and constant-time authentication.
+- Modify `zworkforce/db_governance.py`: repository method for bounded active-key lookup; make bootstrap upserts stable by key identity rather than a randomized verifier.
 - Modify `zworkforce/api.py`: sanitize request IDs and CORS origins before response headers and use fixed MIME values for static assets.
 - Modify `zworkforce/cli.py`: add secure one-time secret-file output for `key-create` and remove clear-text secret logging.
-- Modify `tests/test_security_v2.py`: cover PBKDF2 storage, dynamic-key authentication, bootstrap rotation, legacy upgrade, and constant-time failure behavior.
+- Modify `tests/test_security_v2.py`: cover PBKDF2 storage, dynamic-key authentication, bootstrap rotation, legacy-verifier rejection, and constant-time failure behavior.
 - Modify `tests/test_api_v2.py`: cover safe request-ID/CORS response behavior and fixed static response headers.
 - Create `tests/test_cli_security.py`: verify `key-create` never places the secret in stdout and creates a mode-0600 secret file.
 - Modify `docs/SECRET-MANAGEMENT.md` and the relevant README CLI section: document the secret-file output and rotation behavior.
@@ -66,13 +66,13 @@
 
 **Interfaces:**
 - Store new verifiers in the form `pbkdf2_sha256$<iterations>$<salt>$<digest>` using a per-key random salt and a documented constant work factor.
-- Add repository methods `list_active_api_keys(limit: int = 10000)` and `upgrade_api_key_hash(key_id: str, verifier: str)`; both SQLite and PostgreSQL implementations use the existing shared SQL interface and enforce the active-row limit.
+- Add repository method `list_active_api_keys(limit: int = 10000)`; both SQLite and PostgreSQL implementations use the existing shared SQL interface and enforce the active-row limit.
 - Use a stable bootstrap key ID derived from tenant/name so repeated startup does not create duplicate active rows.
-- Recognize legacy 64-character SHA-256 rows only inside a documented compatibility function; on successful verification, replace the row through `upgrade_api_key_hash` with a PBKDF2 verifier.
+- Reject legacy 64-character SHA-256 rows so operators must recreate and rotate those credentials instead of retaining a weak verifier path.
 
 - [ ] **Step 1: Write failing tests**
 
-  Add tests asserting new records start with `pbkdf2_sha256$`, authentication succeeds for generated and bootstrap keys, wrong keys fail, legacy SHA-256 rows authenticate once and are upgraded, and bootstrap rotation leaves exactly one active row for the name.
+  Add tests asserting new records start with `pbkdf2_sha256$`, authentication succeeds for generated and bootstrap keys, wrong keys fail, legacy SHA-256 rows require rotation, and bootstrap rotation leaves exactly one active row for the name.
 
 - [ ] **Step 2: Run the focused tests and confirm RED**
 
@@ -80,11 +80,11 @@
 
 - [ ] **Step 3: Implement repository and verifier changes**
 
-  Change bootstrap upsert conflict handling to use stable IDs, return at most 10,000 active candidates through repository methods, verify PBKDF2 with `hmac.compare_digest`, and upgrade only after a valid legacy match. Keep all writes inside repository methods and avoid exposing hashes in API responses.
+  Change bootstrap upsert conflict handling to use stable IDs, return at most 10,000 active candidates through repository methods, verify PBKDF2 with `hmac.compare_digest`, and reject legacy verifiers. Keep all writes inside repository methods and avoid exposing hashes in API responses.
 
 - [ ] **Step 4: Run focused security tests and confirm GREEN**
 
-  Run `PYTHONPATH=. python3 -m unittest tests.test_security_v2 -v`; confirm legacy and new-key paths pass on SQLite.
+  Run `PYTHONPATH=. python3 -m unittest tests.test_security_v2 -v`; confirm legacy rows are rejected and new-key paths pass on SQLite.
 
 ### Task 3: Remove CLI clear-text secret logging
 

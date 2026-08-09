@@ -20,7 +20,6 @@ PBKDF2_ITERATIONS = 600_000
 PBKDF2_SALT_BYTES = 16
 PBKDF2_MIN_ITERATIONS = 100_000
 PBKDF2_MAX_ITERATIONS = 1_000_000
-LEGACY_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
 @dataclass(frozen=True)
@@ -63,11 +62,8 @@ class AuthManager:
         if not candidate:
             return None
         for row in self.db.list_active_api_keys(limit=10_000):
-            valid, needs_upgrade = _verify_secret(row.get("key_hash", ""), candidate)
-            if not valid:
+            if not _verify_secret(row.get("key_hash", ""), candidate):
                 continue
-            if needs_upgrade:
-                self.db.upgrade_api_key_hash(row["id"], _hash_secret(candidate))
             self.db.touch_api_key(row["id"])
             scopes = tuple(row.get("scopes") or ["*"])
             return Principal(row["name"], row["role"], row["tenant_id"], scopes, row["id"])
@@ -150,9 +146,9 @@ def _hash_secret(secret: str, salt: bytes | None = None) -> str:
     return f"{PBKDF2_SCHEME}${PBKDF2_ITERATIONS}${salt.hex()}${derived.hex()}"
 
 
-def _verify_secret(stored: str, candidate: str) -> tuple[bool, bool]:
+def _verify_secret(stored: str, candidate: str) -> bool:
     if not isinstance(stored, str):
-        return False, False
+        return False
     parts = stored.split("$")
     if len(parts) == 4 and parts[0] == PBKDF2_SCHEME:
         try:
@@ -160,17 +156,12 @@ def _verify_secret(stored: str, candidate: str) -> tuple[bool, bool]:
             salt = bytes.fromhex(parts[2])
             expected = bytes.fromhex(parts[3])
         except ValueError:
-            return False, False
+            return False
         if not PBKDF2_MIN_ITERATIONS <= iterations <= PBKDF2_MAX_ITERATIONS or not salt or not expected:
-            return False, False
+            return False
         derived = hashlib.pbkdf2_hmac("sha256", candidate.encode("utf-8"), salt, iterations)
-        return hmac.compare_digest(derived, expected), False
-    if LEGACY_SHA256_RE.fullmatch(stored):
-        # Legacy verifier compatibility only; successful matches are immediately upgraded.
-        # codeql[py/weak-sensitive-data-hashing]
-        legacy_digest = hashlib.sha256(candidate.encode("utf-8")).hexdigest()
-        return hmac.compare_digest(legacy_digest, stored), True
-    return False, False
+        return hmac.compare_digest(derived, expected)
+    return False
 
 
 def resolve_tenant(principal: Principal, requested: str | None) -> str:

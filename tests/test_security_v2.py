@@ -27,7 +27,7 @@ class SecurityV2Tests(unittest.TestCase):
         row = next(row for row in self.db.list_active_api_keys() if row["name"] == "test-admin")
         self.assertTrue(row["key_hash"].startswith("pbkdf2_sha256$"))
 
-    def test_legacy_sha256_key_is_upgraded_after_successful_authentication(self):
+    def test_legacy_sha256_key_requires_rotation(self):
         secret = "legacy-secret"
         self.db.upsert_api_key(
             "legacy-key",
@@ -37,10 +37,7 @@ class SecurityV2Tests(unittest.TestCase):
             "viewer",
             ["workforce:read"],
         )
-        principal = AuthManager(self.db).authenticate(None, secret)
-        self.assertIsNotNone(principal)
-        row = next(row for row in self.db.list_active_api_keys() if row["id"] == "legacy-key")
-        self.assertTrue(row["key_hash"].startswith("pbkdf2_sha256$"))
+        self.assertIsNone(AuthManager(self.db).authenticate(None, secret))
 
     def test_active_api_key_scan_is_bounded(self):
         self.assertLessEqual(len(self.db.list_active_api_keys(limit=100_000)), 10_000)

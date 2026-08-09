@@ -43,7 +43,9 @@ The command writes the one-time plaintext secret to a newly created mode-0600 fi
 `$ZWORKFORCE_DATA_DIR/api-keys/` and prints only non-sensitive metadata, including the file path.
 Use `--secret-file PATH` to choose a different destination; existing files are never overwritten.
 The database stores a salted PBKDF2-HMAC-SHA256 verifier, not the plaintext secret. Move the file
-into the approved secret-management boundary and remove local copies after registration.
+into the approved secret-management boundary and remove local copies after registration. API keys
+created by older releases with unsalted SHA-256 verifiers must be recreated and rotated; they are
+not accepted by the current runtime.
 
 ## Kubernetes
 

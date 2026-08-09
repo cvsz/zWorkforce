@@ -2,7 +2,8 @@
 
 ## API keys
 Persistent API keys support viewer/operator/admin/superadmin roles and scopes. Only a salted
-PBKDF2-HMAC-SHA256 verifier is stored; legacy SHA-256 records are upgraded after successful use.
+PBKDF2-HMAC-SHA256 verifier is stored. Legacy unsalted SHA-256 records must be rotated before
+they can be used by the current runtime.
 
 ## Native OIDC
 
