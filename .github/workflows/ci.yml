@@ -80,7 +80,7 @@ jobs:
         run: '! grep -R --line-number --include="*.py" "shell=True" zworkforce'
       - name: No provider secrets in static assets
         run: '! grep -R --line-number -E "API_KEY|provider_api_key|Authorization: Bearer" zworkforce/static'
-      - name: Recovery/bootstrap workflows removed
+      - name: Verify v3 source and no recovery workflow
         run: |
-          test ! -e .github/workflows/v3-materialize.yml
+          test "$(python -c 'import zworkforce; print(zworkforce.__version__)')" = "3.0.0"
           test ! -e .github/workflows/v3-rematerialize.yml
