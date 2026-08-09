@@ -78,13 +78,8 @@ if ($LaunchSmoke) {
 
         if ($null -ne $certificate) {
             Write-Host "Trusting the temporary package certificate for this smoke check."
-            $trustedCertificate = Get-ChildItem -Path "Cert:\CurrentUser\Root" |
-                Where-Object Thumbprint -eq $certificate.Thumbprint |
-                Select-Object -First 1
-            if ($null -eq $trustedCertificate) {
-                Import-Certificate -FilePath $certificate.FullName -CertStoreLocation "Cert:\CurrentUser\Root" | Out-Null
-                $importedCertificateThumbprint = $certificate.Thumbprint
-            }
+            Import-Certificate -FilePath $certificate.FullName -CertStoreLocation "Cert:\CurrentUser\Root" -ErrorAction Stop | Out-Null
+            $importedCertificateThumbprint = $certificate.Thumbprint
         }
 
         Write-Host "Installing the packaged client."

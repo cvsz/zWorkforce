@@ -146,6 +146,7 @@ jobs:
         run: ./ZWorkforceClient/build/windows/Package-Client.ps1 -Configuration Release -Platform x64 -Version "${{ needs.release.outputs.version }}"
 
       - name: Launch smoke check
+        timeout-minutes: 8
         run: ./ZWorkforceClient/build/windows/Test-Client.ps1 -Configuration Release -ExpectedVersion "${{ needs.release.outputs.version }}.0" -LaunchSmoke
 
       - name: Generate Windows checksums
