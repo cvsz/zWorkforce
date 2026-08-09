@@ -18,8 +18,8 @@ services:
     build:
       context: .
       args:
-        VERSION: "3.0.0"
-    image: ${ZWORKFORCE_IMAGE:-zworkforce:3.0.0}
+        VERSION: "3.0.1"
+    image: ${ZWORKFORCE_IMAGE:-zworkforce:3.0.1}
     command: ["serve"]
     ports:
       - "9569:9569"
@@ -65,11 +65,11 @@ services:
         condition: service_healthy
 
   worker:
-    image: ${ZWORKFORCE_IMAGE:-zworkforce:3.0.0}
+    image: ${ZWORKFORCE_IMAGE:-zworkforce:3.0.1}
     build:
       context: .
       args:
-        VERSION: "3.0.0"
+        VERSION: "3.0.1"
     command: ["worker"]
     environment: *zworkforce-env
     volumes:
@@ -85,11 +85,11 @@ services:
         condition: service_healthy
 
   scheduler:
-    image: ${ZWORKFORCE_IMAGE:-zworkforce:3.0.0}
+    image: ${ZWORKFORCE_IMAGE:-zworkforce:3.0.1}
     build:
       context: .
       args:
-        VERSION: "3.0.0"
+        VERSION: "3.0.1"
     command: ["scheduler", "--poll", "1"]
     environment: *zworkforce-env
     volumes:
@@ -105,11 +105,11 @@ services:
         condition: service_healthy
 
   outbox:
-    image: ${ZWORKFORCE_IMAGE:-zworkforce:3.0.0}
+    image: ${ZWORKFORCE_IMAGE:-zworkforce:3.0.1}
     build:
       context: .
       args:
-        VERSION: "3.0.0"
+        VERSION: "3.0.1"
     command: ["outbox", "--poll", "2"]
     environment: *zworkforce-env
     read_only: true

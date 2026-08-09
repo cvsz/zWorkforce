@@ -3,7 +3,9 @@
 ## Security properties
 
 - Provider, database, vector-store and object-store credentials remain server-side.
-- API keys are stored as SHA-256 digests; generated secrets are shown once.
+- API keys are stored as salted PBKDF2-HMAC-SHA256 verifiers; legacy unsalted
+  SHA-256 records are rejected and must be recreated/rotated. Generated
+  secrets are shown once.
 - OIDC verifies signature, issuer, audience and required timestamps and accepts asymmetric signing algorithms only.
 - SAML should terminate at a mature IdP/proxy; zWorkforce verifies the proxy identity with an HMAC timestamped boundary rather than implementing its own SAML parser.
 - Tenant context is resolved from authenticated identity; only superadmin may switch tenant using `X-Tenant-ID`.

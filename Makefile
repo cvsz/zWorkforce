@@ -1,13 +1,29 @@
-.PHONY: test compile doctor run worker scheduler lint-security docker-build
+PYTHON ?= python3
+VERSION ?= 3.0.1
+
+.PHONY: check test compile doctor postgres-test release-check shell-check run worker scheduler lint-security docker-build
+
+check: test doctor release-check shell-check lint-security
 
 compile:
-	python -m compileall -q zworkforce tests
+	$(PYTHON) -m compileall -q zworkforce tests scripts
 
 test: compile
-	PYTHONPATH=. python -m unittest discover -s tests -v
+	PYTHONPATH=. $(PYTHON) -m unittest discover -s tests -v
 
 doctor:
-	python -m zworkforce doctor
+	PYTHONPATH=. $(PYTHON) -m zworkforce doctor
+
+postgres-test:
+	@test -n "$${ZWORKFORCE_TEST_POSTGRES_URL:-}" || (echo "set ZWORKFORCE_TEST_POSTGRES_URL to a real PostgreSQL service" >&2; exit 2)
+	PYTHONPATH=. $(PYTHON) -m unittest tests.test_v3_postgres -v
+
+release-check:
+	$(PYTHON) scripts/verify_release.py --expected $(VERSION)
+
+shell-check:
+	bash -n scripts/*.sh
+	node --check zworkforce/static/app.js
 
 run:
 	python -m zworkforce serve
@@ -23,4 +39,4 @@ lint-security:
 	! grep -R --line-number -E "API_KEY|provider_api_key|Authorization: Bearer" zworkforce/static
 
 docker-build:
-	docker build -t zworkforce:3.0.0 .
+	docker build --build-arg VERSION=$(VERSION) -t zworkforce:$(VERSION) .

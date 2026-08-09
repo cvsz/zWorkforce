@@ -17,7 +17,7 @@ Provider credentials, tenant data, prompts/results, workspace files, artifacts, 
 | Threat | Controls |
 |---|---|
 | Cross-tenant data access | authenticated tenant context, tenant predicates, superadmin-only switching |
-| Credential disclosure | server-side secrets, digest-only API keys, secret refs, static asset scans |
+| Credential disclosure | server-side secrets, salted PBKDF2 API-key verifiers, secret refs, static asset scans |
 | Prompt-triggered mutation | agent grants, mutation declaration, approvals, policy-as-code, capability flags |
 | Shell injection | `shell=False`, executable allowlist, bounded args/env/time/output |
 | SSRF | host allowlist, DNS/IP validation, redirect checks, network egress policy |

@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.0.1 — 2026-08-09
+
+### Security and reliability
+- Hardened response-header construction and fixed static MIME mappings.
+- Replaced weak API-key verification with salted PBKDF2-HMAC-SHA256 records.
+- Rejected legacy unsalted API-key records; operators must recreate and rotate
+  those credentials before upgrading.
+- Added secure mode-0600 CLI secret-file output without plaintext stdout leaks.
+- Made PostgreSQL integration fixtures repeatable across test runs.
+
+### Dependencies and operations
+- Updated checkout, Python setup, Buildx, image build/push, registry login, and
+  Python container dependencies.
+- Protected `main` with pull-request, status-check, force-push, and deletion
+  controls.
+
 ## 3.0.0 — 2026-08-09
 
 ### Added
