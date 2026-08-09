@@ -47,13 +47,14 @@ class GovernanceMixin:
             try:
                 if key_id.startswith("bootstrap-"):
                     c.execute(
-                        "UPDATE api_keys2 SET disabled=1,revoked_at=? WHERE tenant_id=? AND name=? AND id LIKE 'bootstrap-%' AND key_hash<>?",
-                        (now, tenant_id, name, key_hash),
+                        "UPDATE api_keys2 SET disabled=1,revoked_at=? WHERE tenant_id=? AND name=? AND id LIKE 'bootstrap-%' AND id<>?",
+                        (now, tenant_id, name, key_id),
                     )
+                conflict_target = "id" if key_id.startswith("bootstrap-") else "key_hash"
                 c.execute(
-                    """INSERT INTO api_keys2(id,tenant_id,name,key_hash,role,scopes_json,disabled,created_at) VALUES(?,?,?,?,?,?,0,?)
-                    ON CONFLICT(key_hash) DO UPDATE SET tenant_id=excluded.tenant_id,name=excluded.name,role=excluded.role,
-                    scopes_json=excluded.scopes_json,disabled=0,revoked_at=NULL""",
+                    f"""INSERT INTO api_keys2(id,tenant_id,name,key_hash,role,scopes_json,disabled,created_at) VALUES(?,?,?,?,?,?,0,?)
+                    ON CONFLICT({conflict_target}) DO UPDATE SET tenant_id=excluded.tenant_id,name=excluded.name,
+                    key_hash=excluded.key_hash,role=excluded.role,scopes_json=excluded.scopes_json,disabled=0,revoked_at=NULL""",
                     (key_id, tenant_id, name, key_hash, role, json_dumps(scopes or ["*"]), now),
                 )
                 c.execute("COMMIT")
@@ -70,6 +71,22 @@ class GovernanceMixin:
         with self.connection() as c:
             row = c.execute("SELECT * FROM api_keys2 WHERE key_hash=? AND disabled=0", (key_hash,)).fetchone()
             return self._decode(dict(row)) if row else None
+
+    def list_active_api_keys(self, limit: int = 10_000) -> list[dict[str, Any]]:
+        bounded_limit = max(1, min(int(limit), 10_000))
+        with self.connection() as c:
+            rows = c.execute(
+                "SELECT * FROM api_keys2 WHERE disabled=0 ORDER BY created_at LIMIT ?",
+                (bounded_limit,),
+            ).fetchall()
+            return self._rows(rows)
+
+    def upgrade_api_key_hash(self, key_id: str, verifier: str) -> bool:
+        with self.connection() as c:
+            return bool(c.execute(
+                "UPDATE api_keys2 SET key_hash=? WHERE id=? AND disabled=0",
+                (verifier, key_id),
+            ).rowcount)
 
     def touch_api_key(self, key_id: str) -> None:
         now = datetime.now(timezone.utc)

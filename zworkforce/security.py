@@ -10,10 +10,17 @@ import secrets
 import threading
 import time
 from typing import Any
+import uuid
 
 ROLE_LEVEL = {"viewer": 1, "operator": 2, "admin": 3, "superadmin": 4}
 TENANT_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
 SENSITIVE_KEYS = {"authorization", "api_key", "apikey", "token", "password", "secret", "credential", "cookie", "set-cookie"}
+PBKDF2_SCHEME = "pbkdf2_sha256"
+PBKDF2_ITERATIONS = 600_000
+PBKDF2_SALT_BYTES = 16
+PBKDF2_MIN_ITERATIONS = 100_000
+PBKDF2_MAX_ITERATIONS = 1_000_000
+LEGACY_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
 @dataclass(frozen=True)
@@ -35,9 +42,8 @@ class AuthManager:
         self.proxy_identity_secret = proxy_identity_secret
         self.oidc = oidc
         for item in bootstrap_keys:
-            digest = _hash_secret(item.secret)
-            key_id = "bootstrap-" + hashlib.sha256((item.name + digest).encode()).hexdigest()[:16]
-            self.db.upsert_api_key(key_id, item.tenant_id, item.name, digest, item.role, list(item.scopes))
+            key_id = _bootstrap_key_id(item.tenant_id, item.name)
+            self.db.upsert_api_key(key_id, item.tenant_id, item.name, _hash_secret(item.secret), item.role, list(item.scopes))
 
     def authenticate(self, authorization: str | None, x_api_key: str | None, proxy_headers: dict[str, str] | None = None) -> Principal | None:
         if self.trust_proxy_identity and proxy_headers:
@@ -56,13 +62,16 @@ class AuthManager:
             candidate = authorization[7:].strip()
         if not candidate:
             return None
-        digest = _hash_secret(candidate)
-        row = self.db.find_api_key(digest)
-        if not row or not hmac.compare_digest(row["key_hash"], digest):
-            return None
-        self.db.touch_api_key(row["id"])
-        scopes = tuple(row.get("scopes") or ["*"])
-        return Principal(row["name"], row["role"], row["tenant_id"], scopes, row["id"])
+        for row in self.db.list_active_api_keys(limit=10_000):
+            valid, needs_upgrade = _verify_secret(row.get("key_hash", ""), candidate)
+            if not valid:
+                continue
+            if needs_upgrade:
+                self.db.upgrade_api_key_hash(row["id"], _hash_secret(candidate))
+            self.db.touch_api_key(row["id"])
+            scopes = tuple(row.get("scopes") or ["*"])
+            return Principal(row["name"], row["role"], row["tenant_id"], scopes, row["id"])
+        return None
 
     def _proxy_principal(self, headers: dict[str, str]) -> Principal | None:
         name = headers.get("X-Forwarded-User", "").strip()
@@ -130,8 +139,37 @@ class RateLimiter:
             return True, 0
 
 
-def _hash_secret(secret: str) -> str:
-    return hashlib.sha256(secret.encode("utf-8")).hexdigest()
+def _bootstrap_key_id(tenant_id: str, name: str) -> str:
+    material = f"zworkforce/bootstrap/{tenant_id}/{name}"
+    return "bootstrap-" + uuid.uuid5(uuid.NAMESPACE_URL, material).hex
+
+
+def _hash_secret(secret: str, salt: bytes | None = None) -> str:
+    salt = salt if salt is not None else secrets.token_bytes(PBKDF2_SALT_BYTES)
+    derived = hashlib.pbkdf2_hmac("sha256", secret.encode("utf-8"), salt, PBKDF2_ITERATIONS)
+    return f"{PBKDF2_SCHEME}${PBKDF2_ITERATIONS}${salt.hex()}${derived.hex()}"
+
+
+def _verify_secret(stored: str, candidate: str) -> tuple[bool, bool]:
+    if not isinstance(stored, str):
+        return False, False
+    parts = stored.split("$")
+    if len(parts) == 4 and parts[0] == PBKDF2_SCHEME:
+        try:
+            iterations = int(parts[1])
+            salt = bytes.fromhex(parts[2])
+            expected = bytes.fromhex(parts[3])
+        except ValueError:
+            return False, False
+        if not PBKDF2_MIN_ITERATIONS <= iterations <= PBKDF2_MAX_ITERATIONS or not salt or not expected:
+            return False, False
+        derived = hashlib.pbkdf2_hmac("sha256", candidate.encode("utf-8"), salt, iterations)
+        return hmac.compare_digest(derived, expected), False
+    if LEGACY_SHA256_RE.fullmatch(stored):
+        # codeql[py/weak-sensitive-data-hashing] - legacy verifier compatibility only; successful matches are immediately upgraded.
+        legacy_digest = hashlib.sha256(candidate.encode("utf-8")).hexdigest()
+        return hmac.compare_digest(legacy_digest, stored), True
+    return False, False
 
 
 def resolve_tenant(principal: Principal, requested: str | None) -> str:

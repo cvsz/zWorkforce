@@ -3,7 +3,7 @@ import unittest
 
 from common import stack
 from zworkforce.config import BootstrapKey
-from zworkforce.security import AuthManager
+from zworkforce.security import AuthManager, _hash_secret
 from zworkforce.security import RateLimiter, redact, resolve_tenant
 from zworkforce.tools import ToolExecutor, ToolError
 
@@ -18,6 +18,32 @@ class SecurityV2Tests(unittest.TestCase):
         enabled = [x for x in self.db.list_api_keys("default") if not x["disabled"] and x["name"] == "test-admin"]; self.assertEqual(len(enabled), 1)
     def test_dynamic_key_roundtrip_and_revoke(self):
         key_id,secret=self.auth.create_key("default","viewer","viewer",["workforce:read"]); p=self.auth.authenticate(None,secret); self.assertEqual(p.name,"viewer"); self.assertTrue(p.has_scope("workforce:read")); self.db.revoke_api_key("default",key_id); self.assertIsNone(self.auth.authenticate(None,secret))
+    def test_api_key_verifiers_use_salted_pbkdf2(self):
+        first = _hash_secret("same-secret")
+        second = _hash_secret("same-secret")
+        self.assertNotEqual(first, second)
+        self.assertTrue(first.startswith("pbkdf2_sha256$"))
+        self.assertTrue(second.startswith("pbkdf2_sha256$"))
+        row = next(row for row in self.db.list_active_api_keys() if row["name"] == "test-admin")
+        self.assertTrue(row["key_hash"].startswith("pbkdf2_sha256$"))
+
+    def test_legacy_sha256_key_is_upgraded_after_successful_authentication(self):
+        secret = "legacy-secret"
+        self.db.upsert_api_key(
+            "legacy-key",
+            "default",
+            "legacy",
+            "fdcbc807d80f60c6f15ef644d5c372ac92760bd5f414cc3d48c3b320d9d1e689",
+            "viewer",
+            ["workforce:read"],
+        )
+        principal = AuthManager(self.db).authenticate(None, secret)
+        self.assertIsNotNone(principal)
+        row = next(row for row in self.db.list_active_api_keys() if row["id"] == "legacy-key")
+        self.assertTrue(row["key_hash"].startswith("pbkdf2_sha256$"))
+
+    def test_active_api_key_scan_is_bounded(self):
+        self.assertLessEqual(len(self.db.list_active_api_keys(limit=100_000)), 10_000)
     def test_rate_limiter(self):
         r=RateLimiter(2); self.assertTrue(r.allow("x")[0]); self.assertTrue(r.allow("x")[0]); self.assertFalse(r.allow("x")[0])
     def test_redaction(self): self.assertEqual(redact({"api_key":"abc","nested":{"password":"p"}}),{"api_key":"[REDACTED]","nested":{"password":"[REDACTED]"}})
