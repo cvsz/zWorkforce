@@ -12,7 +12,7 @@
     <!-- The CLI MSIX task runs in a .NET 6 task host. Keep a project-local copy
          of its runtime and its missing security assemblies so builds do not
          mutate the shared NuGet cache or depend on Visual Studio MSBuild. -->
-    <MsixTaskAssemblyLocation Condition="'$(MsixTaskAssemblyLocation)' == ''">$(BaseIntermediateOutputPath)msix-task-runtime\</MsixTaskAssemblyLocation>
+    <MsixTaskAssemblyLocation Condition="'$(MsixTaskAssemblyLocation)' == ''">$(MSBuildProjectDirectory)\obj\msix-task-runtime\</MsixTaskAssemblyLocation>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
