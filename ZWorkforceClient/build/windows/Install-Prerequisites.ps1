@@ -50,10 +50,6 @@ $vsPath = $null
 if (Test-Path $vswhere) {
     $vsPath = (& $vswhere -latest -products * -requires Microsoft.VisualStudio.ComponentGroup.WindowsAppDevelopment -property installationPath 2>$null | Select-Object -First 1)
 }
-if ([string]::IsNullOrWhiteSpace($vsPath)) {
-    Add-Failure "Visual Studio with the WinUI application development workload is missing."
-}
-
 $sdkRoot = Join-Path ${env:ProgramFiles(x86)} "Windows Kits\10\Include"
 $sdkVersions = @()
 if (Test-Path $sdkRoot) {
@@ -76,6 +72,16 @@ if ($devMode -ne 1) {
 $templateOutput = if ($null -ne $dotnetPath) { (& dotnet new list winui 2>&1 | Out-String) } else { "" }
 if ($templateOutput -notmatch '(?i)winui') {
     Add-Failure "The WinUI dotnet template is missing. Verify the Visual Studio workload, restart the terminal, and run: dotnet new list winui"
+}
+
+$cliToolchainReady = $null -ne $dotnetPath -and
+    $null -ne $dotnetVersion -and
+    [int]$dotnetVersion.Split('.')[0] -ge 10 -and
+    $templateOutput -match '(?i)winui'
+if ([string]::IsNullOrWhiteSpace($vsPath) -and -not $cliToolchainReady) {
+    Add-Failure "Visual Studio with the WinUI application development workload or the complete .NET CLI WinUI toolchain is required."
+} elseif ([string]::IsNullOrWhiteSpace($vsPath)) {
+    Add-Warning "Visual Studio was not found; the verified .NET CLI WinUI toolchain will be used."
 }
 
 if ($null -eq (Get-CommandPath "git")) {

@@ -10,12 +10,15 @@ durable state remain server-side.
 The checked-in client targets Windows 11 22H2/build 22621 or later and uses:
 
 - .NET 10 SDK;
-- Visual Studio 2026 with the **WinUI application development** workload;
+- Visual Studio 2026 with the **WinUI application development** workload, or
+  the supported .NET CLI path;
 - Windows SDK 10.0.26100.0 or newer;
 - stable Windows App SDK 2.3.1 through NuGet;
 - Developer Mode enabled for local package deployment and launch;
 - Git for Windows; GitHub CLI is optional for repository operations.
 
+Visual Studio is the recommended IDE path. GitHub CI and scripted builds use
+the .NET CLI path, so Visual Studio is not required on a headless build host.
 Microsoft's current setup guidance is the source of truth for machine
 installation:
 
@@ -57,9 +60,11 @@ Set-Location .\ZWorkforceClient
 .\build\windows\Package-Client.ps1 -Configuration Release -Platform x64
 ```
 
-The project is a packaged app. The normal local launch path is Visual Studio
-F5, which builds, signs with the development certificate, registers the MSIX,
-and launches it. The scripted smoke path is:
+The project is a packaged app. The normal IDE launch path is Visual Studio F5,
+which builds, signs with the development certificate, registers the MSIX, and
+launches it. The CLI build/package path is also supported on a Windows host
+with the .NET 10 SDK, Windows SDK, and WinUI template. The scripted smoke path
+is:
 
 ```powershell
 .\build\windows\Test-Client.ps1 -Configuration Release -LaunchSmoke

@@ -143,9 +143,9 @@ normal Windows installation/update path and package identity for Windows
 credential/settings integration. The supported build host is Windows 11 with:
 
 - Windows 11 22H2 or later;
-- Visual Studio 2022/2026 with the WinUI application development workload;
-- a supported .NET SDK (the project targets .NET 8 for the current Windows App
-  SDK baseline);
+- Visual Studio 2026 with the WinUI application development workload, or the
+  supported .NET CLI path;
+- the .NET 10 SDK (the project targets the current Windows App SDK baseline);
 - Windows SDK 10.0.26100.0 or later;
 - Windows App SDK/WinUI 3 tooling installed by the workload;
 - Developer Mode enabled for local deployment/debugging;
@@ -158,6 +158,7 @@ WinUI template, and Developer Mode. It does not write server credentials.
 `Package-Client.ps1` make the local workflow repeatable.
 
 The project targets the current .NET 10 SDK and stable Windows App SDK 2.3.1.
+Visual Studio is the recommended IDE, while CI uses the supported CLI path.
 The current Linux agent cannot compile or launch WinUI. GitHub Actions on
 `windows-latest` is therefore the authoritative Windows build/launch check;
 the local agent will still validate source structure, YAML, scripts, and the

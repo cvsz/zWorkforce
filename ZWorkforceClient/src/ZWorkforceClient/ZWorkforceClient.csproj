@@ -21,6 +21,7 @@
     <ProjectReference Include="..\ZWorkforceClient.Core\ZWorkforceClient.Core.csproj" />
     <PackageReference Include="Microsoft.WindowsAppSDK" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools.WinApp" />
   </ItemGroup>
 
   <ItemGroup>

@@ -4,9 +4,11 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     <WindowsAppSdkVersion>2.3.1</WindowsAppSdkVersion>
     <WindowsSdkBuildToolsVersion>10.0.26100.8249</WindowsSdkBuildToolsVersion>
+    <WindowsSdkWinAppVersion>0.5.0</WindowsSdkWinAppVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Microsoft.WindowsAppSDK" Version="$(WindowsAppSdkVersion)" />
     <PackageVersion Include="Microsoft.Windows.SDK.BuildTools" Version="$(WindowsSdkBuildToolsVersion)" />
+    <PackageVersion Include="Microsoft.Windows.SDK.BuildTools.WinApp" Version="$(WindowsSdkWinAppVersion)" />
   </ItemGroup>
 </Project>
