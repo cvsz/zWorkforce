@@ -4,7 +4,7 @@ using Microsoft.UI.Xaml.Media;
 
 namespace ZWorkforceClient.Pages;
 
-public sealed partial class SettingsPage : Page
+public sealed partial class SettingsPage : PageBase
 {
     private bool _loading;
 

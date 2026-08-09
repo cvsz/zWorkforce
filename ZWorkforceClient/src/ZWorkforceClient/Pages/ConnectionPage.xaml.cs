@@ -4,7 +4,7 @@ using ZWorkforceClient.Core.Models;
 
 namespace ZWorkforceClient.Pages;
 
-public sealed partial class ConnectionPage : Page
+public sealed partial class ConnectionPage : PageBase
 {
     public ConnectionPage()
     {
