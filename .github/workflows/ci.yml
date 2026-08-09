@@ -20,7 +20,7 @@ jobs:
       - name: Install package and runtime dependencies
         run: python -m pip install --no-cache-dir .
       - name: Compile
-        run: python -m compileall -q zworkforce tests
+        run: python -m compileall -q zworkforce tests scripts
       - name: Unit and integration tests
         run: PYTHONPATH=. python -m unittest discover -s tests -v
       - name: Doctor
@@ -64,13 +64,49 @@ jobs:
       - name: PostgreSQL queue/runtime tests
         run: PYTHONPATH=. python -m unittest tests.test_v3_postgres -v
 
+  release-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install release package
+        run: python -m pip install --no-cache-dir .
+      - name: Verify release metadata
+        run: python scripts/verify_release.py
+      - name: Validate operational scripts
+        run: bash -n scripts/*.sh
+      - name: Validate SBOM generator
+        run: |
+          python scripts/generate_sbom.py --output /tmp/zworkforce.cdx.json
+          python - <<'PY'
+          import json
+          data=json.load(open('/tmp/zworkforce.cdx.json'))
+          assert data['bomFormat']=='CycloneDX'
+          assert data['metadata']['component']['name']=='zworkforce'
+          assert data['metadata']['component']['version']=='3.0.0'
+          PY
+      - name: Render production Compose
+        env:
+          ZWORKFORCE_POSTGRES_PASSWORD: ci-only-password
+          ZWORKFORCE_API_KEYS: ci-only-key:superadmin:default:bootstrap:*
+          ZWORKFORCE_IMAGE: ghcr.io/cvsz/zworkforce:v3.0.0
+        run: docker compose config -q
+      - name: Verify release workflow capabilities
+        run: |
+          grep -q 'actions/attest-build-provenance@v2' .github/workflows/release.yml
+          grep -q 'provenance: mode=max' .github/workflows/release.yml
+          grep -q 'sbom: true' .github/workflows/release.yml
+          grep -q 'gh release create' .github/workflows/release.yml
+
   container:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
       - name: Build hardened image
-        run: docker build -t zworkforce:ci .
+        run: docker build --build-arg VERSION=3.0.0 -t zworkforce:ci .
 
   security-invariants:
     runs-on: ubuntu-latest
@@ -84,3 +120,4 @@ jobs:
         run: |
           test "$(python -c 'import zworkforce; print(zworkforce.__version__)')" = "3.0.0"
           test ! -e .github/workflows/v3-rematerialize.yml
+          test ! -e .github/workflows/v3-materialize.yml
