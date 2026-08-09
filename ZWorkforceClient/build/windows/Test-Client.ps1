@@ -32,11 +32,11 @@ if ($LaunchSmoke) {
             ForEach-Object { Remove-AppxPackage -Package $_.PackageFullName -ErrorAction SilentlyContinue }
 
         if ($null -ne $certificate) {
-            $trustedCertificate = Get-ChildItem -Path "Cert:\CurrentUser\TrustedPeople" |
+            $trustedCertificate = Get-ChildItem -Path "Cert:\CurrentUser\Root" |
                 Where-Object Thumbprint -eq $certificate.Thumbprint |
                 Select-Object -First 1
             if ($null -eq $trustedCertificate) {
-                Import-Certificate -FilePath $certificate.FullName -CertStoreLocation "Cert:\CurrentUser\TrustedPeople" | Out-Null
+                Import-Certificate -FilePath $certificate.FullName -CertStoreLocation "Cert:\CurrentUser\Root" | Out-Null
                 $importedCertificateThumbprint = $certificate.Thumbprint
             }
         }
@@ -65,7 +65,7 @@ if ($LaunchSmoke) {
             Remove-AppxPackage -Package $installedPackage.PackageFullName -ErrorAction SilentlyContinue
         }
         if ($null -ne $importedCertificateThumbprint) {
-            Remove-Item -LiteralPath "Cert:\CurrentUser\TrustedPeople\$importedCertificateThumbprint" -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath "Cert:\CurrentUser\Root\$importedCertificateThumbprint" -Force -ErrorAction SilentlyContinue
         }
     }
 }
