@@ -27,3 +27,12 @@ updates:
       timezone: Asia/Bangkok
     open-pull-requests-limit: 5
     labels: [dependencies, docker]
+  - package-ecosystem: nuget
+    directory: /ZWorkforceClient
+    schedule:
+      interval: monthly
+      day: monday
+      time: "05:00"
+      timezone: Asia/Bangkok
+    open-pull-requests-limit: 5
+    labels: [dependencies, windows-client]

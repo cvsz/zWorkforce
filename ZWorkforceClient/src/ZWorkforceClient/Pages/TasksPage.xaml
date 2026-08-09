@@ -1,0 +1,55 @@
+<local:PageBase
+    x:Class="ZWorkforceClient.Pages.TasksPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ZWorkforceClient.Pages">
+    <Grid Padding="{ThemeResource PagePaddingThickness}" RowSpacing="14">
+        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+        <Grid ColumnSpacing="12">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+            <StackPanel Spacing="4"><TextBlock Text="EXECUTION" Style="{StaticResource CaptionTextBlockStyle}" /><TextBlock Text="Tasks" Style="{StaticResource TitleTextBlockStyle}" /></StackPanel>
+            <Button Grid.Column="1" Content="Refresh" Click="OnRefreshClick" />
+        </Grid>
+        <Grid Grid.Row="1" ColumnSpacing="10">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+            <TextBox x:Name="SearchBox" Header="Agent or task ID" PlaceholderText="Filter locally" AutomationProperties.Name="Task filter" />
+            <ComboBox x:Name="StatusBox" Grid.Column="1" Header="Status" SelectedIndex="0" AutomationProperties.Name="Task status filter">
+                <ComboBoxItem Content="All" Tag="" />
+                <ComboBoxItem Content="Queued" Tag="queued" />
+                <ComboBoxItem Content="Running" Tag="running" />
+                <ComboBoxItem Content="Waiting approval" Tag="waiting_approval" />
+                <ComboBoxItem Content="Failed" Tag="failed" />
+                <ComboBoxItem Content="Succeeded" Tag="succeeded" />
+            </ComboBox>
+            <Button Grid.Column="2" Content="Apply" VerticalAlignment="Bottom" Click="OnFilterClick" />
+        </Grid>
+        <Grid Grid.Row="2" ColumnSpacing="14">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+            <ListView x:Name="TasksList" SelectionChanged="OnTaskSelected" AutomationProperties.Name="Tasks">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Padding="4" ColumnSpacing="12">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="150" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <StackPanel><TextBlock Text="{Binding Status}" FontWeight="SemiBold" /><TextBlock Text="{Binding Id}" Opacity="0.65" FontSize="11" /></StackPanel>
+                            <StackPanel Grid.Column="1"><TextBlock Text="{Binding Agent}" /><TextBlock Text="{Binding Tier}" Opacity="0.65" FontSize="11" /></StackPanel>
+                            <TextBlock Grid.Column="2" Text="{Binding Cost}" VerticalAlignment="Center" />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+            <ScrollViewer Grid.Column="1">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Task details" Style="{StaticResource SubtitleTextBlockStyle}" />
+                    <InfoBar x:Name="TaskInfo" IsOpen="False" IsClosable="False" />
+                    <TextBlock x:Name="TaskDetailText" Text="Select a task to inspect its details." TextWrapping="Wrap" />
+                    <StackPanel x:Name="TaskActions" Orientation="Horizontal" Spacing="8" Visibility="Collapsed">
+                        <Button Content="Approve" Click="OnApproveClick" />
+                        <Button Content="Reject" Click="OnRejectClick" />
+                        <Button Content="Cancel" Click="OnCancelClick" />
+                        <Button Content="Retry" Click="OnRetryClick" />
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</local:PageBase>

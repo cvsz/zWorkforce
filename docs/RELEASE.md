@@ -19,8 +19,8 @@ Use an immutable semantic version tag:
 ```bash
 git checkout main
 git pull --ff-only
-git tag -a v3.0.1 -m 'zWorkforce v3.0.1'
-git push origin v3.0.1
+git tag -a v3.0.2 -m 'zWorkforce v3.0.2'
+git push origin v3.0.2
 ```
 
 Do not move or reuse an existing release tag. Publish a new patch/minor/major version instead.
@@ -39,7 +39,29 @@ Do not move or reuse an existing release tag. Publish a new patch/minor/major ve
 - OCI provenance and SBOM from BuildKit;
 - GitHub Release with generated release notes and attached artifacts.
 
+The workflow stages the Python artifacts and trusted Windows MSIX in separate
+jobs, then publishes the GHCR image and GitHub Release only after both jobs
+pass. A failed Windows build therefore cannot leave a public partial release.
+
 Production deployments should pin the semantic tag or image digest, never `latest`.
+
+## Trusted Windows signing
+
+The pull-request Windows workflow deliberately uses a short-lived self-signed
+certificate for package installation smoke tests. A release tag is
+fail-closed unless the repository or protected release environment provides:
+
+- `WINDOWS_MSIX_PFX_BASE64`: base64-encoded organization-issued MSIX signing
+  PFX containing its private key;
+- `WINDOWS_MSIX_PFX_PASSWORD`: the PFX password; and optionally
+- `WINDOWS_MSIX_PUBLISHER`: the exact certificate subject to use as the MSIX
+  publisher (otherwise the package script derives it from the certificate).
+
+The release workflow imports the PFX only on the ephemeral Windows runner,
+patches the package publisher to match the signing identity, and publishes
+only the public `.cer` beside the MSIX. Never commit the PFX, password, or a
+base64 value to the repository. A missing or invalid signing secret blocks the
+release instead of producing a package that users cannot trust.
 
 ## Release verification
 
@@ -51,7 +73,8 @@ After the workflow finishes:
 4. Pull the exact image tag/digest and run `zworkforce --version`.
 5. Deploy first to a staging environment backed by PostgreSQL.
 6. Run `zworkforce doctor` and `scripts/smoke-test.sh`.
-7. Exercise one durable task, one workflow, one approval path and scheduler/outbox leadership before promotion.
+7. Exercise one durable task, one workflow, one approval path, scheduler
+   occurrence deduplication, and outbox claim/retry behavior before promotion.
 
 ## Hotfixes
 

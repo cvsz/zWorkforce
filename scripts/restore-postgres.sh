@@ -22,7 +22,7 @@ BACKUP="$1"
 [[ -f "$BACKUP" ]] || { echo "backup not found: $BACKUP" >&2; exit 2; }
 
 if [[ -f "${BACKUP}.sha256" ]]; then
-  sha256sum --check "${BACKUP}.sha256"
+  sha256sum -c "${BACKUP}.sha256"
 else
   echo "warning: checksum sidecar ${BACKUP}.sha256 not found" >&2
 fi

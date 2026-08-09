@@ -18,8 +18,8 @@ services:
     build:
       context: .
       args:
-        VERSION: "3.0.1"
-    image: ${ZWORKFORCE_IMAGE:-zworkforce:3.0.1}
+        VERSION: "3.0.2"
+    image: ${ZWORKFORCE_IMAGE:-zworkforce:3.0.2}
     command: ["serve"]
     ports:
       - "9569:9569"
@@ -28,7 +28,7 @@ services:
       ZWORKFORCE_DATABASE_URL: postgresql://zworkforce:${ZWORKFORCE_POSTGRES_PASSWORD}@postgres:5432/zworkforce
       ZWORKFORCE_API_KEYS: ${ZWORKFORCE_API_KEYS:?set ZWORKFORCE_API_KEYS}
       ZWORKFORCE_EMBEDDED_WORKERS: "0"
-      ZWORKFORCE_PROVIDER: ${ZWORKFORCE_PROVIDER:-mock}
+      ZWORKFORCE_PROVIDER: ${ZWORKFORCE_PROVIDER:-openai-compatible}
       ZWORKFORCE_PROVIDER_BASE_URL: ${ZWORKFORCE_PROVIDER_BASE_URL:-https://api.openai.com/v1}
       ZWORKFORCE_PROVIDER_API_KEY: ${ZWORKFORCE_PROVIDER_API_KEY:-}
       ZWORKFORCE_PROVIDERS_JSON: ${ZWORKFORCE_PROVIDERS_JSON:-}
@@ -39,6 +39,7 @@ services:
       ZWORKFORCE_OIDC_AUDIENCE: ${ZWORKFORCE_OIDC_AUDIENCE:-}
       ZWORKFORCE_OTLP_TRACES_ENDPOINT: ${ZWORKFORCE_OTLP_TRACES_ENDPOINT:-}
       ZWORKFORCE_OUTBOX_SIGNING_SECRET: ${ZWORKFORCE_OUTBOX_SIGNING_SECRET:-}
+      ZWORKFORCE_OUTBOX_ALLOWLIST: ${ZWORKFORCE_OUTBOX_ALLOWLIST:-}
       ZWORKFORCE_ARTIFACT_BACKEND: ${ZWORKFORCE_ARTIFACT_BACKEND:-local}
       ZWORKFORCE_S3_BUCKET: ${ZWORKFORCE_S3_BUCKET:-}
       ZWORKFORCE_S3_PREFIX: ${ZWORKFORCE_S3_PREFIX:-zworkforce}
@@ -65,11 +66,11 @@ services:
         condition: service_healthy
 
   worker:
-    image: ${ZWORKFORCE_IMAGE:-zworkforce:3.0.1}
+    image: ${ZWORKFORCE_IMAGE:-zworkforce:3.0.2}
     build:
       context: .
       args:
-        VERSION: "3.0.1"
+        VERSION: "3.0.2"
     command: ["worker"]
     environment: *zworkforce-env
     volumes:
@@ -85,11 +86,11 @@ services:
         condition: service_healthy
 
   scheduler:
-    image: ${ZWORKFORCE_IMAGE:-zworkforce:3.0.1}
+    image: ${ZWORKFORCE_IMAGE:-zworkforce:3.0.2}
     build:
       context: .
       args:
-        VERSION: "3.0.1"
+        VERSION: "3.0.2"
     command: ["scheduler", "--poll", "1"]
     environment: *zworkforce-env
     volumes:
@@ -105,11 +106,11 @@ services:
         condition: service_healthy
 
   outbox:
-    image: ${ZWORKFORCE_IMAGE:-zworkforce:3.0.1}
+    image: ${ZWORKFORCE_IMAGE:-zworkforce:3.0.2}
     build:
       context: .
       args:
-        VERSION: "3.0.1"
+        VERSION: "3.0.2"
     command: ["outbox", "--poll", "2"]
     environment: *zworkforce-env
     read_only: true

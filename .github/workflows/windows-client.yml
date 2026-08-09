@@ -1,0 +1,88 @@
+name: Windows client
+
+on:
+  push:
+    paths:
+      - "ZWorkforceClient/**"
+      - ".github/workflows/windows-client.yml"
+      - ".github/workflows/release.yml"
+      - ".github/ISSUE_TEMPLATE/windows-client-bug.yml"
+      - "docs/WINDOWS-CLIENT.md"
+  pull_request:
+    paths:
+      - "ZWorkforceClient/**"
+      - ".github/workflows/windows-client.yml"
+      - ".github/workflows/release.yml"
+      - ".github/ISSUE_TEMPLATE/windows-client-bug.yml"
+      - "docs/WINDOWS-CLIENT.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-client-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test-package:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      NUGET_XMLDOC_MODE: skip
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Audit Windows client environment
+        run: ./ZWorkforceClient/build/windows/Install-Prerequisites.ps1 -CheckOnly
+
+      - name: Restore
+        run: dotnet restore ZWorkforceClient/ZWorkforceClient.sln
+
+      - name: Build core and packaged client
+        run: ./ZWorkforceClient/build/windows/Build-Client.ps1 -Configuration Release -Platform x64
+
+      - name: Run core tests
+        run: ./ZWorkforceClient/build/windows/Test-Client.ps1 -Configuration Release
+
+      - name: Package MSIX
+        run: ./ZWorkforceClient/build/windows/Package-Client.ps1 -Configuration Release -Platform x64 -Version 1.0.0
+
+      - name: Launch smoke check
+        timeout-minutes: 8
+        run: ./ZWorkforceClient/build/windows/Test-Client.ps1 -Configuration Release -ExpectedVersion 1.0.0.0 -LaunchSmoke
+
+      - name: Upload Windows client package
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zworkforce-client-${{ github.run_number }}
+          path: |
+            ZWorkforceClient/out/*/*.msix
+            ZWorkforceClient/out/*/*.msixbundle
+            ZWorkforceClient/out/*/*.cer
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload build diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zworkforce-client-diagnostics-${{ github.run_number }}
+          path: |
+            ZWorkforceClient/src/**/bin/**
+            ZWorkforceClient/src/**/obj/**
+            ZWorkforceClient/out/**
+          if-no-files-found: warn
+          retention-days: 7

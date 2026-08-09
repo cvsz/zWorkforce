@@ -17,7 +17,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
       - name: api
-        image: ghcr.io/cvsz/zworkforce:v3.0.1
+        image: ghcr.io/cvsz/zworkforce:v3.0.2
         args: ["serve"]
         envFrom:
           - configMapRef:

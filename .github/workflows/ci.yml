@@ -64,6 +64,54 @@ jobs:
       - name: PostgreSQL queue/runtime tests
         run: PYTHONPATH=. python -m unittest tests.test_v3_postgres -v
 
+      - name: PostgreSQL backup and restore drill
+        shell: bash
+        run: |
+          set -euo pipefail
+          restore_url="${ZWORKFORCE_TEST_POSTGRES_URL%/zworkforce_ci}/zworkforce_restore"
+          docker run --rm --network host \
+            postgres:17-alpine \
+            psql "$ZWORKFORCE_TEST_POSTGRES_URL" -v ON_ERROR_STOP=1 -c 'CREATE DATABASE zworkforce_restore'
+          ZWORKFORCE_DATABASE_URL="$ZWORKFORCE_TEST_POSTGRES_URL" PYTHONPATH=. python - <<'PY'
+          import os
+          from zworkforce.db import Database
+
+          url = os.environ["ZWORKFORCE_DATABASE_URL"]
+          db = Database(url, "recovery-drill")
+          db.put_memory("recovery-drill", None, "recovery-marker", "backup restore sentinel", ["ci"], "ci", "recovery-marker")
+          assert db.get_memory("recovery-drill", "recovery-marker")["content"] == "backup restore sentinel"
+          PY
+          backup_dir="$(mktemp -d)"
+          backup_path="$backup_dir/zworkforce-recovery.dump"
+          docker run --rm --network host \
+            -e "ZWORKFORCE_DATABASE_URL=$ZWORKFORCE_TEST_POSTGRES_URL" \
+            -e "ZWORKFORCE_BACKUP_DIR=$backup_dir" \
+            -v "$PWD:/workspace" \
+            -v "$backup_dir:$backup_dir" \
+            -w /workspace \
+            postgres:17-alpine \
+            bash scripts/backup-postgres.sh "$backup_path"
+          test -s "$backup_path"
+          test -s "$backup_path.sha256"
+          docker run --rm --network host \
+            -e "ZWORKFORCE_DATABASE_URL=$restore_url" \
+            -e ZWORKFORCE_RESTORE_CONFIRM=YES \
+            -v "$PWD:/workspace" \
+            -v "$backup_dir:$backup_dir" \
+            -w /workspace \
+            postgres:17-alpine \
+            bash scripts/restore-postgres.sh "$backup_path"
+          ZWORKFORCE_DATABASE_URL="$restore_url" PYTHONPATH=. python - <<'PY'
+          import os
+          from zworkforce.db import Database
+
+          db = Database(os.environ["ZWORKFORCE_DATABASE_URL"], "recovery-drill")
+          marker = db.get_memory("recovery-drill", "recovery-marker")
+          assert marker and marker["content"] == "backup restore sentinel"
+          assert db.ready()
+          print("PostgreSQL backup/restore drill passed")
+          PY
+
   release-integrity:
     runs-on: ubuntu-latest
     steps:
@@ -85,7 +133,7 @@ jobs:
           data=json.load(open('/tmp/zworkforce.cdx.json'))
           assert data['bomFormat']=='CycloneDX'
           assert data['metadata']['component']['name']=='zworkforce'
-          assert data['metadata']['component']['version']=='3.0.1'
+          assert data['metadata']['component']['version']=='3.0.2'
           PY
       - name: Exercise deployment smoke script
         shell: bash
@@ -106,7 +154,7 @@ jobs:
         env:
           ZWORKFORCE_POSTGRES_PASSWORD: ci-only-password
           ZWORKFORCE_API_KEYS: ci-only-key:superadmin:default:bootstrap:*
-          ZWORKFORCE_IMAGE: ghcr.io/cvsz/zworkforce:v3.0.1
+          ZWORKFORCE_IMAGE: ghcr.io/cvsz/zworkforce:v3.0.2
         run: docker compose config -q
       - name: Verify release workflow capabilities
         run: |
@@ -114,6 +162,8 @@ jobs:
           grep -q 'provenance: mode=max' .github/workflows/release.yml
           grep -q 'sbom: true' .github/workflows/release.yml
           grep -q 'gh release create' .github/workflows/release.yml
+          grep -q 'WINDOWS_MSIX_PFX_BASE64' .github/workflows/release.yml
+          grep -q 'ZWORKFORCE_MSIX_REQUIRE_TRUSTED_SIGNING' ZWorkforceClient/build/windows/Package-Client.ps1
 
   container:
     runs-on: ubuntu-latest
@@ -121,7 +171,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
       - name: Build hardened image
-        run: docker build --build-arg VERSION=3.0.1 -t zworkforce:ci .
+        run: docker build --build-arg VERSION=3.0.2 -t zworkforce:ci .
 
   security-invariants:
     runs-on: ubuntu-latest
@@ -133,6 +183,6 @@ jobs:
         run: '! grep -R --line-number -E "API_KEY|provider_api_key|Authorization: Bearer" zworkforce/static'
       - name: Verify v3 source and no recovery workflow
         run: |
-          test "$(python -c 'import zworkforce; print(zworkforce.__version__)')" = "3.0.1"
+          test "$(python -c 'import zworkforce; print(zworkforce.__version__)')" = "3.0.2"
           test ! -e .github/workflows/v3-rematerialize.yml
           test ! -e .github/workflows/v3-materialize.yml

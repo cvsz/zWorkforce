@@ -1,0 +1,47 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZWorkforceClient.Core", "src\ZWorkforceClient.Core\ZWorkforceClient.Core.csproj", "{0B0DF9E2-5E37-4E30-9BDA-A0F6514973B9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZWorkforceClient", "src\ZWorkforceClient\ZWorkforceClient.csproj", "{E6A7FD26-2E77-4C9F-A9B5-F8515A5ACD0F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZWorkforceClient.Core.Tests", "tests\ZWorkforceClient.Core.Tests\ZWorkforceClient.Core.Tests.csproj", "{C6FD2FF9-8F5B-4C4C-BB4D-ECF2DFEE4D30}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+		Debug|ARM64 = Debug|ARM64
+		Release|ARM64 = Release|ARM64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0B0DF9E2-5E37-4E30-9BDA-A0F6514973B9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0B0DF9E2-5E37-4E30-9BDA-A0F6514973B9}.Debug|x64.Build.0 = Debug|Any CPU
+		{0B0DF9E2-5E37-4E30-9BDA-A0F6514973B9}.Release|x64.ActiveCfg = Release|Any CPU
+		{0B0DF9E2-5E37-4E30-9BDA-A0F6514973B9}.Release|x64.Build.0 = Release|Any CPU
+		{0B0DF9E2-5E37-4E30-9BDA-A0F6514973B9}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{0B0DF9E2-5E37-4E30-9BDA-A0F6514973B9}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{0B0DF9E2-5E37-4E30-9BDA-A0F6514973B9}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{0B0DF9E2-5E37-4E30-9BDA-A0F6514973B9}.Release|ARM64.Build.0 = Release|Any CPU
+		{E6A7FD26-2E77-4C9F-A9B5-F8515A5ACD0F}.Debug|x64.ActiveCfg = Debug|x64
+		{E6A7FD26-2E77-4C9F-A9B5-F8515A5ACD0F}.Debug|x64.Build.0 = Debug|x64
+		{E6A7FD26-2E77-4C9F-A9B5-F8515A5ACD0F}.Release|x64.ActiveCfg = Release|x64
+		{E6A7FD26-2E77-4C9F-A9B5-F8515A5ACD0F}.Release|x64.Build.0 = Release|x64
+		{E6A7FD26-2E77-4C9F-A9B5-F8515A5ACD0F}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{E6A7FD26-2E77-4C9F-A9B5-F8515A5ACD0F}.Debug|ARM64.Build.0 = Debug|ARM64
+		{E6A7FD26-2E77-4C9F-A9B5-F8515A5ACD0F}.Release|ARM64.ActiveCfg = Release|ARM64
+		{E6A7FD26-2E77-4C9F-A9B5-F8515A5ACD0F}.Release|ARM64.Build.0 = Release|ARM64
+		{C6FD2FF9-8F5B-4C4C-BB4D-ECF2DFEE4D30}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C6FD2FF9-8F5B-4C4C-BB4D-ECF2DFEE4D30}.Debug|x64.Build.0 = Debug|Any CPU
+		{C6FD2FF9-8F5B-4C4C-BB4D-ECF2DFEE4D30}.Release|x64.ActiveCfg = Release|Any CPU
+		{C6FD2FF9-8F5B-4C4C-BB4D-ECF2DFEE4D30}.Release|x64.Build.0 = Release|Any CPU
+		{C6FD2FF9-8F5B-4C4C-BB4D-ECF2DFEE4D30}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{C6FD2FF9-8F5B-4C4C-BB4D-ECF2DFEE4D30}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{C6FD2FF9-8F5B-4C4C-BB4D-ECF2DFEE4D30}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{C6FD2FF9-8F5B-4C4C-BB4D-ECF2DFEE4D30}.Release|ARM64.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

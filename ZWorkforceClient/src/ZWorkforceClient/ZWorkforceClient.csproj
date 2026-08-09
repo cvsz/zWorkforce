@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.22621.0</TargetPlatformMinVersion>
+    <!-- Permit Linux dependency-submission and metadata restores; packaged builds
+         remain authoritative on the Windows runner. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <RootNamespace>ZWorkforceClient</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Platforms>x64;ARM64</Platforms>
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <UseWinUI>true</UseWinUI>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <!-- The CLI MSIX task runs in a .NET 6 task host. Keep a project-local copy
+         of its runtime and its missing security assemblies so builds do not
+         mutate the shared NuGet cache or depend on Visual Studio MSBuild. -->
+    <MsixTaskAssemblyLocation Condition="'$(MsixTaskAssemblyLocation)' == ''">$(MSBuildProjectDirectory)\obj\msix-task-runtime\</MsixTaskAssemblyLocation>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ApplicationTitle>zWorkforce Client</ApplicationTitle>
+    <ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ZWorkforceClient.Core\ZWorkforceClient.Core.csproj" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools.MSIX" GeneratePathProperty="true" PrivateAssets="all" />
+    <PackageReference Include="System.Security.Permissions" GeneratePathProperty="true" IncludeAssets="none" PrivateAssets="all" />
+    <PackageReference Include="System.Windows.Extensions" GeneratePathProperty="true" IncludeAssets="none" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Manifest Include="$(ApplicationManifest)" />
+    <Content Include="Package.appxmanifest" />
+    <Content Include="Assets\*.png" />
+  </ItemGroup>
+
+  <Target Name="PrepareWindowsSdkMsixTaskRuntime"
+          BeforeTargets="PrepareForBuild"
+          Condition="'$(EnableMsixTooling)' == 'true'">
+    <MakeDir Directories="$(MsixTaskAssemblyLocation)" />
+    <ItemGroup>
+      <_MsixTaskRuntimeFiles Include="$(PkgMicrosoft_Windows_SDK_BuildTools_MSIX)\tools\net6.0\*.dll" />
+      <_MsixTaskRuntimeFiles Include="$(PkgSystem_Security_Permissions)\lib\net6.0\System.Security.Permissions.dll" />
+      <_MsixTaskRuntimeFiles Include="$(PkgSystem_Windows_Extensions)\lib\net6.0\System.Windows.Extensions.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_MsixTaskRuntimeFiles)"
+          DestinationFolder="$(MsixTaskAssemblyLocation)"
+          SkipUnchangedFiles="true" />
+  </Target>
+</Project>

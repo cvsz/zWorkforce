@@ -29,7 +29,7 @@ class ApiV2Tests(unittest.TestCase):
     def test_health_is_public(self):
         with urllib.request.urlopen(self.base+"/health",timeout=5) as r:
             data=json.loads(r.read())
-            self.assertEqual(data["version"],"3.0.1")
+            self.assertEqual(data["version"],"3.0.2")
             self.assertEqual(r.headers["X-Frame-Options"],"DENY")
 
     def test_header_values_strip_response_splitting_bytes(self):
@@ -48,6 +48,10 @@ class ApiV2Tests(unittest.TestCase):
         self.engine.worker_loop("api-test",once=True)
         _,_,done=self.req("/api/v1/tasks/"+task["id"])
         self.assertEqual(done["status"],"succeeded")
+    def test_scheduler_tick_endpoint_runs_once(self):
+        status,_,data=self.req("/api/v1/scheduler-tick","POST",{})
+        self.assertEqual(status,200)
+        self.assertEqual(data["ticks"],1)
     def test_superadmin_tenant_switch(self):
         self.req("/api/v1/tenants","POST",{"id":"acme","name":"Acme"})
         _,_,data=self.req("/api/v1/agents",headers={"X-Tenant-ID":"acme"})

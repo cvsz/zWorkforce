@@ -1,0 +1,33 @@
+<local:PageBase
+    x:Class="ZWorkforceClient.Pages.ConnectionPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ZWorkforceClient.Pages">
+    <ScrollViewer>
+        <StackPanel MaxWidth="720" Padding="{ThemeResource PagePaddingThickness}" Spacing="18">
+            <StackPanel Spacing="6">
+                <TextBlock Text="CONNECT TO ZWORKFORCE" Style="{StaticResource CaptionTextBlockStyle}" />
+                <TextBlock Text="Windows 11 operator client" Style="{StaticResource TitleTextBlockStyle}" />
+                <TextBlock Text="Connect to a zWorkforce control plane. Credentials stay in Windows Credential Manager and are never sent to the client filesystem." TextWrapping="Wrap" Opacity="0.78" />
+            </StackPanel>
+
+            <InfoBar x:Name="ConnectionInfo" IsOpen="False" IsClosable="False" />
+
+            <Border Padding="20" CornerRadius="12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                <StackPanel Spacing="14">
+                    <TextBox x:Name="ServerUrlBox" Header="Server URL" PlaceholderText="http://localhost:9569" AutomationProperties.Name="zWorkforce server URL" />
+                    <TextBox x:Name="TenantBox" Header="Tenant ID" PlaceholderText="default" AutomationProperties.Name="Tenant ID" />
+                    <PasswordBox x:Name="ApiKeyBox" Header="API key" PlaceholderText="Paste the one-time or persistent key" AutomationProperties.Name="zWorkforce API key" />
+                    <CheckBox x:Name="RememberCheckBox" Content="Remember this API key in Windows Credential Manager" IsChecked="True" />
+                    <Button x:Name="ConnectButton" Content="Connect" HorizontalAlignment="Left" Click="OnConnectClick" />
+                </StackPanel>
+            </Border>
+
+            <StackPanel Spacing="6">
+                <TextBlock Text="Connection checks" Style="{StaticResource SubtitleTextBlockStyle}" />
+                <TextBlock x:Name="HealthText" Text="Health: not checked" />
+                <TextBlock x:Name="ReadyText" Text="Readiness: not checked" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</local:PageBase>

@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Any
 
-from .db_base import json_dumps, utcnow
+from .db_base import json_dumps, json_loads, utcnow
 
 
 def _decode_json_rows(rows):
@@ -97,24 +97,71 @@ class AutomationMixin:
         with self.connection() as c:
             return self._rows(c.execute("SELECT * FROM workflows3 WHERE tenant_id=? ORDER BY id", (tenant_id,)).fetchall())
 
-    def create_workflow_run(self, tenant_id: str, workflow: dict[str, Any], actor: str, input_data: dict[str, Any]) -> dict[str, Any]:
+    def create_workflow_run(self, tenant_id: str, workflow: dict[str, Any], actor: str, input_data: dict[str, Any], idempotency_key: str | None = None) -> dict[str, Any]:
+        idempotency_key = str(idempotency_key or "").strip()
         run_id = str(uuid.uuid4())
         now = utcnow()
+        request_hash = self._workflow_request_hash(workflow, actor, input_data)
         with self.connection() as c:
-            c.execute(
-                """INSERT INTO workflow_runs3(id,tenant_id,workflow_id,workflow_version,status,actor,input_json,context_json,
-                error,created_at,started_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
-                (run_id, tenant_id, workflow["id"], int(workflow["version"]), "running", actor,
-                 json_dumps(input_data), "{}", "", now, now),
-            )
-            for step in workflow["definition"]["steps"]:
+            c.execute("BEGIN IMMEDIATE")
+            try:
+                if idempotency_key:
+                    existing = c.execute(
+                        "SELECT * FROM workflow_runs3 WHERE tenant_id=? AND idempotency_key=?",
+                        (tenant_id, idempotency_key),
+                    ).fetchone()
+                    if existing:
+                        if self._workflow_request_hash_from_row(existing) != request_hash:
+                            raise ValueError("idempotency key was already used with a different workflow request")
+                        c.execute("COMMIT")
+                        return self._decode(dict(existing))
                 c.execute(
-                    """INSERT INTO workflow_steps3(run_id,tenant_id,step_id,agent_id,status,depends_on_json,definition_json)
-                    VALUES(?,?,?,?,?,?,?)""",
-                    (run_id, tenant_id, step["id"], step["agent_id"], "pending",
-                     json_dumps(step.get("depends_on", [])), json_dumps(step)),
+                    """INSERT INTO workflow_runs3(id,tenant_id,workflow_id,workflow_version,status,actor,idempotency_key,input_json,context_json,
+                    error,created_at,started_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (run_id, tenant_id, workflow["id"], int(workflow["version"]), "running", actor, idempotency_key,
+                     json_dumps(input_data), "{}", "", now, now),
                 )
+                for step in workflow["definition"]["steps"]:
+                    c.execute(
+                        """INSERT INTO workflow_steps3(run_id,tenant_id,step_id,agent_id,status,depends_on_json,definition_json)
+                        VALUES(?,?,?,?,?,?,?)""",
+                        (run_id, tenant_id, step["id"], step["agent_id"], "pending",
+                         json_dumps(step.get("depends_on", [])), json_dumps(step)),
+                    )
+                c.execute("COMMIT")
+            except Exception:
+                c.execute("ROLLBACK")
+                if idempotency_key:
+                    existing = c.execute(
+                        "SELECT * FROM workflow_runs3 WHERE tenant_id=? AND idempotency_key=?",
+                        (tenant_id, idempotency_key),
+                    ).fetchone()
+                    if existing:
+                        if self._workflow_request_hash_from_row(existing) != request_hash:
+                            raise ValueError("idempotency key was already used with a different workflow request")
+                        return self._decode(dict(existing))
+                raise
         return self.get_workflow_run(tenant_id, run_id) or {}
+
+    @staticmethod
+    def _workflow_request_hash(workflow: dict[str, Any], actor: str, input_data: dict[str, Any]) -> str:
+        material = json_dumps({
+            "workflow_id": str(workflow["id"]),
+            "workflow_version": int(workflow["version"]),
+            "actor": str(actor),
+            "input": input_data,
+        }).encode("utf-8")
+        return hashlib.sha256(material).hexdigest()
+
+    @classmethod
+    def _workflow_request_hash_from_row(cls, row: Any) -> str:
+        material = json_dumps({
+            "workflow_id": str(row["workflow_id"]),
+            "workflow_version": int(row["workflow_version"]),
+            "actor": str(row["actor"]),
+            "input": json_loads(row["input_json"], {}),
+        }).encode("utf-8")
+        return hashlib.sha256(material).hexdigest()
 
     def get_workflow_run(self, tenant_id: str, run_id: str) -> dict[str, Any] | None:
         with self.connection() as c:
@@ -450,23 +497,74 @@ class AutomationMixin:
                 (utcnow(), max(1, min(int(limit), 500))),
             ).fetchall())
 
-    def finish_outbox(self, item_id: str, success: bool, error: str = "", retry_seconds: int = 60) -> None:
+    def claim_outbox(self, owner: str, lease_seconds: int = 30, limit: int = 100) -> list[dict[str, Any]]:
+        now = utcnow()
+        expires = (datetime.now(timezone.utc) + timedelta(seconds=max(5, int(lease_seconds)))).isoformat(timespec="seconds")
+        limit = max(1, min(int(limit), 500))
         with self.connection() as c:
+            c.execute("BEGIN IMMEDIATE")
+            try:
+                query = (
+                    "SELECT * FROM outbox3 WHERE "
+                    "(status='pending' AND next_attempt_at<=?) OR "
+                    "(status='processing' AND claim_expires_at<=?) "
+                    "ORDER BY created_at LIMIT ?"
+                )
+                if self.backend_kind == "postgres":
+                    query += " FOR UPDATE SKIP LOCKED"
+                rows = c.execute(query, (now, now, limit)).fetchall()
+                claimed: list[dict[str, Any]] = []
+                for row in rows:
+                    item_id = row["id"]
+                    changed = c.execute(
+                        """UPDATE outbox3 SET status='processing',claim_owner=?,claim_expires_at=?
+                        WHERE id=? AND ((status='pending' AND next_attempt_at<=?) OR
+                        (status='processing' AND claim_expires_at<=?))""",
+                        (owner, expires, item_id, now, now),
+                    ).rowcount
+                    if changed:
+                        item = dict(row)
+                        item.update(status="processing", claim_owner=owner, claim_expires_at=expires)
+                        claimed.append(self._decode(item))
+                c.execute("COMMIT")
+            except Exception:
+                c.execute("ROLLBACK")
+                raise
+        return claimed
+
+    def finish_outbox(self, item_id: str, success: bool, error: str = "", retry_seconds: int = 60, owner: str | None = None) -> bool:
+        with self.connection() as c:
+            owner_clause = " AND status='processing' AND claim_owner=?" if owner else ""
+            owner_args = (owner,) if owner else ()
             if success:
-                c.execute("UPDATE outbox3 SET status='delivered',attempts=attempts+1,last_error='',delivered_at=? WHERE id=?",
-                          (utcnow(), item_id))
+                result = c.execute(
+                    "UPDATE outbox3 SET status='delivered',attempts=attempts+1,last_error='',delivered_at=?,claim_owner=NULL,claim_expires_at=NULL WHERE id=?" + owner_clause,
+                    (utcnow(), item_id) + owner_args,
+                )
             else:
                 retry_at = (datetime.now(timezone.utc) + timedelta(seconds=max(1, retry_seconds))).isoformat(timespec="seconds")
-                c.execute("UPDATE outbox3 SET attempts=attempts+1,last_error=?,next_attempt_at=? WHERE id=?",
-                          (error[:2000], retry_at, item_id))
+                result = c.execute(
+                    "UPDATE outbox3 SET status='pending',attempts=attempts+1,last_error=?,next_attempt_at=?,claim_owner=NULL,claim_expires_at=NULL WHERE id=?" + owner_clause,
+                    (error[:2000], retry_at, item_id) + owner_args,
+                )
+            return bool(result.rowcount)
 
     # ----- Semantic memory vectors -----
     def upsert_memory_vector(self, tenant_id: str, memory_id: str, agent_id: str | None, vector: list[float]) -> None:
         with self.connection() as c:
+            memory = c.execute("SELECT tenant_id FROM memories2 WHERE id=?", (memory_id,)).fetchone()
+            if not memory:
+                raise ValueError("memory does not exist")
+            if memory[0] != tenant_id:
+                raise ValueError("memory id belongs to another tenant")
+            existing = c.execute("SELECT tenant_id FROM memory_vectors3 WHERE memory_id=?", (memory_id,)).fetchone()
+            if existing and existing[0] != tenant_id:
+                raise ValueError("memory vector belongs to another tenant")
             c.execute(
                 """INSERT INTO memory_vectors3(memory_id,tenant_id,agent_id,dimension,vector_json,updated_at)
-                VALUES(?,?,?,?,?,?) ON CONFLICT(memory_id) DO UPDATE SET tenant_id=excluded.tenant_id,
-                agent_id=excluded.agent_id,dimension=excluded.dimension,vector_json=excluded.vector_json,updated_at=excluded.updated_at""",
+                VALUES(?,?,?,?,?,?) ON CONFLICT(memory_id) DO UPDATE SET
+                agent_id=excluded.agent_id,dimension=excluded.dimension,vector_json=excluded.vector_json,updated_at=excluded.updated_at
+                WHERE memory_vectors3.tenant_id=excluded.tenant_id""",
                 (memory_id, tenant_id, agent_id, len(vector), json_dumps(vector), utcnow()),
             )
 
@@ -475,14 +573,14 @@ class AutomationMixin:
             if agent_id:
                 rows = c.execute(
                     """SELECT v.*,m.title,m.content,m.tags_json FROM memory_vectors3 v
-                    JOIN memories2 m ON m.id=v.memory_id WHERE v.tenant_id=? AND (v.agent_id IS NULL OR v.agent_id=?)
+                    JOIN memories2 m ON m.id=v.memory_id AND m.tenant_id=v.tenant_id WHERE v.tenant_id=? AND (v.agent_id IS NULL OR v.agent_id=?)
                     ORDER BY v.updated_at DESC LIMIT ?""",
                     (tenant_id, agent_id, max(1, min(int(limit), 20000))),
                 ).fetchall()
             else:
                 rows = c.execute(
                     """SELECT v.*,m.title,m.content,m.tags_json FROM memory_vectors3 v
-                    JOIN memories2 m ON m.id=v.memory_id WHERE v.tenant_id=? ORDER BY v.updated_at DESC LIMIT ?""",
+                    JOIN memories2 m ON m.id=v.memory_id AND m.tenant_id=v.tenant_id WHERE v.tenant_id=? ORDER BY v.updated_at DESC LIMIT ?""",
                     (tenant_id, max(1, min(int(limit), 20000))),
                 ).fetchall()
             return self._rows(rows)

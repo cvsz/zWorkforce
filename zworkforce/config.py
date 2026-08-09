@@ -201,6 +201,8 @@ def _providers_from_env(env: str) -> tuple[ProviderConfig, ...]:
             kind = str(item.get("kind", "openai-compatible")).strip().lower()
             if kind not in {"mock", "openai-compatible"}:
                 raise ValueError(f"unsupported provider kind: {kind}")
+            if env == "production" and kind == "mock":
+                raise ValueError("mock providers are not allowed in production")
             models = item.get("models") or {}
             if not isinstance(models, dict):
                 raise ValueError(f"provider {name} models must be an object")
@@ -229,6 +231,8 @@ def _providers_from_env(env: str) -> tuple[ProviderConfig, ...]:
 
     legacy_kind = os.getenv("ZWORKFORCE_PROVIDER", "mock").strip().lower()
     if legacy_kind == "mock":
+        if env == "production":
+            raise ValueError("mock providers are not allowed in production")
         return (ProviderConfig(name="mock", kind="mock", priority=100, models={"luna": "mock-luna", "terra": "mock-terra", "sol": "mock-sol"}),)
     if legacy_kind != "openai-compatible":
         raise ValueError("ZWORKFORCE_PROVIDER must be mock or openai-compatible")

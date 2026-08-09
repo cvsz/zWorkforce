@@ -129,7 +129,7 @@ class Scheduler:
 
     def _dispatch(self, tenant_id: str, target_type: str, target_id: str, payload: dict[str, Any], actor: str, key: str):
         if target_type == "workflow":
-            return self.workflows.start(tenant_id, target_id, payload if isinstance(payload, dict) else {}, actor)
+            return self.workflows.start(tenant_id, target_id, payload if isinstance(payload, dict) else {}, actor, idempotency_key=key)
         prompt = str(payload.get("prompt", "")) if isinstance(payload, dict) else str(payload)
         if not prompt.strip():
             raise ScheduleError("agent target requires payload.prompt")
@@ -175,11 +175,12 @@ class Scheduler:
         stats["tasks_submitted"] += wf_stats.get("tasks_submitted", 0)
         return stats
 
-    def loop(self, poll: float = 1.0, once: bool = False):
+    def loop(self, poll: float = 1.0, once: bool = False, owner_id: str | None = None):
+        owner = owner_id or self.owner
         aggregate = {"ticks": 0, "schedules": 0, "events": 0, "tasks_submitted": 0, "workflows": 0}
         try:
             while True:
-                if self.db.acquire_service_lease("scheduler", self.owner, self.lease_seconds):
+                if self.db.acquire_service_lease("scheduler", owner, self.lease_seconds):
                     result = self.tick()
                     aggregate["ticks"] += 1
                     for key in ("schedules", "events", "tasks_submitted", "workflows"):
@@ -189,6 +190,6 @@ class Scheduler:
                 time.sleep(max(0.1, float(poll)))
         finally:
             try:
-                self.db.release_service_lease("scheduler", self.owner)
+                self.db.release_service_lease("scheduler", owner)
             except Exception:
                 pass

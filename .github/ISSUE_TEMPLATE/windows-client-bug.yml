@@ -1,0 +1,40 @@
+name: Windows client bug
+description: Report a reproducible zWorkforce Windows client problem.
+title: "[Windows client] "
+labels:
+  - windows-client
+body:
+  - type: input
+    id: client-version
+    attributes:
+      label: Client version
+      placeholder: 1.0.0
+    validations:
+      required: true
+  - type: input
+    id: windows-version
+    attributes:
+      label: Windows version/build
+      placeholder: Windows 11 24H2 / 26100.x
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Do not include API keys, tokens, or private tenant data.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and request ID
+      description: Include the server request ID if the client displayed one. Never include credentials.
+    validations:
+      required: true

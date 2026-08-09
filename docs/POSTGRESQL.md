@@ -36,4 +36,10 @@ The selected row is transitioned to `running`, attempt count increments and a le
 
 ## Migration
 
-SQLite remains supported. v3 does not automatically copy SQLite contents into PostgreSQL. For production migration, freeze writes, export tenant data through a controlled migration process, verify counts/audit chains, then switch `ZWORKFORCE_DATABASE_URL`.
+Schema initialization applies additive v4 columns for workflow occurrence keys
+and outbox claims to existing databases. SQLite-to-PostgreSQL data migration is
+not automatic or repository-supported. The default production posture is a
+fresh PostgreSQL database; if an existing SQLite deployment contains data,
+production promotion is blocked until a separately approved export/import
+procedure freezes writes, preserves all tenant-scoped state, verifies table
+counts and audit chains, and records the cutover.

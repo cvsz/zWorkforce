@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS workflow_runs3(
     workflow_version INTEGER NOT NULL,
     status TEXT NOT NULL,
     actor TEXT NOT NULL,
+    idempotency_key TEXT NOT NULL DEFAULT '',
     input_json TEXT NOT NULL DEFAULT '{}',
     context_json TEXT NOT NULL DEFAULT '{}',
     error TEXT NOT NULL DEFAULT '',
@@ -246,7 +247,9 @@ CREATE TABLE IF NOT EXISTS outbox3(
     next_attempt_at TEXT NOT NULL,
     last_error TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL,
-    delivered_at TEXT NULL
+    delivered_at TEXT NULL,
+    claim_owner TEXT NULL,
+    claim_expires_at TEXT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_outbox3_due ON outbox3(status,next_attempt_at);
 """

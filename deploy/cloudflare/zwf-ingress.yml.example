@@ -1,0 +1,7 @@
+# Merge this rule into the existing token-managed Cloudflare Tunnel ingress
+# before its terminal http_status:404 rule. The Workforce API must already be
+# running on the host; this file does not start the API or provision secrets.
+ingress:
+  - hostname: zwf.zeaz.dev
+    service: http://127.0.0.1:9569
+  - service: http_status:404

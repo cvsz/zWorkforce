@@ -59,6 +59,12 @@ POST     /api/v1/events
 POST     /api/v1/scheduler-tick
 ```
 
+Use `Idempotency-Key` on `POST /api/v1/workflow-runs` when retrying a scheduled
+or operator-triggered occurrence. Schedule and event dispatches derive a stable
+occurrence key automatically. Task and workflow execution remain at-least-once
+after lease expiry; external mutating consumers must deduplicate their own
+side effects.
+
 ## Evaluation
 
 ```text

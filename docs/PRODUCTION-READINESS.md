@@ -52,7 +52,9 @@ This checklist defines the minimum release gate for a real zWorkforce production
 
 ## 7. Providers and tools
 
-- Configure at least one production provider and test circuit-breaker/failover behavior if multiple providers are configured.
+- Configure at least one non-mock production provider; startup rejects mock-only production configuration.
+- Run an authenticated generation smoke test because readiness/doctor report configured provider health, not a live model request.
+- Test circuit-breaker/failover behavior if multiple providers are configured.
 - Use explicit model IDs supported by the provider; Luna/Terra/Sol are policy tiers, not provider guarantees.
 - Review HTTP allowlists, remote skill registry allowlists and tool grants.
 - Test provider credential redaction and error handling before traffic cutover.
@@ -77,8 +79,9 @@ Production is ready only when all of the following are true:
 
 1. `main` CI and CodeQL are green for the release commit.
 2. Release artifacts, checksums, SBOM and provenance exist for the exact tag.
-3. PostgreSQL backup and restore have been demonstrated in a non-production environment.
+3. PostgreSQL backup and restore have been demonstrated in a non-production environment; a fresh production database or separately approved data-migration record exists.
 4. `zworkforce doctor` succeeds with production-equivalent configuration.
-5. `scripts/smoke-test.sh` succeeds through the production ingress path.
+5. `scripts/smoke-test.sh` succeeds through the `https://zwf.zeaz.dev`
+   production ingress path.
 6. Identity, policy, secret, egress and observability reviews are signed off by the operator.
 7. Rollback and incident contacts are documented and tested.
