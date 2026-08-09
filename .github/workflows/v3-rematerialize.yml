@@ -44,6 +44,20 @@ jobs:
                   p = pathlib.PurePosixPath(m.name)
                   if p.is_absolute() or '..' in p.parts or m.issym() or m.islnk(): raise SystemExit(f'unsafe archive member: {m.name}')
               tf.extractall('.', filter='data')
+
+          # Repair the single corrupted scheduler line detected by compileall.
+          scheduler = pathlib.Path('zworkforce/scheduler.py')
+          lines = scheduler.read_text().splitlines()
+          repaired = False
+          for i, line in enumerate(lines):
+              if line.lstrip().startswith('return isinstance(actual, dict) and all('):
+                  indent = line[:len(line) - len(line.lstrip())]
+                  lines[i] = indent + 'return isinstance(actual, dict) and all(k in actual and _subset(v, actual[k]) for k, v in expected.items())'
+                  repaired = True
+                  break
+          if not repaired: raise SystemExit('scheduler repair target not found')
+          scheduler.write_text('\n'.join(lines) + '\n')
+
           for p in ['.github/workflows/v3-materialize.yml', '.github/workflows/v3-rematerialize.yml']:
               pathlib.Path(p).unlink(missing_ok=True)
           PY
