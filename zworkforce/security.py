@@ -167,7 +167,8 @@ def _verify_secret(stored: str, candidate: str) -> tuple[bool, bool]:
         return hmac.compare_digest(derived, expected), False
     if LEGACY_SHA256_RE.fullmatch(stored):
         # Legacy verifier compatibility only; successful matches are immediately upgraded.
-        legacy_digest = hashlib.sha256(candidate.encode("utf-8")).hexdigest()  # lgtm[py/weak-sensitive-data-hashing]
+        # codeql[py/weak-sensitive-data-hashing]
+        legacy_digest = hashlib.sha256(candidate.encode("utf-8")).hexdigest()
         return hmac.compare_digest(legacy_digest, stored), True
     return False, False
 
