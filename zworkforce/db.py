@@ -17,6 +17,37 @@ class Database(AutomationMixin, TaskMixin, FinOpsMixin, GovernanceMixin, Migrati
         except Exception:
             return False
 
+    def record_provider_success(self, name: str, latency_ms: float) -> None:
+        if self.backend_kind != "postgres":
+            return super().record_provider_success(name, latency_ms)
+        now = utcnow()
+        with self.connection() as c:
+            c.execute(
+                """INSERT INTO provider_health2(name,consecutive_failures,successes,failures,last_latency_ms,last_error,last_success_at,open_until,updated_at)
+                VALUES(?,0,1,0,?,'',?,NULL,?) ON CONFLICT(name) DO UPDATE SET
+                consecutive_failures=0,successes=provider_health2.successes+1,
+                last_latency_ms=excluded.last_latency_ms,last_error='',last_success_at=excluded.last_success_at,
+                open_until=NULL,updated_at=excluded.updated_at""",
+                (name, latency_ms, now, now),
+            )
+
+    def record_provider_failure(self, name: str, latency_ms: float, error: str, threshold: int, circuit_seconds: int) -> None:
+        if self.backend_kind != "postgres":
+            return super().record_provider_failure(name, latency_ms, error, threshold, circuit_seconds)
+        now = utcnow()
+        with self.connection() as c:
+            row = c.execute("SELECT consecutive_failures FROM provider_health2 WHERE name=?", (name,)).fetchone()
+            failures = (int(row[0]) if row else 0) + 1
+            open_until = utc_after(circuit_seconds) if failures >= threshold else None
+            c.execute(
+                """INSERT INTO provider_health2(name,consecutive_failures,successes,failures,last_latency_ms,last_error,last_failure_at,open_until,updated_at)
+                VALUES(?,?,0,1,?,?,?, ?,?) ON CONFLICT(name) DO UPDATE SET
+                consecutive_failures=excluded.consecutive_failures,failures=provider_health2.failures+1,
+                last_latency_ms=excluded.last_latency_ms,last_error=excluded.last_error,last_failure_at=excluded.last_failure_at,
+                open_until=excluded.open_until,updated_at=excluded.updated_at""",
+                (name, failures, latency_ms, error[:1000], now, open_until, now),
+            )
+
     def claim_next_task(self, worker_id: str, lease_seconds: int):
         if self.backend_kind != "postgres":
             return super().claim_next_task(worker_id, lease_seconds)
