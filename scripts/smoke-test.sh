@@ -8,15 +8,16 @@ check_json_field() {
   local url="$1" field="$2" expected="$3"
   local body
   body="$("${CURL[@]}" "$url")"
-  python - "$field" "$expected" <<'PY' <<<"$body"
-import json, sys
-field, expected = sys.argv[1], sys.argv[2]
-data = json.load(sys.stdin)
+  BODY="$body" FIELD="$field" EXPECTED="$expected" python - <<'PY'
+import json, os
+
+data = json.loads(os.environ["BODY"])
 actual = data
-for part in field.split('.'):
+for part in os.environ["FIELD"].split("."):
     actual = actual[part]
+expected = os.environ["EXPECTED"]
 if str(actual).lower() != expected.lower():
-    raise SystemExit(f"{field}={actual!r}, expected {expected!r}")
+    raise SystemExit(f"{os.environ['FIELD']}={actual!r}, expected {expected!r}")
 PY
 }
 
