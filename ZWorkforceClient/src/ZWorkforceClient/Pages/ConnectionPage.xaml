@@ -18,7 +18,7 @@
                     <TextBox x:Name="TenantBox" Header="Tenant ID" PlaceholderText="default" AutomationProperties.Name="Tenant ID" />
                     <PasswordBox x:Name="ApiKeyBox" Header="API key" PlaceholderText="Paste the one-time or persistent key" AutomationProperties.Name="zWorkforce API key" />
                     <CheckBox x:Name="RememberCheckBox" Content="Remember this API key in Windows Credential Manager" IsChecked="True" />
-                    <Button x:Name="ConnectButton" Content="Connect" HorizontalAlignment="Left" Click="OnConnectClick" IsDefault="True" />
+                    <Button x:Name="ConnectButton" Content="Connect" HorizontalAlignment="Left" Click="OnConnectClick" />
                 </StackPanel>
             </Border>
 
