@@ -51,7 +51,8 @@ After the workflow finishes:
 4. Pull the exact image tag/digest and run `zworkforce --version`.
 5. Deploy first to a staging environment backed by PostgreSQL.
 6. Run `zworkforce doctor` and `scripts/smoke-test.sh`.
-7. Exercise one durable task, one workflow, one approval path and scheduler/outbox leadership before promotion.
+7. Exercise one durable task, one workflow, one approval path, scheduler
+   occurrence deduplication, and outbox claim/retry behavior before promotion.
 
 ## Hotfixes
 

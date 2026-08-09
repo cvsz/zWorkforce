@@ -11,7 +11,7 @@ from .db_backend import connect_postgres, is_postgres_target
 from .db_schema import SCHEMA_SQL
 from .db_schema_v3 import V3_SCHEMA_SQL
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 TERMINAL_STATUSES = {"succeeded", "failed", "canceled", "dead_letter"}
 _ARRAY_JSON_FIELDS = {
     "allowed_tools_json", "approval_tools_json", "skill_ids_json", "tags_json", "success_criteria_json",
@@ -75,6 +75,7 @@ class DatabaseBase:
                 c.execute("PRAGMA synchronous=NORMAL")
             c.executescript(SCHEMA_SQL)
             c.executescript(V3_SCHEMA_SQL)
+            self._ensure_v4_schema(c)
             c.execute(
                 "INSERT INTO schema_meta(key,value) VALUES('schema_version',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
                 (str(SCHEMA_VERSION),),
@@ -82,6 +83,29 @@ class DatabaseBase:
         self.ensure_tenant(self.default_tenant, self.default_tenant.title())
         if self.backend_kind == "sqlite":
             self._migrate_v1_if_needed()
+
+    def _column_exists(self, c, table: str, column: str) -> bool:
+        if self.backend_kind == "postgres":
+            row = c.execute(
+                "SELECT 1 FROM information_schema.columns WHERE table_schema=current_schema() AND table_name=? AND column_name=?",
+                (table, column),
+            ).fetchone()
+            return bool(row)
+        rows = c.execute(f"PRAGMA table_info({table})").fetchall()
+        return any(row[1] == column for row in rows)
+
+    def _ensure_v4_schema(self, c) -> None:
+        if not self._column_exists(c, "workflow_runs3", "idempotency_key"):
+            c.execute("ALTER TABLE workflow_runs3 ADD COLUMN idempotency_key TEXT NOT NULL DEFAULT ''")
+        if not self._column_exists(c, "outbox3", "claim_owner"):
+            c.execute("ALTER TABLE outbox3 ADD COLUMN claim_owner TEXT NULL")
+        if not self._column_exists(c, "outbox3", "claim_expires_at"):
+            c.execute("ALTER TABLE outbox3 ADD COLUMN claim_expires_at TEXT NULL")
+        c.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_workflow_runs3_idempotency "
+            "ON workflow_runs3(tenant_id,idempotency_key) WHERE idempotency_key <> ''"
+        )
+        c.execute("CREATE INDEX IF NOT EXISTS idx_outbox3_claim ON outbox3(status,claim_expires_at)")
 
     def _table_exists(self, c, name: str) -> bool:
         if self.backend_kind == "postgres":

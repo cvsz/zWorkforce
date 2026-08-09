@@ -275,7 +275,12 @@ def main(argv=None):
                 "otlp_enabled": bool(os.getenv("ZWORKFORCE_OTLP_TRACES_ENDPOINT", "").strip()),
             }
             print(json.dumps(report, indent=2, ensure_ascii=False))
-            return 0 if report["database_ready"] and report["workspace_exists"] else 1
+            providers_ready = bool(report["providers"]) and any(
+                item["available"] and (settings.env != "production" or item["kind"] != "mock")
+                for item in report["providers"]
+            )
+            audit_ok = bool(report["audit"].get("ok"))
+            return 0 if report["database_ready"] and report["workspace_exists"] and providers_ready and audit_ok else 1
         if cmd == "init":
             print(json.dumps({"ok": True, "database": _safe_database_target(db), "backend": db.backend_kind,
                               "schema_version": SCHEMA_VERSION, "tenants": len(db.list_tenants())}, indent=2))

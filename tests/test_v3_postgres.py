@@ -5,6 +5,7 @@ import uuid
 from zworkforce.config import ProviderConfig, Settings
 from zworkforce.db import Database, utcnow
 from zworkforce.engine import Engine
+from zworkforce.workflow import WorkflowOrchestrator
 from zworkforce.providers import build_provider
 
 
@@ -49,6 +50,21 @@ class PostgresIntegrationTests(unittest.TestCase):
             self.assertIsNotNone(claimed)
             self.assertEqual(claimed["id"],second["id"])
             locker.execute("ROLLBACK")
+
+    def test_v4_workflow_occurrence_and_outbox_claims(self):
+        workflows = WorkflowOrchestrator(self.db, self.engine)
+        workflows.upsert(self.tenant_id, {
+            "id": "scheduled",
+            "definition": {"steps": [{"id": "a", "agent_id": "researcher", "prompt": "run"}]},
+        }, self.tenant_id)
+        first = workflows.start(self.tenant_id, "scheduled", {}, self.tenant_id, idempotency_key="schedule:pg:1")
+        second = workflows.start(self.tenant_id, "scheduled", {}, self.tenant_id, idempotency_key="schedule:pg:1")
+        self.assertEqual(first["id"], second["id"])
+
+        item_id = self.db.enqueue_outbox(self.tenant_id, "topic", "http://localhost/hook", {"ok": True})
+        claimed = self.db.claim_outbox("pg-outbox-a", 30)
+        self.assertEqual([item_id], [item["id"] for item in claimed])
+        self.assertEqual([], self.db.claim_outbox("pg-outbox-b", 30))
 
 
 if __name__ == "__main__": unittest.main()

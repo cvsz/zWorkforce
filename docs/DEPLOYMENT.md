@@ -33,8 +33,8 @@ Use `.env.production.example` as a field inventory only; replace all placeholder
 - namespace/config/secret example;
 - two API replicas;
 - two worker replicas + HPA;
-- leader-elected scheduler replicas;
-- leader-elected outbox replicas;
+- leased scheduler replicas;
+- claim-based outbox replicas with at-least-once delivery;
 - PDBs;
 - non-root/read-only/capability-drop security contexts;
 - workspace/artifact PVCs;
@@ -46,6 +46,11 @@ kubectl apply -k deploy/kubernetes
 ```
 
 Supply `ZWORKFORCE_DATABASE_URL`, API keys and provider credentials through a real secret manager/injector. Replace example secret manifests before deployment. See `docs/SECRET-MANAGEMENT.md`.
+
+Production configuration rejects the mock provider. `zworkforce doctor` checks
+database, workspace, audit-chain and provider readiness, but a successful
+doctor run is not a model-generation smoke test; run the authenticated smoke
+test before promotion.
 
 ### Required network work
 

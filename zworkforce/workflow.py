@@ -96,14 +96,14 @@ class WorkflowOrchestrator:
         payload["definition"] = validated
         return self.db.upsert_workflow(tenant_id, payload, actor)
 
-    def start(self, tenant_id: str, workflow_id: str, input_data: dict[str, Any], actor: str) -> dict[str, Any]:
+    def start(self, tenant_id: str, workflow_id: str, input_data: dict[str, Any], actor: str, idempotency_key: str | None = None) -> dict[str, Any]:
         workflow = self.db.get_workflow(tenant_id, workflow_id)
         if not workflow or not workflow.get("enabled", 1):
             raise WorkflowError("workflow not found or disabled")
         if not isinstance(input_data, dict):
             raise WorkflowError("workflow input must be an object")
         _steps(workflow["definition"])
-        return self.db.create_workflow_run(tenant_id, workflow, actor, input_data)
+        return self.db.create_workflow_run(tenant_id, workflow, actor, input_data, idempotency_key)
 
     def tick(self, tenant_id: str | None = None) -> dict[str, int]:
         stats = {"runs": 0, "tasks_submitted": 0, "completed": 0, "failed": 0}

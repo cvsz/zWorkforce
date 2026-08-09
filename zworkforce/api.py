@@ -190,7 +190,11 @@ class App:
                         return self._json(200, {"status": "ok", "version": __version__})
                     if path == "/ready":
                         providers = app.provider.models()
-                        ready = app.db.ready() and any(item["available"] for item in providers)
+                        provider_ready = any(
+                            item["available"] and (app.settings.env != "production" or item["kind"] != "mock")
+                            for item in providers
+                        )
+                        ready = app.db.ready() and provider_ready
                         return self._json(200 if ready else 503, {"status": "ready" if ready else "not_ready",
                                                                   "database": app.db.ready(), "database_backend": app.db.backend_kind,
                                                                   "providers": [{"name": p["name"], "available": p["available"]} for p in providers]})
@@ -441,7 +445,7 @@ class App:
                         ctx,response=self._principal("operator","automation:write")
                         if response:return response
                         principal,tenant_id=ctx;body=self._body()
-                        result=app.workflows.start(tenant_id,str(body.get("workflow_id","")),body.get("input") or {},principal.name)
+                        result=app.workflows.start(tenant_id,str(body.get("workflow_id","")),body.get("input") or {},principal.name,self.headers.get("Idempotency-Key"))
                         return self._json(201,result)
                     if path == "/api/v1/workflow-tick":
                         ctx,response=self._principal("operator","automation:write")

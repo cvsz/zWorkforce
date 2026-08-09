@@ -97,15 +97,25 @@ class GovernanceMixin:
             return bool(c.execute("UPDATE api_keys2 SET disabled=1,revoked_at=? WHERE tenant_id=? AND id=?", (utcnow(), tenant_id, key_id)).rowcount)
 
     def put_memory(self, tenant_id: str, agent_id: str | None, title: str, content: str, tags: list[str], actor: str, memory_id: str | None = None) -> dict[str, Any]:
-        memory_id = memory_id or str(uuid.uuid4())
+        memory_id = str(memory_id).strip() if memory_id is not None else str(uuid.uuid4())
+        if not memory_id:
+            raise ValueError("memory id must not be empty")
         now = utcnow()
         with self.connection() as c:
             c.execute(
                 """INSERT INTO memories2(id,tenant_id,agent_id,title,content,tags_json,created_by,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)
-                ON CONFLICT(id) DO UPDATE SET title=excluded.title,content=excluded.content,tags_json=excluded.tags_json,updated_at=excluded.updated_at""",
+                ON CONFLICT(id) DO UPDATE SET title=excluded.title,content=excluded.content,tags_json=excluded.tags_json,updated_at=excluded.updated_at
+                WHERE memories2.tenant_id=excluded.tenant_id""",
                 (memory_id, tenant_id, agent_id, title[:300], content, json_dumps(tags[:50]), actor, now, now),
             )
-        return self.get_memory(tenant_id, memory_id) or {}
+        memory = self.get_memory(tenant_id, memory_id)
+        if memory:
+            return memory
+        with self.connection() as c:
+            owner = c.execute("SELECT tenant_id FROM memories2 WHERE id=?", (memory_id,)).fetchone()
+        if owner and owner[0] != tenant_id:
+            raise ValueError("memory id belongs to another tenant")
+        raise RuntimeError("memory could not be stored")
 
     def get_memory(self, tenant_id: str, memory_id: str) -> dict[str, Any] | None:
         with self.connection() as c:
