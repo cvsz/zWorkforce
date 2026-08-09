@@ -18,6 +18,8 @@ $publishArguments = @(
     "--configuration", $Configuration,
     "--property:Platform=$Platform",
     "--property:RuntimeIdentifier=win-$($Platform.ToLowerInvariant())",
+    "--property:WindowsAppSDKSelfContained=true",
+    "--property:SelfContained=true",
     "--property:GenerateAppxPackageOnBuild=true",
     "--property:AppxBundle=Never",
     "--property:AppxPackageDir=$output\",

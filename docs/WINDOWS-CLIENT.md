@@ -138,8 +138,14 @@ after the Windows check is green.
 
 ## Package signing
 
-Local builds use a development certificate suitable for sideloading on the
-developer machine. A production release must use the organization's trusted
-MSIX signing identity or Microsoft Store signing. Never commit a private
-certificate, password, API key, or signing token. The package output is under
-`ZWorkforceClient/out/` and is intentionally ignored by Git.
+`Package-Client.ps1` produces a self-contained MSIX so a clean Windows 11 host
+does not need a separately installed Windows App SDK runtime. Local builds use
+a development certificate suitable for sideloading on the developer machine;
+the scripted smoke check installs that package for the current user, launches
+the registered app, verifies the real client process remains alive, and removes
+the package and temporary certificate afterward.
+
+A production release must use the organization's trusted MSIX signing identity
+or Microsoft Store signing. Never commit a private certificate, password, API
+key, or signing token. The package output is under `ZWorkforceClient/out/` and
+is intentionally ignored by Git.
