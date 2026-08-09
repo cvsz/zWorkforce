@@ -64,8 +64,6 @@ jobs:
               '',
           ]
           scheduler.write_text('\n'.join(lines[:start] + replacement + lines[end:]) + '\n')
-          for p in ['.github/workflows/v3-materialize.yml', '.github/workflows/v3-rematerialize.yml']:
-              pathlib.Path(p).unlink(missing_ok=True)
           PY
       - name: Validate syntax and package metadata
         run: |
@@ -81,6 +79,7 @@ jobs:
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git restore .github/workflows
           git add -A
           git commit -m "chore: materialize zWorkforce v3 candidate source"
           git push
