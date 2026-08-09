@@ -90,7 +90,7 @@ if ($LaunchSmoke) {
         if ($null -ne $certificate) {
             Write-Host "Trusting the temporary package certificate for this smoke check."
             $quotedCertificatePath = '"' + $certificate.FullName + '"'
-            Invoke-Certutil @("-user", "-addstore", "Root", $quotedCertificatePath)
+            Invoke-Certutil @("-user", "-f", "-addstore", "Root", $quotedCertificatePath)
             $importedCertificateThumbprint = $certificate.Thumbprint
         }
 
