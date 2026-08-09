@@ -17,6 +17,8 @@ concurrency:
 
 jobs:
   release:
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -104,3 +106,99 @@ jobs:
               --title "zWorkforce $GITHUB_REF_NAME" \
               --generate-notes
           fi
+
+  windows-client:
+    name: Windows client release
+    needs: release
+    runs-on: windows-latest
+    timeout-minutes: 35
+    permissions:
+      contents: write
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      NUGET_XMLDOC_MODE: skip
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Audit Windows client environment
+        run: ./ZWorkforceClient/build/windows/Install-Prerequisites.ps1 -CheckOnly
+
+      - name: Restore
+        run: dotnet restore ZWorkforceClient/ZWorkforceClient.sln
+
+      - name: Build client
+        run: ./ZWorkforceClient/build/windows/Build-Client.ps1 -Configuration Release -Platform x64
+
+      - name: Run core tests
+        run: ./ZWorkforceClient/build/windows/Test-Client.ps1 -Configuration Release
+
+      - name: Package versioned MSIX
+        run: ./ZWorkforceClient/build/windows/Package-Client.ps1 -Configuration Release -Platform x64 -Version "${{ needs.release.outputs.version }}"
+
+      - name: Launch smoke check
+        run: ./ZWorkforceClient/build/windows/Test-Client.ps1 -Configuration Release -ExpectedVersion "${{ needs.release.outputs.version }}.0" -LaunchSmoke
+
+      - name: Generate Windows checksums
+        run: |
+          $packageDirectory = Join-Path $PWD "ZWorkforceClient\out\Release-x64"
+          $packages = @(Get-ChildItem -LiteralPath $packageDirectory -File |
+              Where-Object { $_.Extension -in ".msix", ".msixbundle" })
+          if ($packages.Count -eq 0) {
+              throw "No Windows package was produced for the release."
+          }
+          foreach ($package in $packages) {
+              $hash = (Get-FileHash -LiteralPath $package.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+              [IO.File]::WriteAllText(
+                  "$($package.FullName).sha256",
+                  "$hash  $($package.Name)`n",
+                  [Text.UTF8Encoding]::new($false)
+              )
+          }
+
+      - name: Upload Windows release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $packageDirectory = Join-Path $PWD "ZWorkforceClient\out\Release-x64"
+          $assets = @(Get-ChildItem -LiteralPath $packageDirectory -File |
+              Where-Object { $_.Extension -in ".msix", ".msixbundle", ".cer", ".sha256" })
+          if ($assets.Count -eq 0) {
+              throw "No Windows release assets were produced."
+          }
+          & gh release upload $env:GITHUB_REF_NAME ($assets | Select-Object -ExpandProperty FullName) --clobber
+          if ($LASTEXITCODE -ne 0) {
+              throw "Uploading Windows release assets failed with exit code $LASTEXITCODE."
+          }
+
+      - name: Upload Windows release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zworkforce-windows-client-${{ github.ref_name }}
+          path: |
+            ZWorkforceClient/out/Release-x64/*.msix
+            ZWorkforceClient/out/Release-x64/*.cer
+            ZWorkforceClient/out/Release-x64/*.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload Windows diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zworkforce-windows-client-diagnostics-${{ github.run_number }}
+          path: |
+            ZWorkforceClient/src/**/bin/**
+            ZWorkforceClient/src/**/obj/**
+            ZWorkforceClient/out/**
+          if-no-files-found: warn
+          retention-days: 14

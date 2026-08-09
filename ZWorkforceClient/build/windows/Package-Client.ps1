@@ -3,21 +3,49 @@ param(
     [ValidateSet("Debug", "Release")]
     [string]$Configuration = "Release",
     [ValidateSet("x64", "ARM64")]
-    [string]$Platform = "x64"
+    [string]$Platform = "x64",
+    [ValidatePattern("^v?\d+\.\d+\.\d+(\.\d+)?$")]
+    [string]$Version = "1.0.0"
 )
 
 $ErrorActionPreference = "Stop"
 $root = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
 $appProject = Join-Path $root "src\ZWorkforceClient\ZWorkforceClient.csproj"
+$manifestPath = Join-Path $root "src\ZWorkforceClient\Package.appxmanifest"
 $output = Join-Path $root "out\$Configuration-$Platform"
 $pfxPath = Join-Path $output "zworkforce-client-temporary.pfx"
 $cerPath = Join-Path $output "zworkforce-client-temporary.cer"
+$normalizedVersion = $Version.TrimStart("v")
+$packageVersion = if ($normalizedVersion.Split(".").Count -eq 3) {
+    "$normalizedVersion.0"
+} else {
+    $normalizedVersion
+}
+
+if ($packageVersion.Split(".") | Where-Object { [int]$_ -gt 65535 }) {
+    throw "The MSIX version must use four numeric components, each no greater than 65535: $packageVersion"
+}
 
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 
 $certificate = $null
+$originalManifestBytes = [IO.File]::ReadAllBytes($manifestPath)
 try {
-    Remove-Item -LiteralPath $pfxPath, $cerPath -Force -ErrorAction SilentlyContinue
+    Get-ChildItem -LiteralPath $output -File -Include "*.msix", "*.msixbundle", "*.cer", "*.sha256" -ErrorAction SilentlyContinue |
+        Remove-Item -Force -ErrorAction SilentlyContinue
+
+    $manifestText = [Text.Encoding]::UTF8.GetString($originalManifestBytes)
+    $versionedManifest = [regex]::Replace(
+        $manifestText,
+        '(<Identity\b[^>]*\bVersion=")[^"]+(")',
+        ('$1' + $packageVersion + '$2'),
+        1
+    )
+    if ($versionedManifest -eq $manifestText) {
+        throw "Could not locate the package Identity Version in $manifestPath."
+    }
+    [IO.File]::WriteAllText($manifestPath, $versionedManifest, [Text.UTF8Encoding]::new($false))
+
     $certificate = New-SelfSignedCertificate `
         -Type CodeSigningCert `
         -Subject "CN=cvsz" `
@@ -37,6 +65,8 @@ try {
         "--property:RuntimeIdentifier=win-$($Platform.ToLowerInvariant())",
         "--property:WindowsAppSDKSelfContained=true",
         "--property:SelfContained=true",
+        "--property:ApplicationDisplayVersion=$normalizedVersion",
+        "--property:AppxPackageVersion=$packageVersion",
         "--property:GenerateAppxPackageOnBuild=true",
         "--property:AppxPackageSigningEnabled=true",
         "--property:PackageCertificateKeyFile=$pfxPath",
@@ -50,6 +80,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "The packaged client publish failed with exit code $LASTEXITCODE." }
 }
 finally {
+    [IO.File]::WriteAllBytes($manifestPath, $originalManifestBytes)
     if ($null -ne $certificate) {
         Remove-Item -LiteralPath "Cert:\CurrentUser\My\$($certificate.Thumbprint)" -Force -ErrorAction SilentlyContinue
     }
@@ -69,4 +100,5 @@ foreach ($package in $packages) {
 }
 
 Write-Host "Windows client package artifacts:"
+Write-Host "  Package version: $packageVersion"
 $packages | ForEach-Object { Write-Host "  $($_.FullName)" }

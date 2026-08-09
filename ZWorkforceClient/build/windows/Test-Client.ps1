@@ -2,6 +2,8 @@
 param(
     [ValidateSet("Debug", "Release")]
     [string]$Configuration = "Release",
+    [ValidatePattern("^\d+\.\d+\.\d+\.\d+$")]
+    [string]$ExpectedVersion,
     [switch]$LaunchSmoke
 )
 
@@ -9,6 +11,46 @@ $ErrorActionPreference = "Stop"
 $root = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
 $solution = Join-Path $root "ZWorkforceClient.sln"
 $appProject = Join-Path $root "src\ZWorkforceClient\ZWorkforceClient.csproj"
+
+function Remove-ClientPackage([string]$PackageFullName) {
+    if ([string]::IsNullOrWhiteSpace($PackageFullName)) {
+        return
+    }
+
+    $removalJob = Start-Job -ScriptBlock {
+        param($FullName)
+        Remove-AppxPackage -Package $FullName -ForceApplicationShutdown -ErrorAction SilentlyContinue
+    } -ArgumentList $PackageFullName
+    try {
+        if ($null -eq (Wait-Job -Job $removalJob -Timeout 30)) {
+            Write-Warning "Timed out removing packaged client $PackageFullName; the ephemeral runner will discard it."
+            Stop-Job -Job $removalJob -ErrorAction SilentlyContinue
+        } else {
+            Receive-Job -Job $removalJob -ErrorAction SilentlyContinue | Out-Null
+        }
+    } finally {
+        Remove-Job -Job $removalJob -Force -ErrorAction SilentlyContinue
+    }
+}
+
+function Find-ClientPackage {
+    $queryJob = Start-Job -ScriptBlock {
+        Get-AppxPackage -Name "cvsz.ZWorkforceClient" -ErrorAction SilentlyContinue |
+            Sort-Object Version -Descending |
+            Select-Object -First 1 PackageFullName, PackageFamilyName, Version
+    }
+    try {
+        if ($null -eq (Wait-Job -Job $queryJob -Timeout 30)) {
+            Write-Warning "Timed out querying the packaged client; continuing without a stale-package cleanup."
+            Stop-Job -Job $queryJob -ErrorAction SilentlyContinue
+            return $null
+        }
+        return Receive-Job -Job $queryJob -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+    } finally {
+        Remove-Job -Job $queryJob -Force -ErrorAction SilentlyContinue
+    }
+}
 
 & dotnet test $solution --configuration $Configuration --property:Platform=x64 --no-restore
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -28,10 +70,14 @@ if ($LaunchSmoke) {
     $importedCertificateThumbprint = $null
     $installedPackage = $null
     try {
-        Get-AppxPackage -Name "cvsz.ZWorkforceClient" -ErrorAction SilentlyContinue |
-            ForEach-Object { Remove-AppxPackage -Package $_.PackageFullName -ErrorAction SilentlyContinue }
+        Write-Host "Checking for a previous packaged client installation."
+        $previousPackage = Find-ClientPackage
+        if ($null -ne $previousPackage) {
+            Remove-ClientPackage $previousPackage.PackageFullName
+        }
 
         if ($null -ne $certificate) {
+            Write-Host "Trusting the temporary package certificate for this smoke check."
             $trustedCertificate = Get-ChildItem -Path "Cert:\CurrentUser\Root" |
                 Where-Object Thumbprint -eq $certificate.Thumbprint |
                 Select-Object -First 1
@@ -41,12 +87,29 @@ if ($LaunchSmoke) {
             }
         }
 
-        Add-AppxPackage -Path $package.FullName -ForceApplicationShutdown -ErrorAction Stop
-        $installedPackage = Get-AppxPackage -Name "cvsz.ZWorkforceClient" |
-            Sort-Object Version -Descending |
-            Select-Object -First 1
+        Write-Host "Installing the packaged client."
+        $installationJob = Start-Job -ScriptBlock {
+            param($PackagePath)
+            Add-AppxPackage -Path $PackagePath -ForceApplicationShutdown -ErrorAction Stop
+        } -ArgumentList $package.FullName
+        try {
+            if ($null -eq (Wait-Job -Job $installationJob -Timeout 180)) {
+                Stop-Job -Job $installationJob -ErrorAction SilentlyContinue
+                throw "Timed out installing the packaged client MSIX."
+            }
+            Receive-Job -Job $installationJob -ErrorAction Stop | Out-Null
+        } finally {
+            Remove-Job -Job $installationJob -Force -ErrorAction SilentlyContinue
+        }
+
+        Write-Host "Resolving the installed package identity."
+        $installedPackage = Find-ClientPackage
         if ($null -eq $installedPackage) {
             throw "The MSIX installed without a discoverable cvsz.ZWorkforceClient package."
+        }
+        if (-not [string]::IsNullOrWhiteSpace($ExpectedVersion) -and
+            $installedPackage.Version.ToString() -ne $ExpectedVersion) {
+            throw "The installed MSIX version $($installedPackage.Version) does not match expected $ExpectedVersion."
         }
 
         $appShellId = "shell:AppsFolder\$($installedPackage.PackageFamilyName)!App"
@@ -62,7 +125,7 @@ if ($LaunchSmoke) {
         Get-Process -Name "ZWorkforceClient" -ErrorAction SilentlyContinue |
             Stop-Process -Force -ErrorAction SilentlyContinue
         if ($null -ne $installedPackage) {
-            Remove-AppxPackage -Package $installedPackage.PackageFullName -ErrorAction SilentlyContinue
+            Remove-ClientPackage $installedPackage.PackageFullName
         }
         if ($null -ne $importedCertificateThumbprint) {
             Remove-Item -LiteralPath "Cert:\CurrentUser\Root\$importedCertificateThumbprint" -Force -ErrorAction SilentlyContinue

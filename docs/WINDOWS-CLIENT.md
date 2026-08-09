@@ -60,6 +60,14 @@ Set-Location .\ZWorkforceClient
 .\build\windows\Package-Client.ps1 -Configuration Release -Platform x64
 ```
 
+For a versioned package, pass the three- or four-part release version. The
+script temporarily applies the version to the package manifest and restores
+the source file before it exits:
+
+```powershell
+.\build\windows\Package-Client.ps1 -Configuration Release -Platform x64 -Version 3.0.1
+```
+
 The project is a packaged app. The normal IDE launch path is Visual Studio F5,
 which builds, signs with the development certificate, registers the MSIX, and
 launches it. The CLI build/package path is also supported on a Windows host
@@ -133,19 +141,24 @@ diagnostics on failure.
 
 Require the **Windows client / build-test-package** check in branch protection
 alongside the existing Python CI, security, CodeQL, and dependency checks.
-Release automation should publish the MSIX only from a protected version tag
-after the Windows check is green.
+Release automation builds and smoke-tests the versioned MSIX from the same
+protected version tag, generates SHA-256 checksums, and uploads the package,
+public sideload certificate, and checksum to the existing GitHub Release. The
+tag must be created only after the required Windows check is green.
 
 ## Package signing
 
-`Package-Client.ps1` produces a self-contained MSIX so a clean Windows 11 host
+`Package-Client.ps1` produces a self-contained, versioned MSIX so a clean Windows 11 host
 does not need a separately installed Windows App SDK runtime. Local builds use
 a development certificate suitable for sideloading on the developer machine;
 the scripted smoke check installs that package for the current user, launches
 the registered app, verifies the real client process remains alive, and removes
 the package and temporary certificate afterward.
 
-A production release must use the organization's trusted MSIX signing identity
-or Microsoft Store signing. Never commit a private certificate, password, API
-key, or signing token. The package output is under `ZWorkforceClient/out/` and
-is intentionally ignored by Git.
+The checked-in CI/release path uses a short-lived self-signed certificate for
+test and sideload artifacts; the uploaded `.cer` is public and is not a
+production trust anchor. A production release must replace that signing step
+with the organization's trusted MSIX signing identity or Microsoft Store
+signing. Never commit a private certificate, password, API key, or signing
+token. The package output is under `ZWorkforceClient/out/` and is intentionally
+ignored by Git.

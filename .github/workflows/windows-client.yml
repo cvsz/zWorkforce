@@ -5,12 +5,14 @@ on:
     paths:
       - "ZWorkforceClient/**"
       - ".github/workflows/windows-client.yml"
+      - ".github/workflows/release.yml"
       - ".github/ISSUE_TEMPLATE/windows-client-bug.yml"
       - "docs/WINDOWS-CLIENT.md"
   pull_request:
     paths:
       - "ZWorkforceClient/**"
       - ".github/workflows/windows-client.yml"
+      - ".github/workflows/release.yml"
       - ".github/ISSUE_TEMPLATE/windows-client-bug.yml"
       - "docs/WINDOWS-CLIENT.md"
   workflow_dispatch:
@@ -55,10 +57,10 @@ jobs:
         run: ./ZWorkforceClient/build/windows/Test-Client.ps1 -Configuration Release
 
       - name: Package MSIX
-        run: ./ZWorkforceClient/build/windows/Package-Client.ps1 -Configuration Release -Platform x64
+        run: ./ZWorkforceClient/build/windows/Package-Client.ps1 -Configuration Release -Platform x64 -Version 1.0.0
 
       - name: Launch smoke check
-        run: ./ZWorkforceClient/build/windows/Test-Client.ps1 -Configuration Release -LaunchSmoke
+        run: ./ZWorkforceClient/build/windows/Test-Client.ps1 -Configuration Release -ExpectedVersion 1.0.0.0 -LaunchSmoke
 
       - name: Upload Windows client package
         if: success()
