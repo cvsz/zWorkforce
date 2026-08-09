@@ -6,6 +6,9 @@ Describe the change and the production behavior it affects.
 - [ ] `python -m compileall -q zworkforce tests scripts`
 - [ ] `python -m unittest discover -s tests -v`
 - [ ] `python scripts/verify_release.py`
+- [ ] `make check` (or equivalent individual gates)
+- [ ] PostgreSQL integration run against a real service when applicable
+- [ ] No `shell=True` in runtime and no provider secrets in static assets
 - [ ] Docker/Compose or Kubernetes changes validated when applicable
 
 ## Security and operations
