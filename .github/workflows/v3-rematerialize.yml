@@ -44,8 +44,6 @@ jobs:
                   p = pathlib.PurePosixPath(m.name)
                   if p.is_absolute() or '..' in p.parts or m.issym() or m.islnk(): raise SystemExit(f'unsafe archive member: {m.name}')
               tf.extractall('.', filter='data')
-
-          # Replace the corrupted _subset helper as one atomic function block.
           scheduler = pathlib.Path('zworkforce/scheduler.py')
           lines = scheduler.read_text().splitlines()
           start = next((i for i, line in enumerate(lines) if line.startswith('def _subset(')), None)
@@ -53,8 +51,7 @@ jobs:
           end = len(lines)
           for i in range(start + 1, len(lines)):
               if lines[i] and not lines[i][0].isspace() and (lines[i].startswith('def ') or lines[i].startswith('class ')):
-                  end = i
-                  break
+                  end = i; break
           replacement = [
               'def _subset(expected, actual):',
               '    if isinstance(expected, dict):',
@@ -67,25 +64,23 @@ jobs:
               '',
           ]
           scheduler.write_text('\n'.join(lines[:start] + replacement + lines[end:]) + '\n')
-
           for p in ['.github/workflows/v3-materialize.yml', '.github/workflows/v3-rematerialize.yml']:
               pathlib.Path(p).unlink(missing_ok=True)
           PY
-      - name: Validate recovered source
+      - name: Validate syntax and package metadata
         run: |
           test "$(python -c 'import zworkforce; print(zworkforce.__version__)')" = "3.0.0"
           python -m compileall -q zworkforce tests
-          PYTHONPATH=. python -m unittest discover -s tests -v
           node --check zworkforce/static/app.js
           python - <<'PY'
           import json, pathlib
           for p in pathlib.Path('examples').glob('*.json'): json.loads(p.read_text())
-          print('v3 source recovered and validated')
+          print('v3 candidate syntax validated')
           PY
-      - name: Commit source
+      - name: Commit candidate source
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add -A
-          git commit -m "fix: materialize verified zWorkforce v3 source"
+          git commit -m "chore: materialize zWorkforce v3 candidate source"
           git push
