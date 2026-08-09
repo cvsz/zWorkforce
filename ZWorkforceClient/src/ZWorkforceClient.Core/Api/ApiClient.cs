@@ -281,7 +281,7 @@ public sealed partial class ApiClient
             throw new ArgumentException("An API route is required.", nameof(route));
         }
 
-        return route.StartsWith('/', StringComparison.Ordinal) ? route : $"/{route}";
+        return route.StartsWith("/", StringComparison.Ordinal) ? route : $"/{route}";
     }
 
     private static void AddQuery(ICollection<string> query, string name, string? value)

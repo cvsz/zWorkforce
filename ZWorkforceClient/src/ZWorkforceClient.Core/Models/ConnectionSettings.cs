@@ -28,7 +28,7 @@ public sealed record ConnectionSettings
         }
 
         var normalized = uri.AbsoluteUri;
-        if (!normalized.EndsWith('/', StringComparison.Ordinal))
+        if (!normalized.EndsWith("/", StringComparison.Ordinal))
         {
             normalized += "/";
         }
