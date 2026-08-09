@@ -36,7 +36,7 @@
   </ItemGroup>
 
   <Target Name="PrepareWindowsSdkMsixTaskRuntime"
-          BeforeTargets="_GenerateCurrentProjectAppxManifest"
+          BeforeTargets="PrepareForBuild"
           Condition="'$(EnableMsixTooling)' == 'true'">
     <MakeDir Directories="$(MsixTaskAssemblyLocation)" />
     <ItemGroup>
