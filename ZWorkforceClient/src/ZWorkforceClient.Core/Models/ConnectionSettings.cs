@@ -52,4 +52,13 @@ public sealed record ConnectionSettings
         (BaseUri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
          BaseUri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
          BaseUri.Host.Equals("::1", StringComparison.OrdinalIgnoreCase));
+
+    public void EnsureSecureTransport()
+    {
+        if (BaseUri.Scheme == Uri.UriSchemeHttp && !IsLocalHttp)
+        {
+            throw new InvalidOperationException(
+                "HTTPS is required for non-local zWorkforce servers. Plain HTTP is allowed only for localhost development.");
+        }
+    }
 }

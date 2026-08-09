@@ -21,6 +21,18 @@ public sealed class ApiClientTests
     }
 
     [Fact]
+    public void Api_client_rejects_remote_http_before_creating_an_authenticated_pipeline()
+    {
+        var handler = new RecordingHandler(_ => JsonResponse("{}"));
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            new ApiClient(new HttpClient(handler), new ConnectionSettings("http://workforce.example", "secret")));
+
+        Assert.Contains("HTTPS", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Null(handler.LastRequest);
+    }
+
+    [Fact]
     public async Task Authenticated_requests_send_bearer_and_tenant_headers()
     {
         var handler = new RecordingHandler(_ => JsonResponse("{\"items\":[]}"));
@@ -111,6 +123,22 @@ public sealed class ApiClientTests
     }
 
     [Fact]
+    public async Task Metrics_use_authenticated_text_response_without_json_parsing()
+    {
+        var handler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("zworkforce_active_tasks 1\n", Encoding.UTF8, "text/plain")
+        });
+        var client = CreateClient(handler);
+
+        var metrics = await client.GetMetricsAsync();
+
+        Assert.Contains("zworkforce_active_tasks 1", metrics);
+        Assert.Equal("/metrics", handler.LastRequest!.RequestUri!.AbsolutePath);
+        Assert.Equal("Bearer secret", handler.LastRequest.Headers.Authorization!.ToString());
+    }
+
+    [Fact]
     public async Task Agent_template_instantiation_uses_the_documented_route_and_idempotency()
     {
         var handler = new RecordingHandler(_ => JsonResponse("{\"id\":\"agent-1\"}", HttpStatusCode.Created));
@@ -179,7 +207,11 @@ public sealed class ApiClientTests
             ("/api/v1/slo", () => client.SetSloPolicyAsync(body)),
             ("/api/v1/economics", () => client.SetEconomicsAsync(body)),
             ("/api/v1/tenants", () => client.CreateTenantAsync(body)),
-            ("/api/v1/api-keys", () => client.CreateApiKeyAsync(body))
+            ("/api/v1/api-keys", () => client.CreateApiKeyAsync(body)),
+            ("/api/v1/workflow-tick", () => client.RunWorkflowTickAsync("workflow-tick-key")),
+            ("/api/v1/scheduler-tick", () => client.RunSchedulerTickAsync("scheduler-tick-key")),
+            ("/api/v1/evaluation-tick", () => client.RunEvaluationTickAsync("evaluation-tick-key")),
+            ("/api/v1/rag/reindex", () => client.ReindexRagAsync("rag-reindex-key"))
         };
 
         foreach (var route in routes)

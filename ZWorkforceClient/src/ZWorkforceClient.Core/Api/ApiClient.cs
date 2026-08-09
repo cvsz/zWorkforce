@@ -21,6 +21,7 @@ public sealed partial class ApiClient
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        _settings.EnsureSecureTransport();
         _httpClient.BaseAddress = settings.BaseUri;
         _httpClient.Timeout = TimeSpan.FromSeconds(30);
     }
@@ -38,6 +39,10 @@ public sealed partial class ApiClient
         return await GetTypedAsync<ReadinessStatus>(ApiRoutes.Ready, authenticated: false, cancellationToken)
             .ConfigureAwait(false);
     }
+
+    public Task<string> GetMetricsAsync(CancellationToken cancellationToken = default) =>
+        SendStringAsync(HttpMethod.Get, ApiRoutes.Metrics, body: null, authenticated: true,
+            idempotencyKey: null, cancellationToken, expectJson: false);
 
     public Task<JsonObject> GetOverviewAsync(CancellationToken cancellationToken = default) =>
         GetJsonAsync(ApiRoutes.Overview, cancellationToken: cancellationToken);
@@ -205,7 +210,8 @@ public sealed partial class ApiClient
         JsonObject? body,
         bool authenticated,
         string? idempotencyKey,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool expectJson = true)
     {
         using var request = new HttpRequestMessage(method, NormalizeRoute(route));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -244,17 +250,21 @@ public sealed partial class ApiClient
             throw new InvalidOperationException("The zWorkforce server could not be reached.", exception);
         }
 
-        await using var responseContent = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        using var document = await JsonDocument.ParseAsync(responseContent, cancellationToken: cancellationToken)
-            .ConfigureAwait(false);
-        var raw = document.RootElement.GetRawText();
+        var raw = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
         {
-            throw CreateApiException(response.StatusCode, document.RootElement);
+            using var errorDocument = JsonDocument.Parse(raw);
+            throw CreateApiException(response.StatusCode, errorDocument.RootElement);
         }
 
-        return raw;
+        if (!expectJson)
+        {
+            return raw;
+        }
+
+        using var document = JsonDocument.Parse(raw);
+        return document.RootElement.GetRawText();
     }
 
     private static ApiException CreateApiException(HttpStatusCode statusCode, JsonElement root)

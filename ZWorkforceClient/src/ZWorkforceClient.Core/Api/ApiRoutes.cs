@@ -4,6 +4,7 @@ public static class ApiRoutes
 {
     public const string Health = "/health";
     public const string Ready = "/ready";
+    public const string Metrics = "/metrics";
     public const string Overview = "/api/v1/overview";
     public const string Providers = "/api/v1/providers";
     public const string Models = "/api/v1/models";

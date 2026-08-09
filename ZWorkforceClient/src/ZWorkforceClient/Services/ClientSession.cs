@@ -36,6 +36,7 @@ public sealed class ClientSession : IDisposable
         {
             throw new InvalidOperationException("Enter an API key before connecting.");
         }
+        connection.EnsureSecureTransport();
 
         var httpClient = new HttpClient();
         var client = new ApiClient(httpClient, connection);

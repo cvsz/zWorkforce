@@ -98,9 +98,13 @@ if ($LaunchSmoke) {
 
         if ($null -ne $certificate) {
             Write-Host "Trusting the temporary package certificate for this smoke check."
+            $certificateDetails = Get-PfxCertificate -FilePath $certificate.FullName
+            if ($null -eq $certificateDetails -or [string]::IsNullOrWhiteSpace($certificateDetails.Thumbprint)) {
+                throw "Could not read the temporary package certificate thumbprint from $($certificate.FullName)."
+            }
             $quotedCertificatePath = '"' + $certificate.FullName + '"'
             Invoke-Certutil @("-f", "-addstore", "TrustedPeople", $quotedCertificatePath)
-            $importedCertificateThumbprint = $certificate.Thumbprint
+            $importedCertificateThumbprint = $certificateDetails.Thumbprint.Replace(' ', '').ToUpperInvariant()
         }
 
         Write-Host "Installing the packaged client."
@@ -146,8 +150,14 @@ if ($LaunchSmoke) {
         if ($null -ne $importedCertificateThumbprint) {
             try {
                 Invoke-Certutil @("-delstore", "TrustedPeople", $importedCertificateThumbprint)
+                $remainingCertificates = @(Get-ChildItem -Path "Cert:\LocalMachine\TrustedPeople" -ErrorAction Stop |
+                    Where-Object { $_.Thumbprint.Replace(' ', '').ToUpperInvariant() -eq $importedCertificateThumbprint })
+                if ($remainingCertificates.Count -ne 0) {
+                    throw "The temporary package certificate $importedCertificateThumbprint is still present in the machine Trusted People store."
+                }
+                Write-Host "Removed the temporary package certificate from the machine Trusted People store."
             } catch {
-                Write-Warning "Could not remove the temporary package certificate: $($_.Exception.Message)"
+                throw "Could not remove the temporary package certificate: $($_.Exception.Message)"
             }
         }
     }
