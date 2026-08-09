@@ -40,9 +40,9 @@
           Condition="'$(EnableMsixTooling)' == 'true'">
     <MakeDir Directories="$(MsixTaskAssemblyLocation)" />
     <ItemGroup>
-      <_MsixTaskRuntimeFiles Include="$(PkgMicrosoft_Windows_SDK_BuildTools_MSIX)tools\net6.0\*.dll" />
-      <_MsixTaskRuntimeFiles Include="$(PkgSystem_Security_Permissions)lib\net6.0\System.Security.Permissions.dll" />
-      <_MsixTaskRuntimeFiles Include="$(PkgSystem_Windows_Extensions)lib\net6.0\System.Windows.Extensions.dll" />
+      <_MsixTaskRuntimeFiles Include="$(PkgMicrosoft_Windows_SDK_BuildTools_MSIX)\tools\net6.0\*.dll" />
+      <_MsixTaskRuntimeFiles Include="$(PkgSystem_Security_Permissions)\lib\net6.0\System.Security.Permissions.dll" />
+      <_MsixTaskRuntimeFiles Include="$(PkgSystem_Windows_Extensions)\lib\net6.0\System.Windows.Extensions.dll" />
     </ItemGroup>
     <Copy SourceFiles="@(_MsixTaskRuntimeFiles)"
           DestinationFolder="$(MsixTaskAssemblyLocation)"
