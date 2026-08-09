@@ -172,10 +172,10 @@ the scripted smoke check installs that package for the current user, launches
 the registered app, verifies the real client process remains alive, and removes
 the package and temporary certificate afterward.
 
-The checked-in CI/release path uses a short-lived self-signed certificate for
-test and sideload artifacts; the uploaded `.cer` is public and is not a
-production trust anchor. A production release must replace that signing step
-with the organization's trusted MSIX signing identity or Microsoft Store
-signing. Never commit a private certificate, password, API key, or signing
-token. The package output is under `ZWorkforceClient/out/` and is intentionally
-ignored by Git.
+The checked-in pull-request path uses a short-lived self-signed certificate
+for test and sideload artifacts; the uploaded `.cer` is public and is not a
+production trust anchor. The release workflow is fail-closed and requires the
+organization's trusted PFX signing identity through the documented GitHub
+secrets before it can publish a release MSIX. Never commit a private
+certificate, password, API key, or signing token. The package output is under
+`ZWorkforceClient/out/` and is intentionally ignored by Git.

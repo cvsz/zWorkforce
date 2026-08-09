@@ -41,6 +41,24 @@ Do not move or reuse an existing release tag. Publish a new patch/minor/major ve
 
 Production deployments should pin the semantic tag or image digest, never `latest`.
 
+## Trusted Windows signing
+
+The pull-request Windows workflow deliberately uses a short-lived self-signed
+certificate for package installation smoke tests. A release tag is
+fail-closed unless the repository or protected release environment provides:
+
+- `WINDOWS_MSIX_PFX_BASE64`: base64-encoded organization-issued MSIX signing
+  PFX containing its private key;
+- `WINDOWS_MSIX_PFX_PASSWORD`: the PFX password; and optionally
+- `WINDOWS_MSIX_PUBLISHER`: the exact certificate subject to use as the MSIX
+  publisher (otherwise the package script derives it from the certificate).
+
+The release workflow imports the PFX only on the ephemeral Windows runner,
+patches the package publisher to match the signing identity, and publishes
+only the public `.cer` beside the MSIX. Never commit the PFX, password, or a
+base64 value to the repository. A missing or invalid signing secret blocks the
+release instead of producing a package that users cannot trust.
+
 ## Release verification
 
 After the workflow finishes:

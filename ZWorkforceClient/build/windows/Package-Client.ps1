@@ -13,9 +13,13 @@ $root = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
 $appProject = Join-Path $root "src\ZWorkforceClient\ZWorkforceClient.csproj"
 $manifestPath = Join-Path $root "src\ZWorkforceClient\Package.appxmanifest"
 $output = Join-Path $root "out\$Configuration-$Platform"
-$pfxPath = Join-Path $output "zworkforce-client-temporary.pfx"
+$temporaryPfxPath = Join-Path $output "zworkforce-client-temporary.pfx"
 $cerPath = Join-Path $output "zworkforce-client-temporary.cer"
 $normalizedVersion = $Version.TrimStart("v")
+$signingPfxPath = $env:ZWORKFORCE_MSIX_SIGNING_PFX_PATH
+$signingPfxPassword = $env:ZWORKFORCE_MSIX_SIGNING_PFX_PASSWORD
+$signingPublisher = $env:ZWORKFORCE_MSIX_SIGNING_PUBLISHER
+$requireTrustedSigning = $env:ZWORKFORCE_MSIX_REQUIRE_TRUSTED_SIGNING -in @("1", "true", "TRUE", "True")
 $packageVersion = if ($normalizedVersion.Split(".").Count -eq 3) {
     "$normalizedVersion.0"
 } else {
@@ -29,12 +33,23 @@ if ($packageVersion.Split(".") | Where-Object { [int]$_ -gt 65535 }) {
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 
 $certificate = $null
+$generatedSigningCertificate = $false
+$certificatePassword = $null
+$pfxPath = $null
 $originalManifestBytes = [IO.File]::ReadAllBytes($manifestPath)
 try {
     Get-ChildItem -LiteralPath $output -Force -ErrorAction SilentlyContinue |
         Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
     $manifestText = [Text.Encoding]::UTF8.GetString($originalManifestBytes)
+    $hasSigningPfxPath = -not [string]::IsNullOrWhiteSpace($signingPfxPath)
+    $hasSigningPfxPassword = -not [string]::IsNullOrWhiteSpace($signingPfxPassword)
+    if ($hasSigningPfxPath -xor $hasSigningPfxPassword) {
+        throw "Both ZWORKFORCE_MSIX_SIGNING_PFX_PATH and ZWORKFORCE_MSIX_SIGNING_PFX_PASSWORD are required for an external MSIX signing identity."
+    }
+    if ($requireTrustedSigning -and -not $hasSigningPfxPath) {
+        throw "Trusted MSIX signing is required for this build, but no signing PFX was supplied. Configure the release signing secrets."
+    }
     $identityPattern = '(<Identity\b[^>]*\bVersion=")[^"]+(")'
     if (-not [regex]::Match($manifestText, $identityPattern).Success) {
         throw "Could not locate the package Identity Version in $manifestPath."
@@ -45,19 +60,62 @@ try {
         ('${1}' + $packageVersion + '${2}'),
         1
     )
-    [IO.File]::WriteAllText($manifestPath, $versionedManifest, [Text.UTF8Encoding]::new($false))
+    if ($hasSigningPfxPath) {
+        if (-not (Test-Path -LiteralPath $signingPfxPath -PathType Leaf)) {
+            throw "The configured MSIX signing PFX was not found at $signingPfxPath."
+        }
+        try {
+            $certificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+                $signingPfxPath,
+                $signingPfxPassword,
+                [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet)
+        } catch {
+            throw "The configured MSIX signing PFX could not be opened: $($_.Exception.Message)"
+        }
+        if (-not $certificate.HasPrivateKey) {
+            throw "The configured MSIX signing PFX does not contain a private key."
+        }
+        if ($certificate.NotAfter -le (Get-Date)) {
+            throw "The configured MSIX signing certificate is expired."
+        }
+        $pfxPath = $signingPfxPath
+        $certificatePassword = $signingPfxPassword
+        Export-Certificate -Cert $certificate -FilePath $cerPath -Force | Out-Null
+    } else {
+        $certificate = New-SelfSignedCertificate `
+            -Type CodeSigningCert `
+            -Subject "CN=cvsz" `
+            -FriendlyName "zWorkforce Client temporary package signing" `
+            -CertStoreLocation "Cert:\CurrentUser\My" `
+            -KeyExportPolicy Exportable `
+            -NotAfter (Get-Date).AddDays(7)
+        $generatedSigningCertificate = $true
+        $certificatePassword = [Guid]::NewGuid().ToString("N")
+        $secureCertificatePassword = ConvertTo-SecureString $certificatePassword -AsPlainText -Force
+        Export-PfxCertificate -Cert $certificate -FilePath $temporaryPfxPath -Password $secureCertificatePassword | Out-Null
+        Export-Certificate -Cert $certificate -FilePath $cerPath -Force | Out-Null
+        $pfxPath = $temporaryPfxPath
+    }
 
-    $certificate = New-SelfSignedCertificate `
-        -Type CodeSigningCert `
-        -Subject "CN=cvsz" `
-        -FriendlyName "zWorkforce Client temporary package signing" `
-        -CertStoreLocation "Cert:\CurrentUser\My" `
-        -KeyExportPolicy Exportable `
-        -NotAfter (Get-Date).AddDays(7)
-    $certificatePassword = [Guid]::NewGuid().ToString("N")
-    $secureCertificatePassword = ConvertTo-SecureString $certificatePassword -AsPlainText -Force
-    Export-PfxCertificate -Cert $certificate -FilePath $pfxPath -Password $secureCertificatePassword | Out-Null
-    Export-Certificate -Cert $certificate -FilePath $cerPath | Out-Null
+    $publisher = if ([string]::IsNullOrWhiteSpace($signingPublisher)) {
+        $certificate.Subject
+    } else {
+        $signingPublisher.Trim()
+    }
+    if ([string]::IsNullOrWhiteSpace($publisher)) {
+        throw "The MSIX signing certificate does not provide a publisher subject."
+    }
+    $identityPublisherPattern = '(<Identity\b[^>]*\bPublisher=")[^"]+(")'
+    if (-not [regex]::Match($versionedManifest, $identityPublisherPattern).Success) {
+        throw "Could not locate the package Identity Publisher in $manifestPath."
+    }
+    $versionedManifest = [regex]::Replace(
+        $versionedManifest,
+        $identityPublisherPattern,
+        ('${1}' + $publisher + '${2}'),
+        1
+    )
+    [IO.File]::WriteAllText($manifestPath, $versionedManifest, [Text.UTF8Encoding]::new($false))
 
     $publishArguments = @(
         "publish", $appProject,
@@ -82,10 +140,12 @@ try {
 }
 finally {
     [IO.File]::WriteAllBytes($manifestPath, $originalManifestBytes)
-    if ($null -ne $certificate) {
+    if ($generatedSigningCertificate -and $null -ne $certificate) {
         Remove-Item -LiteralPath "Cert:\CurrentUser\My\$($certificate.Thumbprint)" -Force -ErrorAction SilentlyContinue
     }
-    Remove-Item -LiteralPath $pfxPath -Force -ErrorAction SilentlyContinue
+    if ($generatedSigningCertificate) {
+        Remove-Item -LiteralPath $temporaryPfxPath -Force -ErrorAction SilentlyContinue
+    }
 }
 
 $package = Get-ChildItem -LiteralPath $output -Recurse -File -ErrorAction SilentlyContinue |
