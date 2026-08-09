@@ -38,7 +38,7 @@ try {
     $versionedManifest = [regex]::Replace(
         $manifestText,
         '(<Identity\b[^>]*\bVersion=")[^"]+(")',
-        ('$1' + $packageVersion + '$2'),
+        ('${1}' + $packageVersion + '${2}'),
         1
     )
     if ($versionedManifest -eq $manifestText) {
