@@ -5,7 +5,7 @@
     xmlns:local="using:ZWorkforceClient.Pages">
     <Grid Padding="{ThemeResource PagePaddingThickness}" RowSpacing="14">
         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-        <Grid ColumnSpacing="12"><StackPanel Spacing="4"><TextBlock Text="WORKFORCE" Style="{StaticResource CaptionTextBlockStyle}" /><TextBlock Text="Agents" Style="{StaticResource TitleTextBlockStyle}" /></StackPanel><Button Grid.Column="1" Content="Refresh" Click="OnRefreshClick" /></Grid>
+        <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><StackPanel Spacing="4"><TextBlock Text="WORKFORCE" Style="{StaticResource CaptionTextBlockStyle}" /><TextBlock Text="Agents" Style="{StaticResource TitleTextBlockStyle}" /></StackPanel><Button Grid.Column="1" Content="Refresh" Click="OnRefreshClick" /></Grid>
         <InfoBar Grid.Row="1" x:Name="AgentsInfo" IsOpen="False" IsClosable="False" />
         <ListView Grid.Row="2" x:Name="AgentsList" AutomationProperties.Name="Agents">
             <ListView.ItemTemplate>

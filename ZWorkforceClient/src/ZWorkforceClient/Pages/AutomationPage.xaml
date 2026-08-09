@@ -5,7 +5,7 @@
     xmlns:local="using:ZWorkforceClient.Pages">
     <Grid Padding="{ThemeResource PagePaddingThickness}" RowSpacing="14">
         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-        <Grid ColumnSpacing="12"><StackPanel Spacing="4"><TextBlock Text="AUTOMATION" Style="{StaticResource CaptionTextBlockStyle}" /><TextBlock Text="Workflows and schedules" Style="{StaticResource TitleTextBlockStyle}" /></StackPanel><Button Grid.Column="1" Content="Refresh" Click="OnRefreshClick" /></Grid>
+        <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><StackPanel Spacing="4"><TextBlock Text="AUTOMATION" Style="{StaticResource CaptionTextBlockStyle}" /><TextBlock Text="Workflows and schedules" Style="{StaticResource TitleTextBlockStyle}" /></StackPanel><Button Grid.Column="1" Content="Refresh" Click="OnRefreshClick" /></Grid>
         <InfoBar Grid.Row="1" x:Name="AutomationInfo" IsOpen="False" IsClosable="False" />
         <TabView Grid.Row="2" x:Name="AutomationTabs" SelectionChanged="OnTabChanged">
             <TabViewItem Header="Workflows" Tag="workflows"><ListView x:Name="WorkflowsList" /></TabViewItem>

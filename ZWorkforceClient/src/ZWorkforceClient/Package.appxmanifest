@@ -20,7 +20,6 @@
   <Applications>
     <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        AppListEntry="none"
         DisplayName="zWorkforce Client"
         Description="Windows 11 operator client for zWorkforce"
         BackgroundColor="transparent"

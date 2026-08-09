@@ -14,6 +14,16 @@ public sealed partial class MainWindow : Window
         NavigateTo("connection");
     }
 
+    public void ApplyTheme(string theme)
+    {
+        RootNavigationView.RequestedTheme = theme switch
+        {
+            "light" => ElementTheme.Light,
+            "dark" => ElementTheme.Dark,
+            _ => ElementTheme.Default
+        };
+    }
+
     public void NavigateTo(string tag)
     {
         if (_isNavigating)

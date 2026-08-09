@@ -24,7 +24,7 @@
                     </ComboBox>
                 </StackPanel>
             </Border>
-            <TextBlock Text="zWorkforce Client 1.0.0 · API keys remain server-side and are stored locally only in Windows Credential Manager when you opt in." TextWrapping="Wrap" Opacity="0.7" />
+            <TextBlock x:Name="ClientVersionText" Text="zWorkforce Client · API keys remain server-side and are stored locally only in Windows Credential Manager when you opt in." TextWrapping="Wrap" Opacity="0.7" />
         </StackPanel>
     </ScrollViewer>
 </local:PageBase>

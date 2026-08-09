@@ -20,6 +20,7 @@ public partial class App : Application
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         MainWindow = new MainWindow();
+        MainWindow.ApplyTheme(Session.Settings.Theme);
         MainWindow.Activate();
     }
 }

@@ -16,10 +16,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  release:
+  prepare-release:
     outputs:
       version: ${{ steps.meta.outputs.version }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -68,52 +72,13 @@ jobs:
         with:
           subject-path: "dist/*"
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Build and push OCI image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          push: true
-          build-args: |
-            VERSION=${{ steps.meta.outputs.version }}
-          tags: |
-            ghcr.io/cvsz/zworkforce:${{ github.ref_name }}
-            ghcr.io/cvsz/zworkforce:${{ steps.meta.outputs.version }}
-            ghcr.io/cvsz/zworkforce:latest
-          provenance: mode=max
-          sbom: true
-
-      - name: Create or update GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
-          else
-            gh release create "$GITHUB_REF_NAME" dist/* \
-              --verify-tag \
-              --title "zWorkforce $GITHUB_REF_NAME" \
-              --generate-notes
-          fi
-
   windows-client:
     name: Windows client release
-    needs: release
+    needs: prepare-release
     runs-on: windows-latest
     timeout-minutes: 35
     permissions:
-      contents: write
+      contents: read
     env:
       DOTNET_NOLOGO: true
       DOTNET_CLI_TELEMETRY_OPTOUT: true
@@ -170,11 +135,11 @@ jobs:
         run: ./ZWorkforceClient/build/windows/Test-Client.ps1 -Configuration Release
 
       - name: Package versioned MSIX
-        run: ./ZWorkforceClient/build/windows/Package-Client.ps1 -Configuration Release -Platform x64 -Version "${{ needs.release.outputs.version }}"
+        run: ./ZWorkforceClient/build/windows/Package-Client.ps1 -Configuration Release -Platform x64 -Version "${{ needs.prepare-release.outputs.version }}"
 
       - name: Launch smoke check
         timeout-minutes: 8
-        run: ./ZWorkforceClient/build/windows/Test-Client.ps1 -Configuration Release -ExpectedVersion "${{ needs.release.outputs.version }}.0" -LaunchSmoke
+        run: ./ZWorkforceClient/build/windows/Test-Client.ps1 -Configuration Release -ExpectedVersion "${{ needs.prepare-release.outputs.version }}.0" -LaunchSmoke
 
       - name: Generate Windows checksums
         run: |
@@ -191,21 +156,6 @@ jobs:
                   "$hash  $($package.Name)`n",
                   [Text.UTF8Encoding]::new($false)
               )
-          }
-
-      - name: Upload Windows release assets
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $packageDirectory = Join-Path $PWD "ZWorkforceClient\out\Release-x64"
-          $assets = @(Get-ChildItem -LiteralPath $packageDirectory -File |
-              Where-Object { $_.Extension -in ".msix", ".msixbundle", ".cer", ".sha256" })
-          if ($assets.Count -eq 0) {
-              throw "No Windows release assets were produced."
-          }
-          & gh release upload $env:GITHUB_REF_NAME ($assets | Select-Object -ExpandProperty FullName) --clobber
-          if ($LASTEXITCODE -ne 0) {
-              throw "Uploading Windows release assets failed with exit code $LASTEXITCODE."
           }
 
       - name: Upload Windows release artifact
@@ -230,3 +180,86 @@ jobs:
             ZWorkforceClient/out/**
           if-no-files-found: warn
           retention-days: 14
+
+  publish:
+    name: Publish release
+    needs: [prepare-release, windows-client]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download Python release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: zworkforce-${{ github.ref_name }}
+          path: dist
+
+      - name: Download Windows release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: zworkforce-windows-client-${{ github.ref_name }}
+          path: windows-assets
+
+      - name: Verify staged release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def require(pattern, root):
+              matches = [path for path in Path(root).rglob(pattern) if path.is_file() and path.stat().st_size > 0]
+              assert matches, f"missing non-empty {pattern} under {root}"
+
+          require("SHA256SUMS", "dist")
+          try:
+              require("*.msix", "windows-assets")
+          except AssertionError:
+              require("*.msixbundle", "windows-assets")
+          require("*.cer", "windows-assets")
+          require("*.sha256", "windows-assets")
+          PY
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build and push OCI image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          build-args: |
+            VERSION=${{ needs.prepare-release.outputs.version }}
+          tags: |
+            ghcr.io/cvsz/zworkforce:${{ github.ref_name }}
+            ghcr.io/cvsz/zworkforce:${{ needs.prepare-release.outputs.version }}
+            ghcr.io/cvsz/zworkforce:latest
+          provenance: mode=max
+          sbom: true
+
+      - name: Create or update GitHub Release with all platform assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t assets < <(find dist windows-assets -type f -print)
+          ((${#assets[@]} > 0))
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "${assets[@]}" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "${assets[@]}" \
+              --verify-tag \
+              --title "zWorkforce $GITHUB_REF_NAME" \
+              --generate-notes
+          fi

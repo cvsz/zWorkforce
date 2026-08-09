@@ -30,19 +30,26 @@ public sealed partial class ApiClient
 
     public async Task<HealthStatus> GetHealthAsync(CancellationToken cancellationToken = default)
     {
-        return await GetTypedAsync<HealthStatus>(ApiRoutes.Health, authenticated: false, cancellationToken)
+        return await GetTypedAsync<HealthStatus>(
+                ApiRoutes.Health,
+                authenticated: false,
+                cancellationToken: cancellationToken)
             .ConfigureAwait(false);
     }
 
     public async Task<ReadinessStatus> GetReadinessAsync(CancellationToken cancellationToken = default)
     {
-        return await GetTypedAsync<ReadinessStatus>(ApiRoutes.Ready, authenticated: false, cancellationToken)
+        return await GetTypedAsync<ReadinessStatus>(
+                ApiRoutes.Ready,
+                authenticated: false,
+                cancellationToken: cancellationToken,
+                toleratedStatusCode: HttpStatusCode.ServiceUnavailable)
             .ConfigureAwait(false);
     }
 
     public Task<string> GetMetricsAsync(CancellationToken cancellationToken = default) =>
         SendStringAsync(HttpMethod.Get, ApiRoutes.Metrics, body: null, authenticated: true,
-            idempotencyKey: null, cancellationToken, expectJson: false);
+            idempotencyKey: null, cancellationToken: cancellationToken, expectJson: false);
 
     public Task<JsonObject> GetOverviewAsync(CancellationToken cancellationToken = default) =>
         GetJsonAsync(ApiRoutes.Overview, cancellationToken: cancellationToken);
@@ -181,10 +188,19 @@ public sealed partial class ApiClient
         GetJsonAsync($"{ApiRoutes.Capacity}?hours={Math.Clamp(hours, 1, 8760)}", cancellationToken: cancellationToken);
 
     private async Task<T> GetTypedAsync<T>(
-        string route, bool authenticated, CancellationToken cancellationToken)
+        string route,
+        bool authenticated,
+        CancellationToken cancellationToken,
+        HttpStatusCode? toleratedStatusCode = null)
     {
         var payload = await SendStringAsync(
-            HttpMethod.Get, route, body: null, authenticated, idempotencyKey: null, cancellationToken)
+            HttpMethod.Get,
+            route,
+            body: null,
+            authenticated: authenticated,
+            idempotencyKey: null,
+            cancellationToken: cancellationToken,
+            toleratedStatusCode: toleratedStatusCode)
             .ConfigureAwait(false);
         return JsonSerializer.Deserialize<T>(payload, SerializerOptions)
                ?? throw new InvalidOperationException($"The server returned an empty {typeof(T).Name} response.");
@@ -211,7 +227,8 @@ public sealed partial class ApiClient
         bool authenticated,
         string? idempotencyKey,
         CancellationToken cancellationToken,
-        bool expectJson = true)
+        bool expectJson = true,
+        HttpStatusCode? toleratedStatusCode = null)
     {
         using var request = new HttpRequestMessage(method, NormalizeRoute(route));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -252,7 +269,7 @@ public sealed partial class ApiClient
 
         var raw = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
-        if (!response.IsSuccessStatusCode)
+        if (!response.IsSuccessStatusCode && response.StatusCode != toleratedStatusCode)
         {
             using var errorDocument = JsonDocument.Parse(raw);
             throw CreateApiException(response.StatusCode, errorDocument.RootElement);
@@ -291,7 +308,10 @@ public sealed partial class ApiClient
             throw new ArgumentException("An API route is required.", nameof(route));
         }
 
-        return route.StartsWith("/", StringComparison.Ordinal) ? route : $"/{route}";
+        // HttpClient resolves a relative request against BaseAddress. Trimming
+        // the leading slash preserves an operator-configured reverse-proxy
+        // prefix such as https://host/zworkforce/.
+        return route.TrimStart('/');
     }
 
     private static void AddQuery(ICollection<string> query, string name, string? value)

@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Any
 
-from .db_base import json_dumps, utcnow
+from .db_base import json_dumps, json_loads, utcnow
 
 
 def _decode_json_rows(rows):
@@ -101,6 +101,7 @@ class AutomationMixin:
         idempotency_key = str(idempotency_key or "").strip()
         run_id = str(uuid.uuid4())
         now = utcnow()
+        request_hash = self._workflow_request_hash(workflow, actor, input_data)
         with self.connection() as c:
             c.execute("BEGIN IMMEDIATE")
             try:
@@ -110,6 +111,8 @@ class AutomationMixin:
                         (tenant_id, idempotency_key),
                     ).fetchone()
                     if existing:
+                        if self._workflow_request_hash_from_row(existing) != request_hash:
+                            raise ValueError("idempotency key was already used with a different workflow request")
                         c.execute("COMMIT")
                         return self._decode(dict(existing))
                 c.execute(
@@ -134,9 +137,31 @@ class AutomationMixin:
                         (tenant_id, idempotency_key),
                     ).fetchone()
                     if existing:
+                        if self._workflow_request_hash_from_row(existing) != request_hash:
+                            raise ValueError("idempotency key was already used with a different workflow request")
                         return self._decode(dict(existing))
                 raise
         return self.get_workflow_run(tenant_id, run_id) or {}
+
+    @staticmethod
+    def _workflow_request_hash(workflow: dict[str, Any], actor: str, input_data: dict[str, Any]) -> str:
+        material = json_dumps({
+            "workflow_id": str(workflow["id"]),
+            "workflow_version": int(workflow["version"]),
+            "actor": str(actor),
+            "input": input_data,
+        }).encode("utf-8")
+        return hashlib.sha256(material).hexdigest()
+
+    @classmethod
+    def _workflow_request_hash_from_row(cls, row: Any) -> str:
+        material = json_dumps({
+            "workflow_id": str(row["workflow_id"]),
+            "workflow_version": int(row["workflow_version"]),
+            "actor": str(row["actor"]),
+            "input": json_loads(row["input_json"], {}),
+        }).encode("utf-8")
+        return hashlib.sha256(material).hexdigest()
 
     def get_workflow_run(self, tenant_id: str, run_id: str) -> dict[str, Any] | None:
         with self.connection() as c:

@@ -43,6 +43,17 @@ class ProductionFixesTests(unittest.TestCase):
         self.assertEqual(first["id"], second["id"])
         self.assertEqual(len(self.db.list_workflow_runs("default")), 1)
 
+    def test_workflow_idempotency_key_rejects_a_different_request(self):
+        workflow = WorkflowOrchestrator(self.db, self.engine)
+        workflow.upsert("default", {
+            "id": "scheduled",
+            "definition": {"steps": [{"id": "a", "agent_id": "researcher", "prompt": "run"}]},
+        }, "test")
+
+        workflow.start("default", "scheduled", {"occurrence": 1}, "scheduler", idempotency_key="same-key")
+        with self.assertRaisesRegex(ValueError, "different workflow request"):
+            workflow.start("default", "scheduled", {"occurrence": 2}, "scheduler", idempotency_key="same-key")
+
     def test_scheduler_dispatch_passes_workflow_occurrence_key(self):
         workflow = WorkflowOrchestrator(self.db, self.engine)
         workflow.upsert("default", {
@@ -118,7 +129,7 @@ class ProductionFixesTests(unittest.TestCase):
             result = dispatcher.tick(owner_id="outbox-test")
 
         self.assertEqual(result["delivered"], 1)
-        self.assertEqual(db.claim, ("outbox-test", dispatcher.claim_lease_seconds, 100))
+        self.assertEqual(db.claim, ("outbox-test", dispatcher.claim_lease_seconds, dispatcher._claim_limit(100)))
         self.assertEqual(db.finished, [("delivery-1", True, "outbox-test")])
 
     def test_existing_v3_database_gets_v4_columns(self):

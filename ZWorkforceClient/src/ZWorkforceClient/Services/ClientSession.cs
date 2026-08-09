@@ -42,6 +42,9 @@ public sealed class ClientSession : IDisposable
         var client = new ApiClient(httpClient, connection);
         await client.GetHealthAsync(cancellationToken).ConfigureAwait(false);
         var readiness = await client.GetReadinessAsync(cancellationToken).ConfigureAwait(false);
+        // Health and readiness are intentionally public. Validate the supplied
+        // credential against an authenticated read before persisting it.
+        await client.GetOverviewAsync(cancellationToken).ConfigureAwait(false);
 
         _httpClient?.Dispose();
         _httpClient = httpClient;

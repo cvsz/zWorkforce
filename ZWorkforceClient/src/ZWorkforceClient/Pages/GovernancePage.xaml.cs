@@ -65,7 +65,7 @@ public sealed partial class GovernancePage : PageBase
         {
             target.Add(new ResourceRow(
                 JsonModels.String(item, titleKey, JsonModels.String(item, "id", "Record")),
-                JsonModels.String(item, detailKey, ""),
+                JsonModels.Display(item[detailKey]),
                 JsonModels.String(item, "status", JsonModels.String(item, "effect", "available"))));
         }
     }

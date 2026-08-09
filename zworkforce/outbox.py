@@ -21,6 +21,14 @@ class OutboxDispatcher:
         self.owner_id=f"outbox-{socket.gethostname()}-{uuid.uuid4().hex[:8]}"
         self.claim_lease_seconds=max(30,self.timeout_seconds*2)
 
+    def _claim_limit(self, requested: int) -> int:
+        requested = max(1, min(int(requested), 500))
+        # A claim is processed serially. Keep the worst-case request time
+        # inside the lease so another worker cannot reclaim later items while
+        # this dispatcher is still delivering the earlier ones.
+        safe_seconds = max(1, self.claim_lease_seconds - 5)
+        return min(requested, max(1, safe_seconds // self.timeout_seconds))
+
     def sign(self,payload:bytes)->str:return hmac.new(self.secret,payload,hashlib.sha256).hexdigest() if self.secret else ""
 
     def _validate_destination(self,url:str)->None:
@@ -38,7 +46,7 @@ class OutboxDispatcher:
     def tick(self,limit:int=100,owner_id:str|None=None)->dict[str,int]:
         stats={"delivered":0,"failed":0}
         owner_id=owner_id or self.owner_id
-        for item in self.db.claim_outbox(owner_id,self.claim_lease_seconds,limit):
+        for item in self.db.claim_outbox(owner_id,self.claim_lease_seconds,self._claim_limit(limit)):
             raw=json.dumps(item.get("payload") or {},separators=(",",":"),ensure_ascii=False,sort_keys=True).encode("utf-8")
             headers={"Content-Type":"application/json","User-Agent":"zWorkforce-outbox/3","X-ZWorkforce-Topic":item["topic"],"X-ZWorkforce-Tenant":item["tenant_id"],"X-ZWorkforce-Delivery-ID":item["id"]}
             signature=item.get("signature") or self.sign(raw)

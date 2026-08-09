@@ -39,6 +39,10 @@ Do not move or reuse an existing release tag. Publish a new patch/minor/major ve
 - OCI provenance and SBOM from BuildKit;
 - GitHub Release with generated release notes and attached artifacts.
 
+The workflow stages the Python artifacts and trusted Windows MSIX in separate
+jobs, then publishes the GHCR image and GitHub Release only after both jobs
+pass. A failed Windows build therefore cannot leave a public partial release.
+
 Production deployments should pin the semantic tag or image digest, never `latest`.
 
 ## Trusted Windows signing

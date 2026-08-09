@@ -47,6 +47,19 @@ public sealed class ApiClientTests
     }
 
     [Fact]
+    public async Task Base_path_prefix_is_preserved_for_api_routes()
+    {
+        var handler = new RecordingHandler(_ => JsonResponse("{\"credits_24h\":0}"));
+        var client = new ApiClient(
+            new HttpClient(handler),
+            new ConnectionSettings("https://workforce.example/zworkforce/", "secret"));
+
+        await client.GetOverviewAsync();
+
+        Assert.Equal("/zworkforce/api/v1/overview", handler.LastRequest!.RequestUri!.AbsolutePath);
+    }
+
+    [Fact]
     public async Task Public_health_does_not_require_credentials()
     {
         var handler = new RecordingHandler(_ => JsonResponse("{\"status\":\"ok\",\"version\":\"3.0.2\"}"));
@@ -120,6 +133,30 @@ public sealed class ApiClientTests
         Assert.Equal("postgresql", ready.DatabaseBackend);
         Assert.Single(ready.Providers);
         Assert.Equal("primary", ready.Providers[0].Name);
+    }
+
+    [Fact]
+    public async Task Readiness_parses_the_expected_503_not_ready_response()
+    {
+        var handler = new RecordingHandler(_ => JsonResponse(
+            "{\"status\":\"not_ready\",\"database\":false,\"database_backend\":\"postgresql\",\"providers\":[]}",
+            HttpStatusCode.ServiceUnavailable));
+        var client = CreateClient(handler);
+
+        var ready = await client.GetReadinessAsync();
+
+        Assert.False(ready.IsReady);
+        Assert.False(ready.Database);
+        Assert.Equal("postgresql", ready.DatabaseBackend);
+        Assert.Empty(ready.Providers);
+    }
+
+    [Fact]
+    public void Json_models_display_numeric_governance_values()
+    {
+        var item = new JsonObject { ["limit_credits"] = 12.5 };
+
+        Assert.Equal("12.5", JsonModels.Display(item["limit_credits"]));
     }
 
     [Fact]
