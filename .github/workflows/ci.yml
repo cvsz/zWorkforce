@@ -87,6 +87,21 @@ jobs:
           assert data['metadata']['component']['name']=='zworkforce'
           assert data['metadata']['component']['version']=='3.0.0'
           PY
+      - name: Exercise deployment smoke script
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZWORKFORCE_ENV=development \
+          ZWORKFORCE_DATA_DIR=/tmp/zworkforce-smoke \
+          ZWORKFORCE_WORKSPACE_ROOT="$PWD" \
+          zworkforce serve >/tmp/zworkforce-smoke.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for _ in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:9569/health >/dev/null; then break; fi
+            sleep 0.25
+          done
+          ZWORKFORCE_BASE_URL=http://127.0.0.1:9569 bash scripts/smoke-test.sh
       - name: Render production Compose
         env:
           ZWORKFORCE_POSTGRES_PASSWORD: ci-only-password
