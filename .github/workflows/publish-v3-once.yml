@@ -36,7 +36,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git fetch origin main --tags --force
+          git fetch origin main:refs/remotes/origin/main --tags --force
           git merge-base --is-ancestor "$RELEASE_SHA" refs/remotes/origin/main
           git checkout --detach "$RELEASE_SHA"
           test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
@@ -57,11 +57,16 @@ jobs:
           fi
 
       - name: Build Python distributions
+        shell: bash
         run: |
+          set -euo pipefail
           python -m pip install --upgrade pip build
           python -m build
           python -m pip install dist/*.whl
-          test "$(zworkforce --version | tail -n1 | tr -d '\r')" = "$RELEASE_VERSION" || zworkforce --version
+          python - <<'PY'
+          import zworkforce
+          assert zworkforce.__version__ == '3.0.0', zworkforce.__version__
+          PY
 
       - name: Generate SBOM and checksums
         shell: bash
