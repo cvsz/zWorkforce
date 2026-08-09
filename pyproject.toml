@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=69"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,12 +8,11 @@ version = "3.0.0"
 description = "Enterprise AI Workforce control plane, distributed agent runtime, workflows, evaluation and AI FinOps platform"
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "MIT"}
+license = "MIT"
 authors = [{name = "cvsz"}]
 keywords = ["ai", "agents", "workforce", "finops", "llm", "orchestration", "workflow", "postgresql"]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
@@ -34,6 +33,7 @@ all = ["boto3>=1.40,<2"]
 zworkforce = "zworkforce.cli:main"
 
 [tool.setuptools]
+packages = ["zworkforce"]
 include-package-data = true
 
 [tool.setuptools.package-data]
