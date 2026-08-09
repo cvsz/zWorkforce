@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: zworkforce
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - storage-rbac.yaml
+  - api.yaml
+  - worker.yaml
+  - scheduler.yaml
+  - outbox.yaml
+  - networkpolicy.yaml
+# Copy secret.example.yaml to secret.yaml, replace placeholders, and add it here
+# or use External Secrets / Sealed Secrets in production.

@@ -5,7 +5,7 @@ import tempfile
 
 from zworkforce.config import BootstrapKey, ProviderConfig, Settings
 from zworkforce.db import Database
-from zworkforce.engine import Engine
+from zworkforce.policy import PolicyEngine
 from zworkforce.providers import build_provider
 from zworkforce.security import AuthManager
 
@@ -29,6 +29,6 @@ def stack(*, embedded_workers=0, required_key=True):
     settings.workspace_root.mkdir(parents=True, exist_ok=True)
     db = Database(settings.database_path, settings.default_tenant)
     provider = build_provider(settings, db)
-    engine = Engine(settings, db, provider)
+    engine = PolicyEngine(settings, db, provider)
     auth = AuthManager(db, settings.bootstrap_keys)
     return temp, settings, db, provider, engine, auth

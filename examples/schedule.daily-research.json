@@ -1,0 +1,1 @@
+{"id":"daily-research","name":"Daily research","target_type":"workflow","target_id":"research-report","schedule_type":"cron","cron_expr":"0 8 * * 1-5","timezone":"Asia/Bangkok","payload":{"topic":"AI workforce platform developments"}}

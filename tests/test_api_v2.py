@@ -29,7 +29,7 @@ class ApiV2Tests(unittest.TestCase):
     def test_health_is_public(self):
         with urllib.request.urlopen(self.base+"/health",timeout=5) as r:
             data=json.loads(r.read())
-            self.assertEqual(data["version"],"2.0.0")
+            self.assertEqual(data["version"],"3.0.0")
             self.assertEqual(r.headers["X-Frame-Options"],"DENY")
     def test_overview_auth_and_task_dispatch(self):
         status,headers,data=self.req("/api/v1/overview")

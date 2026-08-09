@@ -1,0 +1,1 @@
+{"id":"tiers","name":"Tier quality/cost evaluation","description":"Compare efficient and balanced tiers","agent_id":"researcher","cases":[{"id":"summary","prompt":"Summarize the following concept clearly: AI workforce control plane","success_criteria":[{"type":"non_empty"}]}],"variants":[{"name":"efficient","tier":"luna"},{"name":"balanced","tier":"terra"}]}

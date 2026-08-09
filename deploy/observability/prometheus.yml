@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+scrape_configs:
+  - job_name: zworkforce
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["zworkforce-api:9569"]
+    # Production /metrics is authenticated. Mount a viewer token here.
+    bearer_token_file: /run/secrets/zworkforce_metrics_token

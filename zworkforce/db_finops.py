@@ -5,6 +5,7 @@ from typing import Any
 
 from .db_base import utcnow
 
+
 class FinOpsMixin:
     def record_usage(self, task: dict[str, Any], provider_name: str, model: str, inp: int, cached: int, out: int, cost: float) -> None:
         agent = self.get_agent(task["tenant_id"], task["agent_id"]) or {"department": "unknown"}
@@ -32,13 +33,12 @@ class FinOpsMixin:
         start = now.replace(hour=0, minute=0, second=0, microsecond=0) if period == "daily" else now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         clause, args = "tenant_id=?", [tenant_id]
         if scope_type == "department":
-            clause += " AND department=?"
-            args.append(scope_id)
+            clause += " AND department=?"; args.append(scope_id)
         elif scope_type == "agent":
-            clause += " AND agent_id=?"
-            args.append(scope_id)
+            clause += " AND agent_id=?"; args.append(scope_id)
         with self.connection() as c:
-            row = c.execute(f"SELECT COALESCE(SUM(cost_credits),0) FROM usage_events2 WHERE {clause} AND created_at>=?", (*args, start.isoformat(timespec="seconds"))).fetchone()
+            row = c.execute(f"SELECT COALESCE(SUM(cost_credits),0) FROM usage_events2 WHERE {clause} AND created_at>=?",
+                            (*args, start.isoformat(timespec="seconds"))).fetchone()
             return float(row[0] or 0)
 
     def budget_violation(self, tenant_id: str, agent: dict[str, Any], global_daily_limit: float = 0) -> str | None:
@@ -66,8 +66,9 @@ class FinOpsMixin:
             mix = self._rows(c.execute("SELECT tier,COALESCE(SUM(cost_credits),0) cost,COUNT(*) turns FROM usage_events2 WHERE tenant_id=? AND created_at>=? GROUP BY tier ORDER BY tier", (tenant_id, since)).fetchall())
             providers = self._rows(c.execute("SELECT provider_name,COALESCE(SUM(cost_credits),0) cost,COUNT(*) turns FROM usage_events2 WHERE tenant_id=? AND created_at>=? GROUP BY provider_name ORDER BY turns DESC", (tenant_id, since)).fetchall())
             top = self._rows(c.execute("SELECT agent_id,COALESCE(SUM(cost_credits),0) cost,COUNT(*) turns FROM usage_events2 WHERE tenant_id=? AND created_at>=? GROUP BY agent_id ORDER BY cost DESC LIMIT 8", (tenant_id, since)).fetchall())
-            durations = [float(r[0]) for r in c.execute("SELECT (julianday(finished_at)-julianday(started_at))*86400 FROM tasks2 WHERE tenant_id=? AND created_at>=? AND started_at IS NOT NULL AND finished_at IS NOT NULL ORDER BY 1", (tenant_id, since)).fetchall() if r[0] is not None]
-            queues = [float(r[0]) for r in c.execute("SELECT (julianday(started_at)-julianday(created_at))*86400 FROM tasks2 WHERE tenant_id=? AND created_at>=? AND started_at IS NOT NULL", (tenant_id, since)).fetchall() if r[0] is not None]
+            timing_rows = c.execute("SELECT created_at,started_at,finished_at FROM tasks2 WHERE tenant_id=? AND created_at>=?", (tenant_id, since)).fetchall()
+        durations = [_seconds(r["started_at"], r["finished_at"]) for r in timing_rows if r["started_at"] and r["finished_at"]]
+        queues = [_seconds(r["created_at"], r["started_at"]) for r in timing_rows if r["started_at"]]
         outcome_total = int(outcomes["total"] or 0)
         outcome_passed = int(outcomes["passed"] or 0)
         return {
@@ -101,12 +102,23 @@ class FinOpsMixin:
             if n < 3 or pass_rate is None:
                 continue
             if r["tier"] == "sol" and float(pass_rate) >= .95 and float(r["avg_iterations"] or 0) <= 2.5:
-                recs.append({"agent_id": r["agent_id"], "action": "try_lower_tier", "from": "sol", "to": "terra", "confidence": "medium", "evidence": {"tasks": n, "pass_rate": round(float(pass_rate), 3), "avg_iterations": round(float(r["avg_iterations"] or 0), 2), "avg_cost": round(float(r["avg_cost"] or 0), 6)}})
+                recs.append({"agent_id": r["agent_id"], "action": "try_lower_tier", "from": "sol", "to": "terra", "confidence": "medium",
+                             "evidence": {"tasks": n, "pass_rate": round(float(pass_rate), 3), "avg_iterations": round(float(r["avg_iterations"] or 0), 2), "avg_cost": round(float(r["avg_cost"] or 0), 6)}})
             if r["tier"] == "terra" and float(pass_rate) >= .98 and float(r["avg_iterations"] or 0) <= 1.5:
-                recs.append({"agent_id": r["agent_id"], "action": "try_lower_tier", "from": "terra", "to": "luna", "confidence": "medium", "evidence": {"tasks": n, "pass_rate": round(float(pass_rate), 3), "avg_iterations": round(float(r["avg_iterations"] or 0), 2), "avg_cost": round(float(r["avg_cost"] or 0), 6)}})
+                recs.append({"agent_id": r["agent_id"], "action": "try_lower_tier", "from": "terra", "to": "luna", "confidence": "medium",
+                             "evidence": {"tasks": n, "pass_rate": round(float(pass_rate), 3), "avg_iterations": round(float(r["avg_iterations"] or 0), 2), "avg_cost": round(float(r["avg_cost"] or 0), 6)}})
             if r["tier"] == "luna" and float(pass_rate) < .75:
-                recs.append({"agent_id": r["agent_id"], "action": "raise_default_tier", "from": "luna", "to": "terra", "confidence": "medium", "evidence": {"tasks": n, "pass_rate": round(float(pass_rate), 3)}})
+                recs.append({"agent_id": r["agent_id"], "action": "raise_default_tier", "from": "luna", "to": "terra", "confidence": "medium",
+                             "evidence": {"tasks": n, "pass_rate": round(float(pass_rate), 3)}})
         return recs
+
+
+def _seconds(start: str, end: str) -> float:
+    try:
+        return max(0.0, (datetime.fromisoformat(end) - datetime.fromisoformat(start)).total_seconds())
+    except (TypeError, ValueError):
+        return 0.0
+
 
 def percentile(values: list[float], p: float) -> float:
     if not values:

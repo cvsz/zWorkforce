@@ -1,163 +1,117 @@
-# API Reference — zWorkforce v2.0
+# API v3
 
-Base path: `/api/v1`. JSON write requests require `Content-Type: application/json`.
+All `/api/v1/*` endpoints require authentication. Tenant scope comes from the credential; superadmin may set `X-Tenant-ID`. JSON errors use `{"error":{"code","message"},"request_id"}`.
 
-Authentication supports `Authorization: Bearer <key>` or `X-API-Key`. API keys carry role, tenant and scopes. `superadmin` may select another existing tenant with `X-Tenant-ID`.
+## Core
 
-## Public runtime endpoints
+```text
+GET  /health
+GET  /ready
+GET  /metrics
+GET  /api/v1/overview
+GET  /api/v1/providers
+GET  /api/v1/models
+GET  /api/v1/recommendations
+GET  /api/v1/tools
+```
 
-- `GET /health` — liveness and version.
-- `GET /ready` — DB readiness and current provider availability.
+## Agents / policy
 
-## Read APIs
+```text
+GET/POST /api/v1/agents
+GET      /api/v1/agents/{id}/versions
+GET/POST /api/v1/agent-templates
+POST     /api/v1/agent-templates/{id}/instantiate
+GET/POST /api/v1/policies
+```
 
-- `GET /overview` — 24h runtime/outcome/FinOps metrics.
-- `GET /agents` — tenant agent registry.
-- `GET /tasks?limit=&offset=&status=&agent_id=` — tenant tasks.
-- `GET /tasks/{id}` — task detail.
-- `GET /tasks/{id}/events` — task state/event history.
-- `GET /tasks/{id}/approvals` — approval decisions.
-- `GET /budgets` — tenant budgets.
-- `GET /providers` — configured provider pool and health.
-- `GET /models` — Luna/Terra/Sol rates and provider preview.
-- `GET /recommendations?days=7` — outcome-based rightsizing hints.
-- `GET /memories?q=&limit=` — tenant memory search/list.
-- `GET /skills` — signed skill registry.
-- `GET /tools` — tool catalog and mutation classification.
+Policy document:
 
-Admin reads:
-
-- `GET /audit?limit=&offset=`
-- `GET /audit/verify`
-- `GET /api-keys`
-- `GET /tool-events?task_id=&limit=`
-
-Superadmin:
-
-- `GET /tenants`
+```json
+{"default":"allow","rules":[{"id":"deny-shell","effect":"deny","action":"tool.shell_exec","when":{"department":"finance"}}]}
+```
 
 ## Tasks
 
-`POST /tasks`
-
-```json
-{
-  "agent_id": "researcher",
-  "prompt": "Return a JSON market summary",
-  "mutating": false,
-  "tier_override": "terra",
-  "priority": 10,
-  "max_attempts": 3,
-  "success_criteria": [
-    {"type":"json"},
-    {"type":"contains","value":"market"}
-  ]
-}
+```text
+GET/POST /api/v1/tasks
+GET      /api/v1/tasks/{id}
+GET      /api/v1/tasks/{id}/events
+GET      /api/v1/tasks/{id}/approvals
+POST     /api/v1/tasks/{id}/approve
+POST     /api/v1/tasks/{id}/reject
+POST     /api/v1/tasks/{id}/cancel
+POST     /api/v1/tasks/{id}/retry
 ```
 
-Optional `Idempotency-Key` is scoped to tenant + actor and includes a request payload hash; reusing a key with a different request is rejected.
+`POST /tasks` accepts `agent_id`, `prompt`, `mutating`, `tier_override`, `priority`, `success_criteria`, `max_attempts`. Use `Idempotency-Key` for safe retries.
 
-Task actions:
+## Workflow automation
 
-- `POST /tasks/{id}/approve` with optional `{ "comment": "..." }`
-- `POST /tasks/{id}/reject`
-- `POST /tasks/{id}/cancel`
-- `POST /tasks/{id}/retry`
-
-The requester cannot approve or reject their own approval-gated task. Multiple approvals require distinct actor names.
-
-## Agents
-
-`POST /agents`
-
-```json
-{
-  "id":"release-engineer",
-  "name":"Release Engineer",
-  "department":"engineering",
-  "default_tier":"terra",
-  "max_cost_credits":60,
-  "max_iterations":10,
-  "max_subagents":2,
-  "required_approvals":1,
-  "requires_approval_for_mutations":true,
-  "allowed_tools":["workspace_list","workspace_read","workspace_write","shell_exec","agent_delegate"],
-  "approval_tools":["workspace_write","shell_exec"],
-  "skill_ids":[],
-  "system_prompt":"Verify tests and artifacts before claiming success.",
-  "enabled":true
-}
+```text
+GET/POST /api/v1/workflows
+GET/POST /api/v1/workflow-runs
+GET      /api/v1/workflow-runs/{id}
+POST     /api/v1/workflow-tick
+GET/POST /api/v1/schedules
+GET/POST /api/v1/event-rules
+POST     /api/v1/events
+POST     /api/v1/scheduler-tick
 ```
 
-`approval_tools` must be a subset of `allowed_tools`.
+## Evaluation
 
-## Budgets
-
-`POST /budgets`
-
-```json
-{"scope_type":"department","scope_id":"engineering","period":"daily","limit_credits":500}
+```text
+GET/POST /api/v1/evaluation-suites
+POST     /api/v1/evaluation-runs
+GET      /api/v1/evaluation-runs/{id}
+POST     /api/v1/evaluation-tick
 ```
 
-Scope types: `global`, `department`, `agent`. Periods: `daily`, `monthly`.
+## Memory / artifacts
 
-## Memories
-
-`POST /memories`
-
-```json
-{"title":"Release policy","content":"Production deploys need approval.","tags":["release","policy"],"agent_id":"operations"}
+```text
+GET/POST /api/v1/memories
+GET      /api/v1/rag?q=...
+POST     /api/v1/rag/reindex
+GET/POST /api/v1/artifacts
+GET/POST /api/v1/skills
 ```
 
-Search with `GET /memories?q=release&limit=20`.
+Artifact POST body uses base64 payload because this API intentionally stays JSON-only in v3.
 
-## Skills
+## FinOps / SLO
 
-`POST /skills`
-
-```json
-{
-  "manifest": {
-    "id":"repo-review",
-    "version":"1.0.0",
-    "allowed_tools":["workspace_read"],
-    "system_prompt_append":"Check tests and security boundaries."
-  },
-  "signature":"<hex hmac>",
-  "enabled":true
-}
+```text
+GET/POST /api/v1/budgets
+GET      /api/v1/chargeback?hours=24
+GET      /api/v1/capacity?hours=24
+GET      /api/v1/slo
+POST     /api/v1/slo
+POST     /api/v1/economics
 ```
 
-Generate signatures with `zworkforce skill-sign manifest.json`.
+## Identity / audit
 
-## API keys
-
-`POST /api-keys`
-
-```json
-{"name":"ci-worker","role":"operator","scopes":["workforce:read","task:write"]}
+```text
+GET/POST /api/v1/tenants
+GET/POST /api/v1/api-keys
+POST     /api/v1/api-keys/{id}/revoke
+GET      /api/v1/audit
+GET      /api/v1/audit/verify
+GET      /api/v1/tool-events
 ```
 
-The plaintext secret is returned once. Revoke with `POST /api-keys/{id}/revoke`.
+## MCP
 
-## Tenants
+`POST /mcp` accepts stateless JSON-RPC requests with `MCP-Protocol-Version: 2026-07-28`. It uses the same API authentication and tenant authorization as REST.
 
-Superadmin can create a tenant:
+Supported methods:
 
-```json
-{"id":"acme","name":"Acme"}
+```text
+server/discover
+tools/list
+tools/call
 ```
 
-Each new tenant receives the default six-agent registry.
-
-## Metrics
-
-`GET /metrics` requires viewer + `metrics:read` (or `*`). Prometheus metrics include active/queued/dead-letter tasks, 24h runtime success, outcome pass, credits, cost per successful outcome, p95 duration and model/provider health/mix.
-
-## Error format
-
-```json
-{"error":{"code":"invalid_request","message":"..."},"request_id":"..."}
-```
-
-Production responses suppress internal exception details.
+Built-in MCP management tools are documented in [MCP.md](MCP.md).

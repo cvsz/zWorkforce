@@ -2,29 +2,34 @@
 
 ## Health
 
-- `/health` — process liveness.
-- `/ready` — database readiness plus at least one available provider.
-- `/metrics` — authenticated Prometheus exposition.
-- `zworkforce doctor` — configuration/database/provider summary plus audit verification.
-
-## Dead letters
-
-A task enters `dead_letter` when its attempt budget is exhausted, including repeated worker lease expiry. Inspect task error/events/tool-events, provider health, budgets, worker logs and storage latency. After remediation use retry to reset attempts and requeue.
-
-## Provider incidents
-
-Real request failures update persistent health. At the configured consecutive-failure threshold, the provider circuit opens temporarily and other configured providers that support the tier can take over. A later successful call resets health.
-
-## Audit verification
-
-Run periodically:
-
-```bash
-zworkforce audit-verify --tenant default
+```text
+GET /health  process liveness
+GET /ready   DB + provider readiness
+GET /metrics operational metrics
 ```
 
-A failed chain is a high-severity integrity signal. Preserve the database and host logs before remediation.
+## Routine checks
 
-## Cost operations
+```bash
+zworkforce doctor
+zworkforce audit-verify --tenant default
+zworkforce slo-status --tenant default
+zworkforce capacity --tenant default
+zworkforce chargeback --tenant default
+```
 
-Use tenant/department/agent budgets as preventive controls. `/api/v1/recommendations` is a heuristic rightsizing signal; validate quality before changing default tiers.
+## Worker incidents
+- Check queued/dead-letter counts.
+- Check provider circuits and credentials.
+- Inspect task events and tool events.
+- Expired leases are recoverable; do not manually force the same task from two workers.
+- Retry dead-letter tasks only after correcting the underlying cause.
+
+## Scheduler incidents
+Multiple scheduler instances are safe; a DB lease elects the active instance. Check `service_leases3` if no schedules/events progress.
+
+## Outbox incidents
+Outbox payloads remain durable until delivered. Destination handlers should deduplicate on `X-ZWorkforce-Delivery-ID`. Repeated failures back off exponentially.
+
+## PostgreSQL
+Monitor connections, storage, locks and backup/PITR status. The application does not replace DB operational controls.

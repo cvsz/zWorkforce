@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: zworkforce
+  namespace: zworkforce
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zworkforce-workspace
+  namespace: zworkforce
+spec:
+  accessModes: ["ReadWriteMany"]
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zworkforce-artifacts
+  namespace: zworkforce
+spec:
+  accessModes: ["ReadWriteMany"]
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: zworkforce-api
+  namespace: zworkforce
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: zworkforce-api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: zworkforce-worker
+  namespace: zworkforce
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: zworkforce-worker

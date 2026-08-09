@@ -1,0 +1,1 @@
+{"id":"high-severity-incident","name":"High severity incident","event_type":"incident.opened","target_type":"agent","target_id":"operations","filter":{"severity":"high"},"payload_template":{"prompt":"Investigate incident: {{event.title}}","mutating":false,"priority":50}}

@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zworkforce"
-version = "2.0.0"
-description = "Multi-tenant AI Workforce control plane, durable agent runtime, model router and AI FinOps platform"
+version = "3.0.0"
+description = "Enterprise AI Workforce control plane, distributed agent runtime, workflows, evaluation and AI FinOps platform"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
 authors = [{name = "cvsz"}]
-keywords = ["ai", "agents", "workforce", "finops", "llm", "orchestration"]
+keywords = ["ai", "agents", "workforce", "finops", "llm", "orchestration", "workflow", "postgresql"]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "License :: OSI Approved :: MIT License",
@@ -18,7 +18,17 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
 ]
-dependencies = []
+dependencies = [
+  "psycopg[binary]>=3.3.4,<4",
+  "PyJWT[crypto]>=2.13,<3",
+]
+
+[project.optional-dependencies]
+postgres = ["psycopg[binary]>=3.3.4,<4"]
+oidc = ["PyJWT[crypto]>=2.13,<3"]
+aws = ["boto3>=1.40,<2"]
+s3 = ["boto3>=1.40,<2"]
+all = ["boto3>=1.40,<2"]
 
 [project.scripts]
 zworkforce = "zworkforce.cli:main"
