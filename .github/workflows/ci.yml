@@ -64,6 +64,44 @@ jobs:
       - name: PostgreSQL queue/runtime tests
         run: PYTHONPATH=. python -m unittest tests.test_v3_postgres -v
 
+      - name: PostgreSQL backup and restore drill
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client
+          restore_url="${ZWORKFORCE_TEST_POSTGRES_URL%/zworkforce_ci}/zworkforce_restore"
+          psql "$ZWORKFORCE_TEST_POSTGRES_URL" -v ON_ERROR_STOP=1 -c 'CREATE DATABASE zworkforce_restore'
+          ZWORKFORCE_DATABASE_URL="$ZWORKFORCE_TEST_POSTGRES_URL" PYTHONPATH=. python - <<'PY'
+          import os
+          from zworkforce.db import Database
+
+          url = os.environ["ZWORKFORCE_DATABASE_URL"]
+          db = Database(url, "recovery-drill")
+          db.put_memory("recovery-drill", None, "recovery-marker", "backup restore sentinel", ["ci"], "ci", "recovery-marker")
+          assert db.get_memory("recovery-drill", "recovery-marker")["content"] == "backup restore sentinel"
+          PY
+          backup_dir="$(mktemp -d)"
+          backup_path="$backup_dir/zworkforce-recovery.dump"
+          ZWORKFORCE_DATABASE_URL="$ZWORKFORCE_TEST_POSTGRES_URL" \
+            ZWORKFORCE_BACKUP_DIR="$backup_dir" \
+            bash scripts/backup-postgres.sh "$backup_path"
+          test -s "$backup_path"
+          test -s "$backup_path.sha256"
+          ZWORKFORCE_DATABASE_URL="$restore_url" \
+            ZWORKFORCE_RESTORE_CONFIRM=YES \
+            bash scripts/restore-postgres.sh "$backup_path"
+          ZWORKFORCE_DATABASE_URL="$restore_url" PYTHONPATH=. python - <<'PY'
+          import os
+          from zworkforce.db import Database
+
+          db = Database(os.environ["ZWORKFORCE_DATABASE_URL"], "recovery-drill")
+          marker = db.get_memory("recovery-drill", "recovery-marker")
+          assert marker and marker["content"] == "backup restore sentinel"
+          assert db.ready()
+          print("PostgreSQL backup/restore drill passed")
+          PY
+
   release-integrity:
     runs-on: ubuntu-latest
     steps:
