@@ -1,6 +1,12 @@
 FROM python:3.13-slim AS runtime
+ARG VERSION=3.0.0
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PYTHONPATH=/app PIP_DISABLE_PIP_VERSION_CHECK=1
 WORKDIR /app
+LABEL org.opencontainers.image.title="zWorkforce" \
+      org.opencontainers.image.description="Enterprise AI Workforce Operating System" \
+      org.opencontainers.image.source="https://github.com/cvsz/zWorkforce" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.version="${VERSION}"
 COPY pyproject.toml README.md LICENSE ./
 COPY zworkforce ./zworkforce
 RUN python -m pip install --no-cache-dir . \
