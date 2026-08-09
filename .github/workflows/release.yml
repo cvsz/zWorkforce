@@ -28,13 +28,16 @@ jobs:
           python-version: "3.13"
 
       - name: Verify tag, source and main ancestry
+        id: meta
         shell: bash
         run: |
           set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "stable semantic version tag required" >&2; exit 2; }
           python scripts/verify_release.py --expected "$VERSION"
           git fetch origin main:refs/remotes/origin/main
           git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/main
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Build Python distributions
         run: |
@@ -47,8 +50,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          VERSION="${GITHUB_REF_NAME#v}"
-          python scripts/generate_sbom.py --output "dist/zworkforce-${VERSION}.cdx.json"
+          python scripts/generate_sbom.py --output "dist/zworkforce-${{ steps.meta.outputs.version }}.cdx.json"
           (cd dist && sha256sum * > SHA256SUMS)
 
       - name: Upload release artifacts
@@ -80,9 +82,10 @@ jobs:
           context: .
           push: true
           build-args: |
-            VERSION=${{ github.ref_name }}
+            VERSION=${{ steps.meta.outputs.version }}
           tags: |
             ghcr.io/cvsz/zworkforce:${{ github.ref_name }}
+            ghcr.io/cvsz/zworkforce:${{ steps.meta.outputs.version }}
             ghcr.io/cvsz/zworkforce:latest
           provenance: mode=max
           sbom: true
