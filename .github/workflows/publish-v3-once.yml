@@ -1,0 +1,145 @@
+name: Publish v3.0.0 Once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+  attestations: write
+
+concurrency:
+  group: publish-v3-0-0-once
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: v3.0.0
+  RELEASE_VERSION: 3.0.0
+  RELEASE_SHA: 1425192f9f544683b37352032298138c8b36b519
+
+jobs:
+  publish:
+    if: github.repository == 'cvsz/zWorkforce'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Verify immutable release source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main:refs/remotes/origin/main --tags --force
+          git merge-base --is-ancestor "$RELEASE_SHA" refs/remotes/origin/main
+          git checkout --detach "$RELEASE_SHA"
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          python scripts/verify_release.py --expected "$RELEASE_VERSION"
+
+      - name: Create or verify annotated tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            git fetch origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG" --force
+            test "$(git rev-list -n1 "$RELEASE_TAG")" = "$RELEASE_SHA"
+          else
+            git tag -a "$RELEASE_TAG" "$RELEASE_SHA" -m "zWorkforce $RELEASE_TAG"
+            git push origin "refs/tags/$RELEASE_TAG"
+          fi
+
+      - name: Build Python distributions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip build
+          python -m build
+          python -m pip install dist/*.whl
+          python - <<'PY'
+          import zworkforce
+          assert zworkforce.__version__ == '3.0.0', zworkforce.__version__
+          PY
+
+      - name: Generate SBOM and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/generate_sbom.py --output "dist/zworkforce-${RELEASE_VERSION}.cdx.json"
+          (cd dist && sha256sum * > SHA256SUMS)
+
+      - name: Upload release artifact bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: zworkforce-v3.0.0
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Attest distribution provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: "dist/*"
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push release OCI image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: |
+            VERSION=3.0.0
+          tags: |
+            ghcr.io/cvsz/zworkforce:v3.0.0
+            ghcr.io/cvsz/zworkforce:3.0.0
+            ghcr.io/cvsz/zworkforce:latest
+          provenance: mode=max
+          sbom: true
+
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" dist/* --clobber
+          else
+            gh release create "$RELEASE_TAG" dist/* \
+              --verify-tag \
+              --title "zWorkforce $RELEASE_TAG" \
+              --generate-notes
+          fi
+
+      - name: Verify publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-list -n1 "$RELEASE_TAG")" = "$RELEASE_SHA"
+          gh release view "$RELEASE_TAG" --json tagName,isDraft,isPrerelease,url >/tmp/release.json
+          python - <<'PY'
+          import json
+          data=json.load(open('/tmp/release.json'))
+          assert data['tagName']=='v3.0.0'
+          assert data['isDraft'] is False
+          assert data['isPrerelease'] is False
+          print(data['url'])
+          PY
