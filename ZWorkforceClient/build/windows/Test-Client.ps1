@@ -52,6 +52,17 @@ function Find-ClientPackage {
     }
 }
 
+function Invoke-Certutil([string[]]$Arguments) {
+    $process = Start-Process -FilePath "certutil.exe" -ArgumentList $Arguments -NoNewWindow -PassThru
+    if (-not $process.WaitForExit(60 * 1000)) {
+        $process.Kill()
+        throw "certutil.exe timed out while updating the current-user certificate store."
+    }
+    if ($process.ExitCode -ne 0) {
+        throw "certutil.exe failed with exit code $($process.ExitCode)."
+    }
+}
+
 & dotnet test $solution --configuration $Configuration --property:Platform=x64 --no-restore
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
@@ -78,7 +89,8 @@ if ($LaunchSmoke) {
 
         if ($null -ne $certificate) {
             Write-Host "Trusting the temporary package certificate for this smoke check."
-            Import-Certificate -FilePath $certificate.FullName -CertStoreLocation "Cert:\CurrentUser\Root" -ErrorAction Stop | Out-Null
+            $quotedCertificatePath = '"' + $certificate.FullName + '"'
+            Invoke-Certutil @("-user", "-addstore", "Root", $quotedCertificatePath)
             $importedCertificateThumbprint = $certificate.Thumbprint
         }
 
@@ -123,7 +135,11 @@ if ($LaunchSmoke) {
             Remove-ClientPackage $installedPackage.PackageFullName
         }
         if ($null -ne $importedCertificateThumbprint) {
-            Remove-Item -LiteralPath "Cert:\CurrentUser\Root\$importedCertificateThumbprint" -Force -ErrorAction SilentlyContinue
+            try {
+                Invoke-Certutil @("-user", "-delstore", "Root", $importedCertificateThumbprint)
+            } catch {
+                Write-Warning "Could not remove the temporary package certificate: $($_.Exception.Message)"
+            }
         }
     }
 }
