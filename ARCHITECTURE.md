@@ -1,49 +1,92 @@
-# Architecture — zWorkforce v2.0
+# Architecture
 
-## Goals
+## Design goals
 
-zWorkforce provides a dependency-light control plane for governed AI agents. The runtime optimizes for correctness, bounded execution, recoverability, auditability and cost visibility before autonomy.
+zWorkforce is a control plane and runtime for governed AI work. The architecture separates durable state, orchestration, execution, model-provider routing and external integrations so each can scale without giving browser clients provider credentials.
 
-## Components
+## Runtime components
 
-### Control plane
+```text
+Ingress / Identity
+       |
+       v
+API replicas -------------------------- MCP clients
+       |
+       +---- PostgreSQL / SQLite ----+
+       |                             |
+       v                             v
+Worker replicas                 Scheduler replicas
+       |                         active/passive lease
+       v                             |
+PolicyEngine                         +--> workflows/events
+       |
+       v
+Model Router -> Provider Pool -> LLMs
+       |
+       +--> Tool Gateway
+       +--> Semantic Memory
+       +--> Artifact Store
+       +--> Sub-agents
 
-The HTTP server owns authentication, tenant resolution, RBAC/scopes, rate limiting, agent policy, budget configuration, memory, skills, audit inspection and task lifecycle actions. Static dashboard assets contain no provider credentials.
+Outbox replicas -- active/passive lease --> approved webhooks
+Telemetry -----------------------------> OTLP / Prometheus
+```
 
-### Durable task repository
+## Database backends
 
-SQLite runs in WAL mode with `busy_timeout` and explicit `BEGIN IMMEDIATE` transactions around queue claims, approvals and idempotency. v2 tables are tenant-aware and coexist with untouched v1 tables for migration safety.
+### SQLite
+Used for zero-config development and single-host deployments. WAL, busy timeout and transactional leases are retained from v2.
 
-### Worker runtime
+### PostgreSQL
+The compatibility layer maps the repository's parameterized SQL onto psycopg and preserves the same repository API. Worker claims use `SELECT ... FOR UPDATE SKIP LOCKED` so separate hosts can claim independent tasks safely. Task state remains the source of truth; worker processes are disposable.
 
-Workers transactionally claim one queued task, mark it running, increment its attempt number and write a lease owner/expiry. A heartbeat thread extends the lease while provider/tool turns execute. Expired leases are requeued unless attempts are exhausted, then the task becomes `dead_letter`.
+## Durable task state
 
-### Provider pool
+```text
+waiting_approval -> queued -> running -> succeeded
+        |             |         |       failed
+        |             |         +-----> queued retry
+        +-> canceled  |                  |
+                      +-----------------> dead_letter
+```
 
-Providers define priority, type, endpoint, tier-to-model mapping, timeout and retry policy. Real calls update persistent health. Consecutive failures open a temporary circuit; calls fall through to the next healthy provider that supports the tier.
+A claim increments `attempt`, assigns `lease_owner`, `lease_expires_at` and heartbeat. Stale running tasks are recovered according to attempt budget.
 
-### Policy/tool gateway
+## Policy model
 
-The worker exposes only agent-granted tool schemas. Models cannot execute ungranted capabilities by naming them. Mutating tools additionally require a mutating task and completed approvals when policy requires them.
+The production engine is `PolicyEngine`, a compatible subclass of the bounded v2 engine. Tenant policies are JSON documents with glob-style action matching and deterministic conditions. Policy checks occur before task creation and immediately before tool execution. Explicit deny wins.
 
-### AI FinOps and outcome evaluation
+## Workflow engine
 
-Every model turn records provider, model, tier, tokens and computed credits. Deterministic outcome criteria are evaluated after runtime completion, separating `status=succeeded` from `outcome_status=passed`.
+Workflow definitions are versioned DAGs. Each run snapshots the workflow version and each step stores durable status and the task ID it created. A step becomes runnable only after all dependencies succeed. Template rendering supports `{{input.*}}` and `{{steps.<id>.result}}`.
 
-## State machine
+## Scheduler and events
 
-`waiting_approval -> queued -> running -> succeeded|failed|canceled`
+Cron/interval schedules and durable events live in the database. Scheduler replicas compete for a renewable service lease. The leader dispatches due schedules, processes event rules and advances workflow runs. Idempotency keys include schedule timestamp or event/rule identity.
 
-Retryable provider failures transition `running -> queued` with exponential `run_after`. Exhausted attempts or repeated lease expiry transition to `dead_letter`; failed/dead-letter tasks can be manually retried.
+## Evaluation engine
 
-## Multi-tenancy
+Evaluation suites contain cases and tier variants. A run creates real workforce tasks for each case/variant pair. Final summaries prioritize pass rate/outcome score before cost and duration, avoiding cost optimization that silently degrades quality.
 
-Tenant ID is present in all v2 policy/data tables. API keys bind to one tenant. Only `superadmin` can explicitly switch to another existing tenant using `X-Tenant-ID`. Worker execution derives tenant exclusively from the stored task.
+## Identity
 
-## Audit integrity
+- persistent hashed API keys with roles/scopes;
+- OIDC discovery/JWKS verification with issuer/audience checks;
+- group-to-role mapping;
+- optional HMAC-signed identity-aware proxy boundary for SAML/brokered identity.
 
-Each tenant has an independent SHA-256 hash chain over canonicalized audit events. Verification recomputes every event. This detects ordinary in-database edits but does not replace external immutable storage against a fully privileged host attacker.
+## Knowledge and artifacts
 
-## Concurrency boundary
+Local semantic memory uses deterministic feature hashing. A runtime-selectable Qdrant adapter uses an OpenAI-compatible embeddings endpoint. Artifacts are content-addressed by SHA-256 and can be stored locally or in S3-compatible storage.
 
-SQLite WAL supports multiple processes on one reliable local filesystem. The project does not claim multi-host HA over network filesystems. A transactional PostgreSQL/managed-queue backend is the correct next boundary for horizontal cross-host scale.
+## Observability
+
+Metrics are Prometheus-compatible. Optional OTLP/HTTP JSON tracing wraps provider calls. Provider health, queue state, outcomes, cost, workflows, evaluations, outbox and SLO status are visible to operations.
+
+## Scaling
+
+- API: stateless except durable DB/storage; horizontally scalable.
+- Workers: horizontally scalable through PostgreSQL claim locking.
+- Scheduler/outbox: multiple replicas safe through service-leader leases.
+- Memory/artifacts: replace local adapters with Qdrant/S3.
+- Database: deploy PostgreSQL using the operator's HA/PITR topology.

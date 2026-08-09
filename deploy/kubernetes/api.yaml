@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zworkforce-api
+  namespace: zworkforce
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: zworkforce-api}
+  template:
+    metadata:
+      labels: {app: zworkforce-api}
+    spec:
+      serviceAccountName: zworkforce
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+      - name: api
+        image: ghcr.io/cvsz/zworkforce:3.0.0
+        args: ["serve"]
+        envFrom:
+          - configMapRef:
+              name: zworkforce
+          - secretRef:
+              name: zworkforce-secrets
+        ports:
+          - containerPort: 9569
+        readinessProbe:
+          httpGet: {path: /ready, port: 9569}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet: {path: /health, port: 9569}
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        resources:
+          requests: {cpu: "100m", memory: "128Mi"}
+          limits: {cpu: "1", memory: "1Gi"}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: ["ALL"]}
+        volumeMounts:
+          - {name: tmp, mountPath: /tmp}
+          - {name: workspace, mountPath: /workspace}
+          - {name: artifacts, mountPath: /artifacts}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: workspace
+          persistentVolumeClaim: {claimName: zworkforce-workspace}
+        - name: artifacts
+          persistentVolumeClaim: {claimName: zworkforce-artifacts}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zworkforce-api
+  namespace: zworkforce
+spec:
+  selector: {app: zworkforce-api}
+  ports:
+    - port: 9569
+      targetPort: 9569

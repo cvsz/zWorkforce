@@ -1,0 +1,24 @@
+{
+  "title": "zWorkforce AI Workforce",
+  "uid": "zworkforce-v3",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15s",
+  "time": {"from": "now-24h", "to": "now"},
+  "templating": {"list": []},
+  "panels": [
+    {"type":"stat","title":"Active tasks","gridPos":{"h":4,"w":4,"x":0,"y":0},"targets":[{"expr":"zworkforce_active_tasks"}]},
+    {"type":"stat","title":"Queued tasks","gridPos":{"h":4,"w":4,"x":4,"y":0},"targets":[{"expr":"zworkforce_queued_tasks"}]},
+    {"type":"stat","title":"Dead letters","gridPos":{"h":4,"w":4,"x":8,"y":0},"targets":[{"expr":"zworkforce_dead_letter_tasks"}]},
+    {"type":"stat","title":"Outcome pass %","gridPos":{"h":4,"w":4,"x":12,"y":0},"targets":[{"expr":"zworkforce_outcome_pass_rate_24h"}]},
+    {"type":"stat","title":"Credits 24h","gridPos":{"h":4,"w":4,"x":16,"y":0},"targets":[{"expr":"zworkforce_credits_24h"}]},
+    {"type":"stat","title":"P95 runtime (s)","gridPos":{"h":4,"w":4,"x":20,"y":0},"targets":[{"expr":"zworkforce_p95_duration_seconds_24h"}]},
+    {"type":"timeseries","title":"Model credits","gridPos":{"h":8,"w":12,"x":0,"y":4},"targets":[{"expr":"zworkforce_model_credits_24h","legendFormat":"{{tier}}"}]},
+    {"type":"timeseries","title":"Provider availability","gridPos":{"h":8,"w":12,"x":12,"y":4},"targets":[{"expr":"zworkforce_provider_available","legendFormat":"{{provider}}"}]},
+    {"type":"stat","title":"Active workflow runs","gridPos":{"h":4,"w":6,"x":0,"y":12},"targets":[{"expr":"zworkforce_workflow_runs_active"}]},
+    {"type":"stat","title":"Enabled schedules","gridPos":{"h":4,"w":6,"x":6,"y":12},"targets":[{"expr":"zworkforce_schedules_enabled"}]},
+    {"type":"stat","title":"Active evaluations","gridPos":{"h":4,"w":6,"x":12,"y":12},"targets":[{"expr":"zworkforce_evaluations_active"}]},
+    {"type":"stat","title":"Outbox pending","gridPos":{"h":4,"w":6,"x":18,"y":12},"targets":[{"expr":"zworkforce_outbox_pending"}]},
+    {"type":"table","title":"SLO status","gridPos":{"h":7,"w":24,"x":0,"y":16},"targets":[{"expr":"zworkforce_slo_ok","format":"table","instant":true},{"expr":"zworkforce_slo_value","format":"table","instant":true}]}
+  ]
+}

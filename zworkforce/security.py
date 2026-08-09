@@ -29,10 +29,11 @@ class Principal:
 
 
 class AuthManager:
-    def __init__(self, db, bootstrap_keys=(), trust_proxy_identity: bool = False, proxy_identity_secret: str = ""):
+    def __init__(self, db, bootstrap_keys=(), trust_proxy_identity: bool = False, proxy_identity_secret: str = "", oidc=None):
         self.db = db
         self.trust_proxy_identity = trust_proxy_identity
         self.proxy_identity_secret = proxy_identity_secret
+        self.oidc = oidc
         for item in bootstrap_keys:
             digest = _hash_secret(item.secret)
             key_id = "bootstrap-" + hashlib.sha256((item.name + digest).encode()).hexdigest()[:16]
@@ -43,6 +44,13 @@ class AuthManager:
             principal = self._proxy_principal(proxy_headers)
             if principal:
                 return principal
+        if authorization and authorization.lower().startswith("bearer ") and self.oidc:
+            token = authorization[7:].strip()
+            try:
+                claims = self.oidc.verify(token)
+                return Principal(claims["name"], claims["role"], claims["tenant_id"], tuple(claims.get("scopes") or ["*"]), "oidc")
+            except Exception:
+                pass
         candidate = x_api_key or ""
         if authorization and authorization.lower().startswith("bearer "):
             candidate = authorization[7:].strip()
@@ -60,9 +68,10 @@ class AuthManager:
         name = headers.get("X-Forwarded-User", "").strip()
         role = headers.get("X-Forwarded-Role", "").strip().lower()
         tenant = headers.get("X-Forwarded-Tenant", "").strip().lower()
+        scopes_raw = headers.get("X-Forwarded-Scopes", "*").strip()
         signature = headers.get("X-ZWorkforce-Proxy-Signature", "").strip().lower()
         timestamp = headers.get("X-ZWorkforce-Proxy-Timestamp", "").strip()
-        if not (name and role in ROLE_LEVEL and TENANT_RE.fullmatch(tenant) and signature and timestamp and self.proxy_identity_secret):
+        if not (name and role in ROLE_LEVEL and TENANT_RE.fullmatch(tenant) and scopes_raw and signature and timestamp and self.proxy_identity_secret):
             return None
         try:
             ts = int(timestamp)
@@ -70,12 +79,13 @@ class AuthManager:
             return None
         if abs(int(time.time()) - ts) > 60:
             return None
-        material = f"{name}\n{role}\n{tenant}\n{timestamp}".encode()
+        material = f"{name}\n{role}\n{tenant}\n{scopes_raw}\n{timestamp}".encode()
         expected = hmac.new(self.proxy_identity_secret.encode(), material, hashlib.sha256).hexdigest()
         if not hmac.compare_digest(expected, signature):
             return None
-        scopes_raw = headers.get("X-Forwarded-Scopes", "*")
-        scopes = tuple(s.strip() for s in scopes_raw.split(",") if s.strip()) or ("*",)
+        scopes = tuple(s.strip() for s in scopes_raw.split(",") if s.strip())
+        if not scopes:
+            return None
         return Principal(name, role, tenant, scopes, "proxy")
 
     @staticmethod

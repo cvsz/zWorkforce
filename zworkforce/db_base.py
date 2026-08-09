@@ -7,19 +7,29 @@ from pathlib import Path
 import sqlite3
 from typing import Any, Iterable
 
+from .db_backend import connect_postgres, is_postgres_target
 from .db_schema import SCHEMA_SQL
+from .db_schema_v3 import V3_SCHEMA_SQL
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 TERMINAL_STATUSES = {"succeeded", "failed", "canceled", "dead_letter"}
+_ARRAY_JSON_FIELDS = {
+    "allowed_tools_json", "approval_tools_json", "skill_ids_json", "tags_json", "success_criteria_json",
+    "scopes_json", "depends_on_json", "cases_json", "variants_json",
+}
+
 
 def utcnow() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
+
 def utc_after(seconds: int) -> str:
     return (datetime.now(timezone.utc) + timedelta(seconds=seconds)).isoformat(timespec="seconds")
 
+
 def json_dumps(value: Any) -> str:
     return json.dumps(value, separators=(",", ":"), ensure_ascii=False, sort_keys=True, default=str)
+
 
 def json_loads(value: str | None, default: Any) -> Any:
     if not value:
@@ -29,15 +39,26 @@ def json_loads(value: str | None, default: Any) -> Any:
     except json.JSONDecodeError:
         return default
 
+
 class DatabaseBase:
-    def __init__(self, path: str | Path, default_tenant: str = "default"):
-        self.path = Path(path)
+    def __init__(self, target: str | Path, default_tenant: str = "default"):
+        self.target = str(target)
+        self.backend_kind = "postgres" if is_postgres_target(self.target) else "sqlite"
+        self.path = None if self.backend_kind == "postgres" else Path(target)
         self.default_tenant = default_tenant
-        self.path.parent.mkdir(parents=True, exist_ok=True)
+        if self.path is not None:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
         self.initialize()
 
     @contextmanager
     def connection(self):
+        if self.backend_kind == "postgres":
+            connection = connect_postgres(self.target)
+            try:
+                yield connection
+            finally:
+                connection.close()
+            return
         c = sqlite3.connect(self.path, timeout=30, isolation_level=None)
         c.row_factory = sqlite3.Row
         c.execute("PRAGMA foreign_keys=ON")
@@ -49,44 +70,54 @@ class DatabaseBase:
 
     def initialize(self) -> None:
         with self.connection() as c:
-            c.execute("PRAGMA journal_mode=WAL")
-            c.execute("PRAGMA synchronous=NORMAL")
+            if self.backend_kind == "sqlite":
+                c.execute("PRAGMA journal_mode=WAL")
+                c.execute("PRAGMA synchronous=NORMAL")
             c.executescript(SCHEMA_SQL)
+            c.executescript(V3_SCHEMA_SQL)
             c.execute(
                 "INSERT INTO schema_meta(key,value) VALUES('schema_version',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
                 (str(SCHEMA_VERSION),),
             )
         self.ensure_tenant(self.default_tenant, self.default_tenant.title())
-        self._migrate_v1_if_needed()
+        if self.backend_kind == "sqlite":
+            self._migrate_v1_if_needed()
 
-    def _table_exists(self, c: sqlite3.Connection, name: str) -> bool:
+    def _table_exists(self, c, name: str) -> bool:
+        if self.backend_kind == "postgres":
+            row = c.execute("SELECT to_regclass(?)", (name,)).fetchone()
+            return bool(row and row[0])
         return bool(c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (name,)).fetchone())
 
-    def _rows(self, rows: Iterable[sqlite3.Row]) -> list[dict[str, Any]]:
+    def _rows(self, rows: Iterable) -> list[dict[str, Any]]:
         return [self._decode(dict(r)) for r in rows]
 
     @staticmethod
     def _decode(row: dict[str, Any]) -> dict[str, Any]:
         for key in list(row):
             if key.endswith("_json"):
-                row[key[:-5]] = json_loads(row.pop(key), [] if key in {"allowed_tools_json", "approval_tools_json", "skill_ids_json", "tags_json", "success_criteria_json", "scopes_json"} else {})
+                row[key[:-5]] = json_loads(row.pop(key), [] if key in _ARRAY_JSON_FIELDS else {})
         return row
 
     def ensure_tenant(self, tenant_id: str, name: str | None = None) -> dict[str, Any]:
         now = utcnow()
         with self.connection() as c:
             c.execute("BEGIN IMMEDIATE")
-            c.execute(
-                "INSERT OR IGNORE INTO tenants(id,name,enabled,created_at,updated_at) VALUES(?,?,1,?,?)",
-                (tenant_id, name or tenant_id, now, now),
-            )
-            count = c.execute("SELECT COUNT(*) FROM agents2 WHERE tenant_id=?", (tenant_id,)).fetchone()[0]
-            if count == 0:
-                self._seed_agents(c, tenant_id, now)
-            c.execute("COMMIT")
+            try:
+                c.execute(
+                    "INSERT OR IGNORE INTO tenants(id,name,enabled,created_at,updated_at) VALUES(?,?,1,?,?)",
+                    (tenant_id, name or tenant_id, now, now),
+                )
+                count = c.execute("SELECT COUNT(*) FROM agents2 WHERE tenant_id=?", (tenant_id,)).fetchone()[0]
+                if count == 0:
+                    self._seed_agents(c, tenant_id, now)
+                c.execute("COMMIT")
+            except Exception:
+                c.execute("ROLLBACK")
+                raise
         return self.get_tenant(tenant_id) or {}
 
-    def _seed_agents(self, c: sqlite3.Connection, tenant_id: str, now: str) -> None:
+    def _seed_agents(self, c, tenant_id: str, now: str) -> None:
         common_read = ["calculator", "workspace_list", "workspace_read", "memory_search", "http_get", "agent_delegate"]
         coding = common_read + ["workspace_write", "shell_exec"]
         seeds = [
@@ -123,8 +154,9 @@ class DatabaseBase:
             row = c.execute("SELECT * FROM agents2 WHERE tenant_id=? AND id=?", (tenant_id, agent_id)).fetchone()
             return self._decode(dict(row)) if row else None
 
-    def upsert_agent(self, tenant_id: str, a: dict[str, Any]) -> dict[str, Any]:
+    def upsert_agent(self, tenant_id: str, a: dict[str, Any], actor: str = "system") -> dict[str, Any]:
         now = utcnow()
+        before = self.get_agent(tenant_id, a["id"])
         values = (
             tenant_id,
             a["id"],
@@ -158,4 +190,10 @@ class DatabaseBase:
                 skill_ids_json=excluded.skill_ids_json,enabled=excluded.enabled,updated_at=excluded.updated_at""",
                 values,
             )
-        return self.get_agent(tenant_id, a["id"]) or {}
+        result = self.get_agent(tenant_id, a["id"]) or {}
+        def comparable(value):
+            if not value: return value
+            return {k: v for k, v in value.items() if k not in {"created_at", "updated_at"}}
+        if result and comparable(result) != comparable(before) and hasattr(self, "record_agent_version"):
+            self.record_agent_version(tenant_id, a["id"], result, actor)
+        return result

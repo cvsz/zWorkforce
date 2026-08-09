@@ -1,37 +1,52 @@
-# Security Policy
+# Security
 
-Security fixes target the latest `2.x` release line.
+## Security properties
 
-## Trust boundaries
+- Provider, database, vector-store and object-store credentials remain server-side.
+- API keys are stored as SHA-256 digests; generated secrets are shown once.
+- OIDC verifies signature, issuer, audience and required timestamps and accepts asymmetric signing algorithms only.
+- SAML should terminate at a mature IdP/proxy; zWorkforce verifies the proxy identity with an HMAC timestamped boundary rather than implementing its own SAML parser.
+- Tenant context is resolved from authenticated identity; only superadmin may switch tenant using `X-Tenant-ID`.
+- Four-eyes approvals prevent a task requester from satisfying their own approval requirement.
+- Policy-as-code can deny task classes or tools in addition to agent grants.
+- Mutating tools require explicit mutating task intent and completed approvals where configured.
+- Shell execution is disabled by default, uses `shell=False`, an executable allowlist, bounded arguments/output/time and sanitized environment variables.
+- Workspace paths are rooted; writes are atomic.
+- HTTP tools use hostname allowlists, DNS/IP validation, redirect revalidation and private/non-routable address denial by default.
+- Artifacts are SHA-256 content addressed and verified on read.
+- Remote MCP/skill/embedding/Qdrant endpoints require HTTPS except explicit localhost development endpoints.
+- Per-tenant audit events are SHA-256 chained for tamper evidence.
+- Request/auth rate limits, request-size caps, CSP, no-frame and no-sniff headers are enabled.
+- Containers run non-root, drop Linux capabilities and support read-only root filesystems.
+- Kubernetes manifests start with default-deny ingress and egress.
 
-- Browser/UI is untrusted and never receives provider secrets.
-- API keys authenticate at the control-plane boundary and are stored as SHA-256 digests.
-- Tenant comes from authenticated identity; cross-tenant switching is restricted to `superadmin`.
-- Model output and provider responses are untrusted.
-- Tool arguments are validated again at execution.
+## Secrets
 
-## Mutation controls
+Use long random bootstrap API keys. Prefer mounted files, Vault or AWS Secrets Manager references rather than plain Compose environment values where supported.
 
-A mutating tool requires the server capability to be enabled, an agent grant, a task explicitly marked mutating, completed distinct approvals where required, and a task that is not canceled or over budget. The requester cannot approve/reject their own mutating task.
+Reference schemes:
 
-## Shell
+```text
+env://NAME
+file:///run/secrets/name#field
+aws-sm://secret-id#field
+vault://mount/path#field
+```
 
-Shell is disabled by default. When enabled it uses `shell=False`, a command allowlist, bounded arguments/time/output, fixed workspace cwd and a sanitized environment containing only explicitly allowed variable names. Provider/API secrets are not inherited unless an operator deliberately allowlists them.
+Never commit `.env`, provider tokens, database passwords, OIDC client secrets or signing keys.
 
-## HTTP / SSRF
+## PostgreSQL
 
-HTTP tools are deny-by-default and require a hostname allowlist. URL credentials are rejected. DNS answers resolving to private, loopback, link-local, multicast, unspecified or reserved addresses are rejected unless private access is explicitly enabled. Automatic redirects are disabled and allowed redirects are revalidated hop-by-hop.
+Require TLS for remote database connections, private network placement, least-privilege credentials, encrypted backups and PITR. zWorkforce handles distributed task locking; it does not replace database HA controls.
 
-DNS preflight materially reduces SSRF risk but is not equivalent to a dedicated egress proxy that pins destination IPs. High-assurance environments should add network egress policy.
+## Egress
 
-## Skills
+Application DNS checks reduce SSRF risk but do not prevent all DNS rebinding/network-path attacks. High-assurance deployments must enforce egress at network/firewall/service-mesh level.
 
-Skill manifests can be HMAC signed. In production, configured signing keys enable signature enforcement. Rotate signing keys by re-signing trusted manifests.
+## MCP and integrations
 
-## Audit
+Treat remote MCP servers and webhook destinations as third-party execution boundaries. Use scoped tokens, HTTPS, network allowlists and tenant-specific policy. The webhook outbox signs payloads when a signing secret is configured; consumers should validate the delivery ID and signature and make handlers idempotent.
 
-Audit events are per-tenant hash chained and can be verified with `zworkforce audit-verify --tenant <id>`. For resistance to host compromise, forward audit/log events to immutable external storage.
+## Reporting vulnerabilities
 
-## Reporting
-
-Do not open a public issue for an exploitable vulnerability. Use the repository owner's private security reporting channel when available and include version, impact, reproduction and mitigation details.
+Do not publish secrets or exploit details in a public issue. Use the repository's private security-reporting channel when enabled, or contact the repository owner privately.

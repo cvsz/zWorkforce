@@ -1,12 +1,28 @@
 services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: zworkforce
+      POSTGRES_USER: zworkforce
+      POSTGRES_PASSWORD: ${ZWORKFORCE_POSTGRES_PASSWORD:?set ZWORKFORCE_POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zworkforce -d zworkforce"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
   api:
     build: .
-    image: zworkforce:2.0.0
+    image: zworkforce:3.0.0
     command: ["serve"]
     ports:
       - "9569:9569"
-    environment:
+    environment: &zworkforce-env
       ZWORKFORCE_ENV: production
+      ZWORKFORCE_DATABASE_URL: postgresql://zworkforce:${ZWORKFORCE_POSTGRES_PASSWORD}@postgres:5432/zworkforce
       ZWORKFORCE_API_KEYS: ${ZWORKFORCE_API_KEYS:?set ZWORKFORCE_API_KEYS}
       ZWORKFORCE_EMBEDDED_WORKERS: "0"
       ZWORKFORCE_PROVIDER: ${ZWORKFORCE_PROVIDER:-mock}
@@ -16,41 +32,84 @@ services:
       ZWORKFORCE_HTTP_ALLOWLIST: ${ZWORKFORCE_HTTP_ALLOWLIST:-}
       ZWORKFORCE_SHELL_ENABLED: ${ZWORKFORCE_SHELL_ENABLED:-false}
       ZWORKFORCE_SKILL_SIGNING_KEY: ${ZWORKFORCE_SKILL_SIGNING_KEY:-}
+      ZWORKFORCE_OIDC_ISSUER: ${ZWORKFORCE_OIDC_ISSUER:-}
+      ZWORKFORCE_OIDC_AUDIENCE: ${ZWORKFORCE_OIDC_AUDIENCE:-}
+      ZWORKFORCE_OTLP_TRACES_ENDPOINT: ${ZWORKFORCE_OTLP_TRACES_ENDPOINT:-}
+      ZWORKFORCE_OUTBOX_SIGNING_SECRET: ${ZWORKFORCE_OUTBOX_SIGNING_SECRET:-}
+      ZWORKFORCE_ARTIFACT_BACKEND: ${ZWORKFORCE_ARTIFACT_BACKEND:-local}
+      ZWORKFORCE_S3_BUCKET: ${ZWORKFORCE_S3_BUCKET:-}
+      ZWORKFORCE_S3_PREFIX: ${ZWORKFORCE_S3_PREFIX:-zworkforce}
+      ZWORKFORCE_S3_ENDPOINT_URL: ${ZWORKFORCE_S3_ENDPOINT_URL:-}
+      ZWORKFORCE_VECTOR_BACKEND: ${ZWORKFORCE_VECTOR_BACKEND:-local}
+      ZWORKFORCE_LOCAL_VECTOR_DIMENSIONS: ${ZWORKFORCE_LOCAL_VECTOR_DIMENSIONS:-128}
+      ZWORKFORCE_QDRANT_URL: ${ZWORKFORCE_QDRANT_URL:-}
+      ZWORKFORCE_QDRANT_COLLECTION: ${ZWORKFORCE_QDRANT_COLLECTION:-zworkforce-memory}
+      ZWORKFORCE_QDRANT_API_KEY: ${ZWORKFORCE_QDRANT_API_KEY:-}
+      ZWORKFORCE_EMBEDDING_BASE_URL: ${ZWORKFORCE_EMBEDDING_BASE_URL:-}
+      ZWORKFORCE_EMBEDDING_API_KEY: ${ZWORKFORCE_EMBEDDING_API_KEY:-}
+      ZWORKFORCE_EMBEDDING_MODEL: ${ZWORKFORCE_EMBEDDING_MODEL:-}
+      ZWORKFORCE_EMBEDDING_DIMENSIONS: ${ZWORKFORCE_EMBEDDING_DIMENSIONS:-0}
     volumes:
-      - zworkforce-data:/data
       - ./workspace:/workspace
-    read_only: true
-    tmpfs: [/tmp]
-    security_opt: ["no-new-privileges:true"]
-    cap_drop: ["ALL"]
-    restart: unless-stopped
-
-  worker:
-    image: zworkforce:2.0.0
-    build: .
-    command: ["worker", "--id", "docker-worker-1"]
-    environment:
-      ZWORKFORCE_ENV: production
-      ZWORKFORCE_API_KEYS: ${ZWORKFORCE_API_KEYS:?set ZWORKFORCE_API_KEYS}
-      ZWORKFORCE_EMBEDDED_WORKERS: "0"
-      ZWORKFORCE_PROVIDER: ${ZWORKFORCE_PROVIDER:-mock}
-      ZWORKFORCE_PROVIDER_BASE_URL: ${ZWORKFORCE_PROVIDER_BASE_URL:-https://api.openai.com/v1}
-      ZWORKFORCE_PROVIDER_API_KEY: ${ZWORKFORCE_PROVIDER_API_KEY:-}
-      ZWORKFORCE_PROVIDERS_JSON: ${ZWORKFORCE_PROVIDERS_JSON:-}
-      ZWORKFORCE_HTTP_ALLOWLIST: ${ZWORKFORCE_HTTP_ALLOWLIST:-}
-      ZWORKFORCE_SHELL_ENABLED: ${ZWORKFORCE_SHELL_ENABLED:-false}
-      ZWORKFORCE_SKILL_SIGNING_KEY: ${ZWORKFORCE_SKILL_SIGNING_KEY:-}
-    volumes:
-      - zworkforce-data:/data
-      - ./workspace:/workspace
+      - artifacts:/artifacts
     read_only: true
     tmpfs: [/tmp]
     security_opt: ["no-new-privileges:true"]
     cap_drop: ["ALL"]
     restart: unless-stopped
     depends_on:
-      api:
+      postgres:
+        condition: service_healthy
+
+  worker:
+    image: zworkforce:3.0.0
+    build: .
+    command: ["worker"]
+    environment: *zworkforce-env
+    volumes:
+      - ./workspace:/workspace
+      - artifacts:/artifacts
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  scheduler:
+    image: zworkforce:3.0.0
+    build: .
+    command: ["scheduler", "--poll", "1"]
+    environment: *zworkforce-env
+    volumes:
+      - ./workspace:/workspace
+      - artifacts:/artifacts
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  outbox:
+    image: zworkforce:3.0.0
+    build: .
+    command: ["outbox", "--poll", "2"]
+    environment: *zworkforce-env
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    restart: unless-stopped
+    profiles: ["integrations"]
+    depends_on:
+      postgres:
         condition: service_healthy
 
 volumes:
-  zworkforce-data:
+  postgres-data:
+  artifacts:

@@ -1,0 +1,1 @@
+{"id":"production-guard","name":"Production guardrails","document":{"default":"allow","rules":[{"id":"no-finance-shell","effect":"deny","action":"tool.shell_exec","when":{"department":"finance"}},{"id":"no-sales-mutations","effect":"deny","action":"task.submit","when":{"department":"sales","mutating":true}}]}}

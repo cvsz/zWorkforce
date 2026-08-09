@@ -1,12 +1,15 @@
 .git
 .github
 .env
+.env.*
+!.env.example
 .venv
 __pycache__
 *.pyc
 *.pyo
 data
 workspace
+artifacts
 tests
 dist
 build

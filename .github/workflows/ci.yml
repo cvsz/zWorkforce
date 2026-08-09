@@ -17,16 +17,53 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+      - name: Install package and runtime dependencies
+        run: python -m pip install --no-cache-dir .
       - name: Compile
         run: python -m compileall -q zworkforce tests
       - name: Unit and integration tests
         run: PYTHONPATH=. python -m unittest discover -s tests -v
-      - name: Package install
-        run: python -m pip install --no-cache-dir .
       - name: Doctor
         run: ZWORKFORCE_DATA_DIR=/tmp/zworkforce-ci ZWORKFORCE_WORKSPACE_ROOT=$PWD zworkforce doctor
       - name: CLI smoke
         run: zworkforce --version
+      - name: JavaScript syntax and example JSON
+        run: |
+          node --check zworkforce/static/app.js
+          python - <<'PY'
+          import json, pathlib
+          for p in pathlib.Path('examples').glob('*.json'):
+              json.loads(p.read_text())
+          PY
+
+  postgres-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: zworkforce
+          POSTGRES_PASSWORD: zworkforce
+          POSTGRES_DB: zworkforce_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U zworkforce -d zworkforce_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      ZWORKFORCE_TEST_POSTGRES_URL: postgresql://zworkforce:zworkforce@127.0.0.1:5432/zworkforce_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install package
+        run: python -m pip install --no-cache-dir .
+      - name: PostgreSQL queue/runtime tests
+        run: PYTHONPATH=. python -m unittest tests.test_v3_postgres -v
+
   container:
     runs-on: ubuntu-latest
     steps:
@@ -34,6 +71,7 @@ jobs:
       - uses: docker/setup-buildx-action@v3
       - name: Build hardened image
         run: docker build -t zworkforce:ci .
+
   security-invariants:
     runs-on: ubuntu-latest
     steps:
@@ -42,3 +80,7 @@ jobs:
         run: '! grep -R --line-number --include="*.py" "shell=True" zworkforce'
       - name: No provider secrets in static assets
         run: '! grep -R --line-number -E "API_KEY|provider_api_key|Authorization: Bearer" zworkforce/static'
+      - name: Verify v3 source and no recovery workflow
+        run: |
+          test "$(python -c 'import zworkforce; print(zworkforce.__version__)')" = "3.0.0"
+          test ! -e .github/workflows/v3-rematerialize.yml
