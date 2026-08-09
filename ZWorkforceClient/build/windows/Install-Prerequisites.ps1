@@ -126,3 +126,4 @@ if ($requiredFailures.Count -gt 0) {
 }
 
 Write-Host "All required WinUI client build prerequisites are present."
+exit 0
