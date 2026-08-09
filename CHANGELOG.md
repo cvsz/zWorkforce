@@ -13,11 +13,18 @@
 - Runtime-selectable local/Qdrant semantic memory with embedding adapter.
 - OTLP tracing, durable webhook outbox, SLO/capacity/chargeback reporting.
 - Agent templates/version history, Kubernetes and observability deployment examples.
+- Tag-driven GitHub release pipeline with wheel/sdist, SHA-256 checksums, CycloneDX SBOM, build provenance and GHCR OCI provenance/SBOM.
+- Dependabot, dependency review, CODEOWNERS and pull-request security/release checklist.
+- Production readiness, release, secret-management and disaster-recovery runbooks.
+- Guarded PostgreSQL backup/restore scripts and deployment smoke test.
+- Release metadata verifier enforcing package/Compose/Kubernetes version consistency.
 
 ### Changed
-- Production Compose defaults to PostgreSQL with dedicated API/worker/scheduler services.
+- Production Compose defaults to PostgreSQL with dedicated API/worker/scheduler services and supports immutable `ZWORKFORCE_IMAGE` overrides.
+- Kubernetes release manifests use canonical `v3.0.0` GHCR tags.
 - Python dependency floors updated for the v3 distributed/identity stack.
 - Dashboard and API surface expanded for automation, evaluation and economics.
+- CI now validates operational scripts, release metadata, SBOM generation and production Compose rendering in addition to runtime tests.
 
 ### Compatibility
 - Existing v2 SQLite data/schema remains supported.
