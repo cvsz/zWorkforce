@@ -1,0 +1,11 @@
+# Default ownership
+* @cvsz
+
+# Security-sensitive surfaces
+/.github/ @cvsz
+/zworkforce/security.py @cvsz
+/zworkforce/policy.py @cvsz
+/zworkforce/secret_store.py @cvsz
+/zworkforce/skill_registry.py @cvsz
+/deploy/ @cvsz
+/SECURITY.md @cvsz
