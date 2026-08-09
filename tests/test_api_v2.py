@@ -6,7 +6,7 @@ import urllib.error
 from http.server import ThreadingHTTPServer
 
 from common import stack
-from zworkforce.api import App
+from zworkforce.api import App, _sanitize_header_value
 
 
 class ApiV2Tests(unittest.TestCase):
@@ -31,6 +31,15 @@ class ApiV2Tests(unittest.TestCase):
             data=json.loads(r.read())
             self.assertEqual(data["version"],"3.0.0")
             self.assertEqual(r.headers["X-Frame-Options"],"DENY")
+
+    def test_header_values_strip_response_splitting_bytes(self):
+        self.assertEqual(_sanitize_header_value("request\r\nInjected: yes"), "requestInjected: yes")
+        self.assertEqual(_sanitize_header_value("origin\nInjected: yes"), "originInjected: yes")
+
+    def test_static_asset_uses_explicit_content_type(self):
+        req=urllib.request.Request(self.base+"/app.js")
+        with urllib.request.urlopen(req,timeout=5) as r:
+            self.assertEqual(r.headers["Content-Type"], "text/javascript; charset=utf-8")
     def test_overview_auth_and_task_dispatch(self):
         status,headers,data=self.req("/api/v1/overview")
         self.assertEqual(status,200); self.assertIn("credits_24h",data)

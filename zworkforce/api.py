@@ -4,7 +4,6 @@ import base64
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
-import mimetypes
 import os
 from pathlib import Path
 import re
@@ -28,6 +27,15 @@ from .workflow import WorkflowOrchestrator
 
 AGENT_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{1,62}$")
 REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
+STATIC_CONTENT_TYPES = {
+    "index.html": "text/html; charset=utf-8",
+    "app.js": "text/javascript; charset=utf-8",
+    "styles.css": "text/css; charset=utf-8",
+}
+
+
+def _sanitize_header_value(value: str) -> str:
+    return value.replace("\r", "").replace("\n", "")
 
 
 class App:
@@ -62,9 +70,9 @@ class App:
                                  separators=(",", ":")), flush=True)
 
             def _prepare(self):
-                rid = self.headers.get("X-Request-ID", "")
+                rid = _sanitize_header_value(self.headers.get("X-Request-ID", ""))
                 self.request_id = rid if REQUEST_ID_RE.fullmatch(rid) else uuid.uuid4().hex
-                origin = self.headers.get("Origin", "")
+                origin = _sanitize_header_value(self.headers.get("Origin", ""))
                 self._cors_origin = origin if origin and origin in app.settings.cors_origins else ""
 
             def _security_headers(self, cache_control: str = "no-store"):
@@ -74,9 +82,9 @@ class App:
                 self.send_header("Referrer-Policy", "no-referrer")
                 self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
                 self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'")
-                self.send_header("X-Request-ID", self.request_id)
+                self.send_header("X-Request-ID", _sanitize_header_value(self.request_id))
                 if self._cors_origin:
-                    self.send_header("Access-Control-Allow-Origin", self._cors_origin)
+                    self.send_header("Access-Control-Allow-Origin", _sanitize_header_value(self._cors_origin))
                     self.send_header("Vary", "Origin")
 
             def _json(self, status: int, data: Any, headers: dict[str, str] | None = None):
@@ -86,7 +94,7 @@ class App:
                 self.send_header("Content-Length", str(len(payload)))
                 self._security_headers()
                 for k, v in (headers or {}).items():
-                    self.send_header(k, v)
+                    self.send_header(k, _sanitize_header_value(str(v)))
                 self.end_headers()
                 self.wfile.write(payload)
 
@@ -147,7 +155,7 @@ class App:
                     return self._error(404, "not_found", "not found")
                 data = path.read_bytes()
                 self.send_response(200)
-                self.send_header("Content-Type", mimetypes.guess_type(name)[0] or "application/octet-stream")
+                self.send_header("Content-Type", STATIC_CONTENT_TYPES.get(name, "application/octet-stream"))
                 self.send_header("Content-Length", str(len(data)))
                 self._security_headers("public,max-age=300")
                 self.end_headers()
@@ -158,7 +166,7 @@ class App:
 
             def do_OPTIONS(self):
                 self._prepare()
-                origin = self.headers.get("Origin", "")
+                origin = _sanitize_header_value(self.headers.get("Origin", ""))
                 if not origin or origin not in app.settings.cors_origins:
                     return self._error(403, "cors_denied", "origin is not allowed")
                 self.send_response(204)
