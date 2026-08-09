@@ -68,10 +68,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends postgresql-client
           restore_url="${ZWORKFORCE_TEST_POSTGRES_URL%/zworkforce_ci}/zworkforce_restore"
-          psql "$ZWORKFORCE_TEST_POSTGRES_URL" -v ON_ERROR_STOP=1 -c 'CREATE DATABASE zworkforce_restore'
+          docker run --rm --network host \
+            postgres:17-alpine \
+            psql "$ZWORKFORCE_TEST_POSTGRES_URL" -v ON_ERROR_STOP=1 -c 'CREATE DATABASE zworkforce_restore'
           ZWORKFORCE_DATABASE_URL="$ZWORKFORCE_TEST_POSTGRES_URL" PYTHONPATH=. python - <<'PY'
           import os
           from zworkforce.db import Database
@@ -83,13 +83,23 @@ jobs:
           PY
           backup_dir="$(mktemp -d)"
           backup_path="$backup_dir/zworkforce-recovery.dump"
-          ZWORKFORCE_DATABASE_URL="$ZWORKFORCE_TEST_POSTGRES_URL" \
-            ZWORKFORCE_BACKUP_DIR="$backup_dir" \
+          docker run --rm --network host \
+            -e "ZWORKFORCE_DATABASE_URL=$ZWORKFORCE_TEST_POSTGRES_URL" \
+            -e "ZWORKFORCE_BACKUP_DIR=$backup_dir" \
+            -v "$PWD:/workspace" \
+            -v "$backup_dir:$backup_dir" \
+            -w /workspace \
+            postgres:17-alpine \
             bash scripts/backup-postgres.sh "$backup_path"
           test -s "$backup_path"
           test -s "$backup_path.sha256"
-          ZWORKFORCE_DATABASE_URL="$restore_url" \
-            ZWORKFORCE_RESTORE_CONFIRM=YES \
+          docker run --rm --network host \
+            -e "ZWORKFORCE_DATABASE_URL=$restore_url" \
+            -e ZWORKFORCE_RESTORE_CONFIRM=YES \
+            -v "$PWD:/workspace" \
+            -v "$backup_dir:$backup_dir" \
+            -w /workspace \
+            postgres:17-alpine \
             bash scripts/restore-postgres.sh "$backup_path"
           ZWORKFORCE_DATABASE_URL="$restore_url" PYTHONPATH=. python - <<'PY'
           import os
