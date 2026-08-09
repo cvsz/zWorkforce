@@ -1,7 +1,8 @@
-<Page
+<local:PageBase
     x:Class="ZWorkforceClient.Pages.ConnectionPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ZWorkforceClient.Pages">
     <ScrollViewer>
         <StackPanel MaxWidth="720" Padding="{ThemeResource PagePaddingThickness}" Spacing="18">
             <StackPanel Spacing="6">
@@ -29,4 +30,4 @@
             </StackPanel>
         </StackPanel>
     </ScrollViewer>
-</Page>
+</local:PageBase>

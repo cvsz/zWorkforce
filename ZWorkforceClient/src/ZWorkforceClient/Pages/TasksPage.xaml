@@ -1,7 +1,8 @@
-<Page
+<local:PageBase
     x:Class="ZWorkforceClient.Pages.TasksPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ZWorkforceClient.Pages">
     <Grid Padding="{ThemeResource PagePaddingThickness}" RowSpacing="14">
         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
         <Grid ColumnSpacing="12">
@@ -51,4 +52,4 @@
             </ScrollViewer>
         </Grid>
     </Grid>
-</Page>
+</local:PageBase>

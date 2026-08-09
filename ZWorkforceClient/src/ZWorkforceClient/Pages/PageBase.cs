@@ -3,7 +3,7 @@ using ZWorkforceClient.Core.Api;
 
 namespace ZWorkforceClient.Pages;
 
-public abstract class PageBase : Page
+public class PageBase : Page
 {
     protected ApiClient? Api => App.Current.Session.Api;
 

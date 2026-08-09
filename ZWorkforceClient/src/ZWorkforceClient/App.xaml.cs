@@ -11,7 +11,7 @@ public partial class App : Application
         Session = new ClientSession();
     }
 
-    public static App Current => (App)Application.Current;
+    public static new App Current => (App)Application.Current;
 
     public ClientSession Session { get; }
 

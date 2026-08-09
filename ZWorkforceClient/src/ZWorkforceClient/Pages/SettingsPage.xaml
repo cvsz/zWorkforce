@@ -1,7 +1,8 @@
-<Page
+<local:PageBase
     x:Class="ZWorkforceClient.Pages.SettingsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ZWorkforceClient.Pages">
     <ScrollViewer>
         <StackPanel MaxWidth="720" Padding="{ThemeResource PagePaddingThickness}" Spacing="18">
             <StackPanel Spacing="4"><TextBlock Text="CLIENT" Style="{StaticResource CaptionTextBlockStyle}" /><TextBlock Text="Settings" Style="{StaticResource TitleTextBlockStyle}" /></StackPanel>
@@ -26,4 +27,4 @@
             <TextBlock Text="zWorkforce Client 1.0.0 · API keys remain server-side and are stored locally only in Windows Credential Manager when you opt in." TextWrapping="Wrap" Opacity="0.7" />
         </StackPanel>
     </ScrollViewer>
-</Page>
+</local:PageBase>
