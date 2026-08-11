@@ -1,0 +1,26 @@
+name: Feature request
+description: Propose a capability or workflow improvement for the platform.
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What user or operator need does this request address?
+      placeholder: What is the gap?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Describe the smallest useful change that would address the need.
+      placeholder: What should we build or change?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: List any alternatives, tradeoffs, or constraints that matter.
+      placeholder: Other options or reasons not to do this?

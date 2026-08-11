@@ -1,0 +1,17 @@
+packages:
+  - apps/*
+  - services/*
+  - packages/*
+  - tools/*
+  - workers/*
+
+allowBuilds:
+  esbuild: false
+  sharp: true
+  unrs-resolver: true
+  workerd: false
+
+minimumReleaseAge: "0"
+
+overrides:
+  postcss: ">=8.5.10"

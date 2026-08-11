@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "suite_id": "zeaz-master-meta-codex-cloud-suite",
+  "display_name": "Zeaz Master Meta Codex Cloud Suite",
+  "repository": "cvsz/cloudflare-platform",
+  "primary_domain": "zeaz.dev",
+  "objective": "Coordinate safe, phase-scoped Codex Cloud work for the Zeaz Cloudflare Zero Trust platform without secrets or automatic infrastructure mutation.",
+  "source_of_truth": [
+    "AGENTS.md",
+    ".codex/context.md",
+    "docs/codex/master-meta-cloud-suite.md"
+  ],
+  "safety_contract": {
+    "offline_default": true,
+    "api_checks_opt_in_only": true,
+    "terraform_apply_allowed": false,
+    "terraform_destroy_allowed": false,
+    "external_mutation_allowed": false,
+    "secret_printing_allowed": false,
+    "global_cloudflare_api_key_allowed": false,
+    "allow_all_access_policy_allowed": false,
+    "requires_human_approval_for_mutation": true
+  },
+  "agent_roster": [
+    {
+      "id": "explorer",
+      "config_file": ".codex/agents/explorer.toml",
+      "mode": "read-only",
+      "purpose": "Gather file evidence and execution-path context before a change is planned."
+    },
+    {
+      "id": "docs_researcher",
+      "config_file": ".codex/agents/docs-researcher.toml",
+      "mode": "read-only",
+      "purpose": "Verify external API and product claims against primary documentation before implementation."
+    },
+    {
+      "id": "phase_planner",
+      "config_file": ".codex/agents/phase-planner.toml",
+      "mode": "read-only",
+      "purpose": "Break a broad request into one AGENTS.md phase with validations and rollback notes."
+    },
+    {
+      "id": "security_guardian",
+      "config_file": ".codex/agents/security-guardian.toml",
+      "mode": "read-only",
+      "purpose": "Review secrets, token separation, Access policies, placeholders, and guarded automation."
+    },
+    {
+      "id": "validation_operator",
+      "config_file": ".codex/agents/validation-operator.toml",
+      "mode": "read-only",
+      "purpose": "Select and interpret offline validation commands for the active phase."
+    },
+    {
+      "id": "reviewer",
+      "config_file": ".codex/agents/reviewer.toml",
+      "mode": "read-only",
+      "purpose": "Review the final patch for correctness, regressions, and missing tests."
+    }
+  ],
+  "phase_lanes": [
+    {
+      "phase": "F0",
+      "name": "Repository Audit",
+      "prompt_file": "docs/codex/prompts/f0-repository-audit.md",
+      "default_validations": ["git status --short", "make validate"],
+      "allowed_outputs": ["docs/audit/", "reports/platform/"]
+    },
+    {
+      "phase": "F1",
+      "name": "Context and Variables",
+      "prompt_file": "docs/codex/prompts/f1-context-and-variables.md",
+      "default_validations": ["make validate", "python3 -m pytest tests/", "bash scripts/validate.sh --offline"]
+    },
+    {
+      "phase": "F2",
+      "name": "Terraform and OpenTofu Foundation",
+      "prompt_file": "docs/codex/prompts/f2-terraform-opentofu-foundation.md",
+      "default_validations": ["make tf-fmt-check", "make tf-validate", "make tofu-validate"]
+    },
+    {
+      "phase": "F3",
+      "name": "Zero Trust and Identity",
+      "prompt_file": "docs/codex/prompts/f3-zero-trust-identity.md",
+      "default_validations": ["make policy-test", "make zero-trust-validate", "python3 -m pytest tests/"]
+    },
+    {
+      "phase": "F4",
+      "name": "DNS, Tunnels, and Networking",
+      "prompt_file": "docs/codex/prompts/f4-dns-tunnels-networking.md",
+      "default_validations": ["make dns-validate", "make tunnel-validate", "make network-validate", "make networking-validate"]
+    },
+    {
+      "phase": "F5",
+      "name": "Workers, Edge, and AI Gateway",
+      "prompt_file": "docs/codex/prompts/f5-workers-edge-ai-gateway.md",
+      "default_validations": ["make workers-validate", "make ai-gateway-validate", "make edge-validate"]
+    },
+    {
+      "phase": "F6",
+      "name": "Monitoring, DR, and Security Tooling",
+      "prompt_file": "docs/codex/prompts/f6-monitoring-dr-security.md",
+      "default_validations": ["make monitoring-validate", "make dr-validate", "make ops-validate", "make security-scan"]
+    },
+    {
+      "phase": "F7",
+      "name": "GitHub Actions and GitOps Orchestration",
+      "prompt_file": "docs/codex/prompts/f7-gitops-orchestration.md",
+      "default_validations": ["make workflow-policy", "make workflow-validate", "make gitops-validate"]
+    },
+    {
+      "phase": "F8",
+      "name": "Final Integration and Release Candidate",
+      "prompt_file": "docs/codex/prompts/f8-release-candidate-hardening.md",
+      "default_validations": ["make validate", "make security-scan", "make policy-test"]
+    },
+    {
+      "phase": "F9",
+      "name": "Human Review and First Apply Readiness",
+      "prompt_file": "docs/codex/prompts/f9-first-apply-readiness.md",
+      "default_validations": ["make readiness-validate", "make validate"]
+    },
+    {
+      "phase": "F10",
+      "name": "Controlled Deployment and Post-Deploy Review",
+      "prompt_file": "docs/codex/prompts/f10-controlled-deployment.md",
+      "default_validations": ["make deployment-validate", "make validate"]
+    },
+    {
+      "phase": "F11",
+      "name": "Maintenance Automation and Quarterly Review",
+      "prompt_file": "docs/codex/prompts/f11-maintenance-review.md",
+      "default_validations": ["make maintenance-validate", "make security-scan"]
+    },
+    {
+      "phase": "F12",
+      "name": "Final Documentation Pack and Long-Term Ownership Handoff",
+      "prompt_file": "docs/codex/prompts/f12-ownership-handoff.md",
+      "default_validations": ["make validate", "make security-scan"]
+    }
+  ],
+  "handoff_contract": {
+    "pull_request_body_required_sections": [
+      "summary",
+      "phase implemented",
+      "files changed",
+      "validation commands run",
+      "security notes",
+      "rollback notes",
+      "manual setup required",
+      "known limitations"
+    ],
+    "commit_scope_prefixes": ["feat(f1)", "feat(f2)", "feat(f3)", "feat(f4)", "feat(f5)", "feat(f6)", "feat(f7)", "chore(f8)", "docs(f9)", "docs(f10)", "docs(f11)", "docs(f12)"]
+  }
+}

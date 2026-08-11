@@ -1,0 +1,51 @@
+#:schema https://developers.openai.com/codex/config-schema.json
+
+# ECC Tools generated Codex baseline
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+web_search = "live"
+
+[mcp_servers.github]
+command = "npx"
+args = ["--yes", "--silent", "@modelcontextprotocol/server-github"]
+startup_timeout_sec = 180
+
+[mcp_servers.context7]
+command = "npx"
+args = ["--yes", "--silent", "@upstash/context7-mcp"]
+startup_timeout_sec = 180
+
+[mcp_servers.cloudflare]
+command = "bash"
+args = ["scripts/mcp/cloudflare-mcp.sh"]
+startup_timeout_sec = 180
+
+[mcp_servers.exa]
+url = "https://mcp.exa.ai/mcp"
+bearer_token_env_var = "EXA_API_KEY"
+startup_timeout_sec = 180
+
+[mcp_servers.memory]
+command = "npx"
+args = ["--yes", "--silent", "@modelcontextprotocol/server-memory"]
+startup_timeout_sec = 180
+
+[mcp_servers.playwright]
+command = "npx"
+args = ["--yes", "--silent", "@playwright/mcp@latest", "--extension"]
+startup_timeout_sec = 180
+
+[mcp_servers.playwright.tools.browser_resize]
+approval_mode = "approve"
+
+[mcp_servers.sequential-thinking]
+command = "npx"
+args = ["--yes", "--silent", "@modelcontextprotocol/server-sequential-thinking"]
+startup_timeout_sec = 180
+
+[features]
+multi_agent = true
+
+[agents]
+max_threads = 6
+max_depth = 1

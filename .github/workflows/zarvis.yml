@@ -1,0 +1,46 @@
+name: ZARVIS
+
+on:
+  pull_request:
+    paths:
+      - "packages/zarvis/**"
+      - "tests/test_zarvis_package.py"
+      - ".github/workflows/zarvis.yml"
+  push:
+    branches: [main]
+    paths:
+      - "packages/zarvis/**"
+      - "tests/test_zarvis_package.py"
+      - ".github/workflows/zarvis.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  migration-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - run: python -m unittest tests.test_zarvis_package -v
+
+  node-workspace:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/zarvis
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v5
+        with:
+          version: 11.4.0
+          run_install: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: pnpm
+          cache-dependency-path: packages/zarvis/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test

@@ -1,0 +1,7 @@
+name = "agent-control-worker"
+main = "src/index.ts"
+compatibility_date = "2024-03-20"
+
+[vars]
+API_GATEWAY_URL = "http://phase6-api:8080"
+AUTH_TOKEN = "test-token"
