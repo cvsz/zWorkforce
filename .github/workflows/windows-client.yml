@@ -9,14 +9,10 @@ on:
       - ".github/workflows/release.yml"
       - ".github/ISSUE_TEMPLATE/windows-client-bug.yml"
       - "docs/WINDOWS-CLIENT.md"
+  # This job is a required branch-protection context. It must be emitted for
+  # every pull request; path filtering here would leave unrelated PRs
+  # permanently blocked with a missing required check.
   pull_request:
-    paths:
-      - "ZWorkforceClient/**"
-      - "packages/zarvis/**"
-      - ".github/workflows/windows-client.yml"
-      - ".github/workflows/release.yml"
-      - ".github/ISSUE_TEMPLATE/windows-client-bug.yml"
-      - "docs/WINDOWS-CLIENT.md"
   workflow_dispatch:
 
 permissions:

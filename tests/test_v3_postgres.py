@@ -1,6 +1,9 @@
 import os
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 import unittest
 import uuid
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from zworkforce.config import ProviderConfig, Settings
 from zworkforce.db import Database, utcnow
@@ -50,6 +53,61 @@ class PostgresIntegrationTests(unittest.TestCase):
             self.assertIsNotNone(claimed)
             self.assertEqual(claimed["id"],second["id"])
             locker.execute("ROLLBACK")
+
+    def test_bootstrap_api_key_upsert_supports_postgres_literal_like_pattern(self):
+        key_id = f"bootstrap-{uuid.uuid4().hex}"
+        key_hash = f"test-hash-{uuid.uuid4().hex}"
+        self.db.upsert_api_key(key_id, self.tenant_id, "bootstrap", key_hash, "superadmin", ["*"])
+        stored = self.db.find_api_key(key_hash)
+        self.assertIsNotNone(stored)
+        self.assertEqual(stored["id"], key_id)
+
+    def test_concurrent_initialization_serializes_postgres_schema_ddl(self):
+        schema = f"ci_init_{uuid.uuid4().hex}"
+        import psycopg
+
+        def schema_target():
+            parsed = urlsplit(self.url)
+            query = [(key, value) for key, value in parse_qsl(parsed.query, keep_blank_values=True) if key != "options"]
+            query.append(("options", f"-csearch_path={schema}"))
+            return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(query), parsed.fragment))
+
+        with psycopg.connect(self.url, autocommit=True) as connection:
+            connection.execute(f'CREATE SCHEMA "{schema}"')
+        target = schema_target()
+        failures = []
+        start = Barrier(4)
+
+        def initialize(index):
+            start.wait(timeout=10)
+            return Database(target, f"init-{index}-{uuid.uuid4().hex}")
+
+        try:
+            with ThreadPoolExecutor(max_workers=4) as pool:
+                futures = [pool.submit(initialize, index) for index in range(4)]
+                for future in futures:
+                    try:
+                        future.result()
+                    except Exception as exc:
+                        failures.append(exc)
+            self.assertEqual(failures, [], [str(exc) for exc in failures])
+            with psycopg.connect(self.url, autocommit=True) as connection:
+                relations = connection.execute(
+                    "SELECT to_regclass(%s), to_regclass(%s), to_regclass(%s)",
+                    (f"{schema}.tenants", f"{schema}.tasks2", f"{schema}.event_rules3"),
+                ).fetchone()
+                schema_version = connection.execute(
+                    f'SELECT value FROM "{schema}".schema_meta WHERE key=%s',
+                    ("schema_version",),
+                ).fetchone()[0]
+            self.assertEqual(
+                relations,
+                (f"{schema}.tenants", f"{schema}.tasks2", f"{schema}.event_rules3"),
+            )
+            self.assertEqual(schema_version, "4")
+        finally:
+            with psycopg.connect(self.url, autocommit=True) as connection:
+                connection.execute(f'DROP SCHEMA "{schema}" CASCADE')
 
     def test_v4_workflow_occurrence_and_outbox_claims(self):
         workflows = WorkflowOrchestrator(self.db, self.engine)

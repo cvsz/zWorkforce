@@ -47,8 +47,8 @@ class GovernanceMixin:
             try:
                 if key_id.startswith("bootstrap-"):
                     c.execute(
-                        "UPDATE api_keys2 SET disabled=1,revoked_at=? WHERE tenant_id=? AND name=? AND id LIKE 'bootstrap-%' AND id<>?",
-                        (now, tenant_id, name, key_id),
+                        "UPDATE api_keys2 SET disabled=1,revoked_at=? WHERE tenant_id=? AND name=? AND id LIKE ? AND id<>?",
+                        (now, tenant_id, name, "bootstrap-%", key_id),
                     )
                 conflict_target = "id" if key_id.startswith("bootstrap-") else "key_hash"
                 c.execute(

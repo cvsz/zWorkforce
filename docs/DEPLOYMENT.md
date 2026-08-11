@@ -26,8 +26,10 @@ docker compose up -d --no-build
 
 The production control-plane hostname for this deployment is
 `https://zwf.zeaz.dev`. The Cloudflare Tunnel must route that exact hostname
-to the API origin at `http://127.0.0.1:9569`; keep the API bound to the
-loopback/network boundary and do not publish PostgreSQL or worker ports.
+to the host origin at `http://127.0.0.1:9570`. The container API still listens
+on port `9569`; the host-port split keeps `9569` available for the separate
+zksato service. Keep the API bound to the loopback/network boundary and do not
+publish PostgreSQL or worker ports.
 After the origin is running, verify the public path with:
 
 ```bash
