@@ -1,0 +1,85 @@
+# Instincts curated for https://github.com/cvsz/zWorkforce
+# Updated: 2026-08-11
+# Version: 2.0
+# NOTE: This file supplements (does not replace) existing curated instincts.
+
+---
+id: zWorkforce-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.9
+domain: git
+source: repo-review
+source_repo: https://github.com/cvsz/zWorkforce
+---
+
+# Conventional commits
+
+## Action
+
+Use a concise Conventional Commit subject with the prefix that describes the
+change, such as `feat`, `fix`, `docs`, `test`, or `chore`.
+
+## Evidence
+
+- Recent repository history consistently uses Conventional Commit subjects.
+
+---
+id: zWorkforce-python-naming
+trigger: "when creating or naming Python code"
+confidence: 0.95
+domain: code-style
+source: repo-review
+source_repo: https://github.com/cvsz/zWorkforce
+---
+
+# Python naming
+
+## Action
+
+Use `snake_case` for Python files, functions, methods, and variables;
+`PascalCase` for classes; and `UPPER_SNAKE_CASE` for constants.
+
+## Evidence
+
+- The `zworkforce/` package and `tests/` suite follow standard Python naming.
+
+---
+id: zWorkforce-package-boundaries
+trigger: "when changing a component in the repository"
+confidence: 0.95
+domain: architecture
+source: repo-review
+source_repo: https://github.com/cvsz/zWorkforce
+---
+
+# Package boundaries
+
+## Action
+
+Follow the local instructions and toolchain for the component being changed:
+Python service at the root, .NET under `ZWorkforceClient/`, and Z.A.R.V.I.S.
+under `packages/zarvis/`.
+
+## Evidence
+
+- The repository is a polyglot monorepo with independently tested components.
+
+---
+id: zWorkforce-test-separate
+trigger: "when writing tests"
+confidence: 0.9
+domain: testing
+source: repo-review
+source_repo: https://github.com/cvsz/zWorkforce
+---
+
+# Test placement
+
+## Action
+
+Place Python regression tests in `tests/` using `test_*.py` names. Keep .NET
+and Z.A.R.V.I.S. tests with their respective components.
+
+## Evidence
+
+- Root Python tests live in `tests/`; nested components own their test suites.
