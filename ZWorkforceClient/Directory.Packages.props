@@ -8,7 +8,7 @@
     <SystemSecurityPermissionsVersion>8.0.0</SystemSecurityPermissionsVersion>
     <SystemWindowsExtensionsVersion>8.0.0</SystemWindowsExtensionsVersion>
     <TestSdkVersion>18.8.1</TestSdkVersion>
-    <XunitVersion>2.9.2</XunitVersion>
+    <XunitVersion>2.9.3</XunitVersion>
     <XunitRunnerVersion>2.8.2</XunitRunnerVersion>
   </PropertyGroup>
   <ItemGroup>
