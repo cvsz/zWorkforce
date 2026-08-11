@@ -1,0 +1,4 @@
+[submodule "apps/zdash"]
+	path = apps/zdash
+	url = https://github.com/cvsz/zdash.git
+	branch = main

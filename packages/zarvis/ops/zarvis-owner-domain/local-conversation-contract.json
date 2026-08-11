@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "mode": "owner-local-conversation",
+  "domain": "voice.zarvis.zeaz.dev",
+  "publicIngress": false,
+  "defaultModel": "qwen3:8b",
+  "gateway": {
+    "host": "127.0.0.1",
+    "port": 8443,
+    "protocol": "https",
+    "exposure": "owner-ssh-loopback-only"
+  },
+  "publishedLoopbackServices": [
+    {
+      "id": "ollama",
+      "host": "127.0.0.1",
+      "hostPort": 11434,
+      "containerPort": 11434,
+      "gatewayExposed": false
+    },
+    {
+      "id": "zarvis-orchestrator",
+      "host": "127.0.0.1",
+      "hostPort": 8094,
+      "containerPort": 8094,
+      "gatewayExposed": false
+    },
+    {
+      "id": "voice-gateway",
+      "host": "127.0.0.1",
+      "hostPort": 8450,
+      "containerPort": 8450,
+      "gatewayExposed": true
+    },
+    {
+      "id": "zarvis-owner-voice-edge",
+      "host": "127.0.0.1",
+      "hostPort": 3023,
+      "containerPort": 3023,
+      "gatewayExposed": true
+    }
+  ],
+  "internalOnlyServices": [
+    {
+      "id": "voice-agent",
+      "containerPort": 8765
+    },
+    {
+      "id": "zvoice",
+      "containerPort": 3022
+    }
+  ],
+  "gatewayRoutes": [
+    {
+      "serverName": "voice.zarvis.zeaz.dev",
+      "path": "/v1/realtime",
+      "upstream": "http://127.0.0.1:8450"
+    },
+    {
+      "serverName": "voice.zarvis.zeaz.dev",
+      "path": "/",
+      "upstream": "http://127.0.0.1:3023"
+    }
+  ],
+  "forbiddenGatewayUpstreams": [
+    "http://127.0.0.1:11434",
+    "http://127.0.0.1:8094"
+  ],
+  "security": {
+    "anonymousAccess": false,
+    "browserProviderKeys": false,
+    "localLlmOnly": true,
+    "mutationRequiresApproval": true,
+    "runtimeEgressAfterBootstrap": false
+  }
+}

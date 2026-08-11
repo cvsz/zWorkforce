@@ -1,0 +1,10 @@
+{
+  "schema_version": "zarvis.migration.v1",
+  "migrated_from": "cvsz/z-platform",
+  "source_commit": "b86ee6f8b07b18b7025540193b919614e12cef09",
+  "source_of_truth": "cvsz/zWorkforce",
+  "destination": "packages/zarvis",
+  "migrated_at": "2026-08-11",
+  "upstream_sync": false,
+  "former_source_retained": true
+}

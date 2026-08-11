@@ -1,0 +1,26 @@
+{
+  "name": "z-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Clean ZeaZ platform foundation",
+  "packageManager": "pnpm@11.4.0",
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "test": "pnpm -r --workspace-concurrency=1 --if-present test && node --test scripts/test/*.test.mjs apps/zvoice/test/*.test.mjs services/voice-gateway/test/*.test.mjs",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "keys:validate": "node scripts/validate-api-keys.mjs",
+    "keys:check": "node scripts/validate-api-keys.mjs --syntax-only --strict",
+    "release:validate": "node scripts/validate-release-templates.mjs",
+    "release:evidence:validate": "node scripts/validate-release-evidence.mjs",
+    "k8s:validate": "node scripts/validate-kubernetes-manifests.mjs",
+    "k3s:validate": "bash scripts/validate-k3s-cilium.sh"
+  },
+  "engines": {
+    "node": ">=22.13",
+    "pnpm": ">=11"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  email {$ACME_EMAIL}
+}
+
+http://{$PHASE6_DOMAIN} {
+  encode zstd gzip
+
+  handle_path /grafana/* {
+    reverse_proxy grafana:3000
+  }
+
+  handle_path /jaeger/* {
+    reverse_proxy jaeger:16686
+  }
+
+  handle {
+    reverse_proxy phase6-api:8080
+  }
+
+  log {
+    output stdout
+    format json
+  }
+}
+
+# Public observability hostnames are routed through the Caddy gateway so the
+# Cloudflare Tunnel does not depend on Compose container names being resolvable
+# from the cloudflared runtime.
+http://grafana.zeaz.dev {
+  encode zstd gzip
+  reverse_proxy grafana:3000
+
+  log {
+    output stdout
+    format json
+  }
+}
+
+http://prometheus.zeaz.dev {
+  encode zstd gzip
+  reverse_proxy prometheus:9090
+
+  log {
+    output stdout
+    format json
+  }
+}
+
+http://{$ZC_DOMAIN} {
+  encode zstd gzip
+
+  reverse_proxy zc-api:8420
+
+  log {
+    output stdout
+    format json
+  }
+}
