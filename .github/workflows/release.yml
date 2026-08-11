@@ -60,7 +60,7 @@ jobs:
           (cd dist && sha256sum * > SHA256SUMS)
 
       - name: Upload release artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: zworkforce-${{ github.ref_name }}
           path: dist/*
@@ -159,7 +159,7 @@ jobs:
           }
 
       - name: Upload Windows release artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: zworkforce-windows-client-${{ github.ref_name }}
           path: |
@@ -171,7 +171,7 @@ jobs:
 
       - name: Upload Windows diagnostics
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: zworkforce-windows-client-diagnostics-${{ github.run_number }}
           path: |
