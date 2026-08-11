@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "ZWorkforceClient/**"
+      - "packages/zarvis/**"
       - ".github/workflows/windows-client.yml"
       - ".github/workflows/release.yml"
       - ".github/ISSUE_TEMPLATE/windows-client-bug.yml"
@@ -11,6 +12,7 @@ on:
   pull_request:
     paths:
       - "ZWorkforceClient/**"
+      - "packages/zarvis/**"
       - ".github/workflows/windows-client.yml"
       - ".github/workflows/release.yml"
       - ".github/ISSUE_TEMPLATE/windows-client-bug.yml"
@@ -58,6 +60,15 @@ jobs:
 
       - name: Package MSIX
         run: ./ZWorkforceClient/build/windows/Package-Client.ps1 -Configuration Release -Platform x64 -Version 1.0.0
+
+      - name: Restore Z.A.R.V.I.S. Windows client
+        run: dotnet restore packages/zarvis/apps/zarvis-windows/src/ZARVIS.Windows/ZARVIS.Windows.csproj
+
+      - name: Test Z.A.R.V.I.S. Windows client
+        run: dotnet test packages/zarvis/apps/zarvis-windows/tests/ZARVIS.Windows.Tests/ZARVIS.Windows.Tests.csproj --configuration Release --no-restore
+
+      - name: Build Z.A.R.V.I.S. Windows client
+        run: dotnet build packages/zarvis/apps/zarvis-windows/src/ZARVIS.Windows/ZARVIS.Windows.csproj --configuration Release --no-restore
 
       - name: Launch smoke check
         timeout-minutes: 8
