@@ -192,13 +192,13 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Download Python release artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: zworkforce-${{ github.ref_name }}
           path: dist
 
       - name: Download Windows release artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: zworkforce-windows-client-${{ github.ref_name }}
           path: windows-assets
