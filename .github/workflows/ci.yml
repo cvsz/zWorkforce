@@ -158,7 +158,7 @@ jobs:
         run: docker compose config -q
       - name: Verify release workflow capabilities
         run: |
-          grep -q 'actions/attest-build-provenance@v2' .github/workflows/release.yml
+          grep -q 'actions/attest-build-provenance@v4' .github/workflows/release.yml
           grep -q 'provenance: mode=max' .github/workflows/release.yml
           grep -q 'sbom: true' .github/workflows/release.yml
           grep -q 'gh release create' .github/workflows/release.yml
