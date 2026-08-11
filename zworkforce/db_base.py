@@ -17,6 +17,7 @@ _ARRAY_JSON_FIELDS = {
     "allowed_tools_json", "approval_tools_json", "skill_ids_json", "tags_json", "success_criteria_json",
     "scopes_json", "depends_on_json", "cases_json", "variants_json",
 }
+_POSTGRES_SCHEMA_LOCK_KEY = 0x5A574F524B
 
 
 def utcnow() -> str:
@@ -70,19 +71,31 @@ class DatabaseBase:
 
     def initialize(self) -> None:
         with self.connection() as c:
-            if self.backend_kind == "sqlite":
+            if self.backend_kind == "postgres":
+                c.execute("BEGIN")
+                try:
+                    c.execute("SELECT pg_advisory_xact_lock(?)", (_POSTGRES_SCHEMA_LOCK_KEY,))
+                    self._initialize_schema(c)
+                    c.execute("COMMIT")
+                except Exception:
+                    c.execute("ROLLBACK")
+                    raise
+            else:
                 c.execute("PRAGMA journal_mode=WAL")
                 c.execute("PRAGMA synchronous=NORMAL")
-            c.executescript(SCHEMA_SQL)
-            c.executescript(V3_SCHEMA_SQL)
-            self._ensure_v4_schema(c)
-            c.execute(
-                "INSERT INTO schema_meta(key,value) VALUES('schema_version',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-                (str(SCHEMA_VERSION),),
-            )
+                self._initialize_schema(c)
         self.ensure_tenant(self.default_tenant, self.default_tenant.title())
         if self.backend_kind == "sqlite":
             self._migrate_v1_if_needed()
+
+    def _initialize_schema(self, c) -> None:
+        c.executescript(SCHEMA_SQL)
+        c.executescript(V3_SCHEMA_SQL)
+        self._ensure_v4_schema(c)
+        c.execute(
+            "INSERT INTO schema_meta(key,value) VALUES('schema_version',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            (str(SCHEMA_VERSION),),
+        )
 
     def _column_exists(self, c, table: str, column: str) -> bool:
         if self.backend_kind == "postgres":

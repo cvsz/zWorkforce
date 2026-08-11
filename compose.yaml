@@ -22,7 +22,9 @@ services:
     image: ${ZWORKFORCE_IMAGE:-zworkforce:3.0.2}
     command: ["serve"]
     ports:
-      - "9569:9569"
+      # The container API remains on 9569; the host port is separated from
+      # zksato, which owns host port 9569.
+      - "${ZWORKFORCE_HOST_PORT:-9570}:9569"
     environment: &zworkforce-env
       ZWORKFORCE_ENV: production
       ZWORKFORCE_DATABASE_URL: postgresql://zworkforce:${ZWORKFORCE_POSTGRES_PASSWORD}@postgres:5432/zworkforce
@@ -80,6 +82,9 @@ services:
     tmpfs: [/tmp]
     security_opt: ["no-new-privileges:true"]
     cap_drop: ["ALL"]
+    # The image healthcheck targets the HTTP API; this role is queue-only.
+    healthcheck:
+      disable: true
     restart: unless-stopped
     depends_on:
       postgres:
@@ -100,6 +105,9 @@ services:
     tmpfs: [/tmp]
     security_opt: ["no-new-privileges:true"]
     cap_drop: ["ALL"]
+    # The image healthcheck targets the HTTP API; this role is scheduler-only.
+    healthcheck:
+      disable: true
     restart: unless-stopped
     depends_on:
       postgres:
@@ -117,6 +125,9 @@ services:
     tmpfs: [/tmp]
     security_opt: ["no-new-privileges:true"]
     cap_drop: ["ALL"]
+    # The image healthcheck targets the HTTP API; this role is outbox-only.
+    healthcheck:
+      disable: true
     restart: unless-stopped
     profiles: ["integrations"]
     depends_on:

@@ -1,0 +1,41 @@
+from pathlib import Path
+import re
+import unittest
+
+
+COMPOSE = Path(__file__).resolve().parents[1] / "compose.yaml"
+
+
+def service_block(source: str, service: str) -> str:
+    lines = source.splitlines()
+    marker = f"  {service}:"
+    try:
+        start = lines.index(marker) + 1
+    except ValueError as exc:
+        raise AssertionError(f"service {service!r} not found") from exc
+    end = next(
+        (index for index in range(start, len(lines)) if re.match(r"^  [^ ]", lines[index])),
+        len(lines),
+    )
+    return "\n".join(lines[start:end])
+
+
+class ComposeHealthcheckContractTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.source = COMPOSE.read_text(encoding="utf-8")
+
+    def test_api_keeps_http_healthcheck_and_host_port_contract(self):
+        api = service_block(self.source, "api")
+        self.assertNotIn("disable: true", api)
+        self.assertIn('${ZWORKFORCE_HOST_PORT:-9570}:9569', api)
+
+    def test_non_http_roles_disable_inherited_api_healthcheck(self):
+        for role in ("worker", "scheduler", "outbox"):
+            with self.subTest(role=role):
+                block = service_block(self.source, role)
+                self.assertRegex(block, r"(?m)^    healthcheck:\n      disable: true$")
+
+
+if __name__ == "__main__":
+    unittest.main()
