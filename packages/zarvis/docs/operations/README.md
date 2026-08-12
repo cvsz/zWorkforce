@@ -1,6 +1,11 @@
 # Operations Documentation
 
-This directory contains production operations controls, runbooks, and readiness gates for `z-platform`.
+This directory contains production operations controls, runbooks, and readiness
+gates for the Z.A.R.V.I.S. suite shipped from `cvsz/zWorkforce`.
+
+Repository workflow files under the root `.github/workflows/` directory are the
+active GitHub Actions definitions. Package-local workflow files are retained as
+reference/reusable governance assets and are not independently discovered by GitHub.
 
 ## Primary production document
 

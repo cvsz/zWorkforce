@@ -1,7 +1,7 @@
 fastapi==0.141.1
 starlette==1.6.0
 uvicorn[standard]==0.52.1
-redis==6.4.0
+redis==8.1.0
 httpx==0.28.1
 python-multipart==0.0.32
 prometheus-client==0.26.0

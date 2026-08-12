@@ -7,10 +7,12 @@ zWorkforce releases are tag-driven and must originate from a commit reachable fr
 Before creating a release tag:
 
 1. Merge the intended release commit to `main`.
-2. Confirm CI and CodeQL are green.
+2. Confirm CI, ZARVIS, Windows client, Dependency Review, and CodeQL are green.
 3. Confirm `pyproject.toml`, `zworkforce.__version__`, Compose/Kubernetes image references and `CHANGELOG.md` carry the same version.
 4. Run `python scripts/verify_release.py` locally or rely on the mandatory CI release-integrity job.
 5. Confirm production migration/rollback notes are current.
+6. Run `pnpm peers check` from `packages/zarvis` and reject dependency updates with unresolved peer constraints.
+7. Confirm the Z.A.R.V.I.S. API audit and test suite pass for the exact release commit.
 
 ## Tag format
 
@@ -44,6 +46,11 @@ jobs, then publishes the GHCR image and GitHub Release only after both jobs
 pass. A failed Windows build therefore cannot leave a public partial release.
 
 Production deployments should pin the semantic tag or image digest, never `latest`.
+
+The `packages/zarvis` tree is shipped from the same immutable repository commit.
+Its package manifests, lockfile, Windows artifacts, release-governance records,
+and service images must therefore be validated before the root release tag is
+created; a green root Python build alone is not a release approval.
 
 ## Trusted Windows signing
 

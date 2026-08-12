@@ -17,7 +17,7 @@ grpcio-tools>=1.64.0
 opentelemetry-api>=1.25.0
 opentelemetry-sdk>=1.25.0
 opentelemetry-instrumentation-fastapi>=0.46b0
-opentelemetry-exporter-otlp>=1.25.0
+opentelemetry-exporter-otlp>=1.44.0
 prometheus-client>=0.20.0
 
 ## Security
@@ -33,7 +33,7 @@ httpx>=0.28.1
 
 ## Development
 ruff>=0.4.0
-mypy>=1.10.0
+mypy>=2.3.0
 black>=24.4.0
 
 ## Optional: HTTP/3 Support
@@ -44,4 +44,4 @@ nats-py>=2.7.0
 
 ## Optional: S3 Storage
 boto3>=1.34.0
-aiobotocore>=2.13.0
+aiobotocore>=3.9.0

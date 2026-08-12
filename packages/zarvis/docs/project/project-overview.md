@@ -1,10 +1,17 @@
-# Z Platform Project Overview
+# Z.A.R.V.I.S. Package Project Overview
 
-This document explains the project shape of `z-platform`: why it exists, what it contains, how work is organized, and how delivery decisions connect to the architecture, requirements, migration plan, and production readiness documents.
+This document explains the project shape of `packages/zarvis` inside
+`cvsz/zWorkforce`: why it exists, what it contains, how work is organized, and
+how delivery decisions connect to architecture, requirements, migration, and
+production-readiness records.
 
 ## Project purpose
 
-`z-platform` is a clean, security-first platform foundation extracted incrementally from `cvsz/zeaz-platform`. It preserves the useful product direction of the legacy platform while replacing direct provider access, unsafe financial surfaces, in-memory migration-only adapters, and unapproved execution paths with explicit platform boundaries.
+The Z.A.R.V.I.S. package suite is the security-first platform foundation migrated
+from `cvsz/z-platform` and consolidated into `cvsz/zWorkforce`. It preserves the
+useful product direction of the legacy platform while replacing direct provider
+access, unsafe financial surfaces, in-memory migration-only adapters, and
+unapproved execution paths with explicit platform boundaries.
 
 The project exists to provide:
 
@@ -41,7 +48,9 @@ The project exists to provide:
 | Billing Ledger | `services/billing-ledger` | Idempotent usage ledger, credits, invoice intents. |
 | ZWallet | `apps/zwallet` | Billing-ledger adapter surface only; unsafe wallet/payment paths denied. |
 | Contracts | `packages/contracts` | Versioned schemas for API and event boundaries. |
-| Operations | `.github/workflows`, `tools/ops`, `docs/operations` | CI, validation, secret scanning, dependency policy, SBOM, provenance, runbooks, readiness gates. |
+| Operations | root `.github/workflows`, package tooling, `docs/operations` | CI, validation, dependency policy, SBOM, provenance, runbooks, readiness gates. |
+| ZARVIS API | `services/zarvis-api` | FastAPI runtime, health, metrics, webhook and approved read-only integration boundaries. |
+| Windows client | `apps/zarvis-windows` | Owner-facing Windows application with Linux restore and native Windows release gates. |
 
 ## Out of scope unless separately approved
 
@@ -93,7 +102,8 @@ Until real owners are assigned, production remains blocked by the production mas
 
 - Work should land in small, reviewable commits or pull requests.
 - Each PR should reference the relevant requirement, migration item, or runbook.
-- GitHub Actions should run repository-local tests for migrated Node and Python runtimes.
+- Root GitHub Actions run repository-local Node, Python, Linux restore, and Windows package gates for this subtree.
+- Node dependency changes must pass `pnpm peers check`; unsupported major versions stay deferred rather than forced.
 - Validation should reject missing package test scripts in migrated workspaces.
 - Secret scanning, dependency policy, SBOM generation, and provenance verification should pass before production release.
 - Release records should include commit SHA, workflow result, artifact set, rollback SHA, and operator approval.

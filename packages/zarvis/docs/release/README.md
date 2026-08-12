@@ -32,3 +32,12 @@ The validator enforces template-to-schema mappings, API version and kind consist
 - `PENDING_OPERATOR` remains until reviewer, incident, rollback, release, and approval ownership is recorded.
 - `READY_FOR_RELEASE` requires both `VERIFIED_EXTERNAL` and `APPROVED_OPERATOR` for the same immutable candidate.
 - Production deployment additionally requires an explicit `GO` decision bound to the approved commit and image digests.
+- Root repository CI, ZARVIS, Dependency Review, CodeQL, and Windows client checks must pass on the same commit.
+- Node releases must pass `pnpm install --frozen-lockfile`, `pnpm peers check`, and `pnpm test`.
+- ZARVIS API releases must pass route tests and a zero-vulnerability dependency audit.
+- Windows-targeted projects must restore on Ubuntu and pass the native Windows packaging/smoke workflow.
+
+## Current maintenance record
+
+See [August 2026 dependency maintenance](../releases/2026-08-12-dependency-maintenance.md)
+for the integrated dependency set, compatibility decisions, and verification map.

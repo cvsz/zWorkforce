@@ -8,7 +8,6 @@ updates:
       time: "03:00"
       timezone: Asia/Bangkok
     open-pull-requests-limit: 5
-    labels: [dependencies, python]
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -17,7 +16,6 @@ updates:
       time: "03:30"
       timezone: Asia/Bangkok
     open-pull-requests-limit: 5
-    labels: [dependencies, github-actions]
   - package-ecosystem: docker
     directory: /
     schedule:
@@ -26,7 +24,6 @@ updates:
       time: "04:00"
       timezone: Asia/Bangkok
     open-pull-requests-limit: 5
-    labels: [dependencies, docker]
   - package-ecosystem: nuget
     directory: /ZWorkforceClient
     schedule:
@@ -35,7 +32,6 @@ updates:
       time: "05:00"
       timezone: Asia/Bangkok
     open-pull-requests-limit: 5
-    labels: [dependencies, windows-client]
   - package-ecosystem: npm
     directory: /packages/zarvis
     schedule:
@@ -44,7 +40,11 @@ updates:
       time: "05:30"
       timezone: Asia/Bangkok
     open-pull-requests-limit: 10
-    labels: [dependencies, zarvis]
+    ignore:
+      - dependency-name: "eslint"
+        update-types: [version-update:semver-major]
+      - dependency-name: "typescript"
+        update-types: [version-update:semver-major]
   - package-ecosystem: pip
     directory: /packages/zarvis/apps/zaicoder/backend
     schedule:
@@ -53,7 +53,6 @@ updates:
       time: "06:00"
       timezone: Asia/Bangkok
     open-pull-requests-limit: 5
-    labels: [dependencies, python, zarvis]
   - package-ecosystem: pip
     directory: /packages/zarvis/services/zarvis-api
     schedule:
@@ -62,7 +61,6 @@ updates:
       time: "06:15"
       timezone: Asia/Bangkok
     open-pull-requests-limit: 5
-    labels: [dependencies, python, zarvis]
   - package-ecosystem: pip
     directory: /packages/zarvis/services/zc
     schedule:
@@ -71,7 +69,6 @@ updates:
       time: "06:30"
       timezone: Asia/Bangkok
     open-pull-requests-limit: 5
-    labels: [dependencies, python, zarvis]
   - package-ecosystem: gomod
     directory: /packages/zarvis/tools/zctl
     schedule:
@@ -80,7 +77,6 @@ updates:
       time: "06:45"
       timezone: Asia/Bangkok
     open-pull-requests-limit: 5
-    labels: [dependencies, go, zarvis]
   - package-ecosystem: nuget
     directory: /packages/zarvis/apps/zarvis-windows
     schedule:
@@ -89,4 +85,3 @@ updates:
       time: "07:00"
       timezone: Asia/Bangkok
     open-pull-requests-limit: 5
-    labels: [dependencies, windows-client, zarvis]
