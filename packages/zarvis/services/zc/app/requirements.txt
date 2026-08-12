@@ -33,7 +33,7 @@ httpx>=0.28.1
 
 ## Development
 ruff>=0.4.0
-mypy>=1.10.0
+mypy>=2.3.0
 black>=24.4.0
 
 ## Optional: HTTP/3 Support
