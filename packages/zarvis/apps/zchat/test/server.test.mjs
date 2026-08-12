@@ -84,10 +84,10 @@ test("chat shell exposes accessible history search and shortcut guidance", { con
   assert.match(html, /id="load-older"[^>]+hidden/);
 });
 
-test("platform status keeps api6 and zc as separate backend boundaries", { concurrency: false }, async () => {
+test("platform status keeps zarvis and zc as separate backend boundaries", { concurrency: false }, async () => {
   const calls = [];
   const result = await platformStatus({
-    PHASE6_API_URL: "http://api6",
+    ZARVIS_API_URL: "http://api6",
     ZC_API_URL: "http://zc",
   }, async (url) => {
     calls.push(url);
@@ -95,7 +95,7 @@ test("platform status keeps api6 and zc as separate backend boundaries", { concu
   });
 
   assert.equal(result.status, "ok");
-  assert.deepEqual(result.backends.map((backend) => backend.service), ["phase6", "zc"]);
+  assert.deepEqual(result.backends.map((backend) => backend.service), ["zarvis", "zc"]);
   assert.deepEqual(calls.sort(), ["http://api6/health", "http://zc/v1/wire/health/live"]);
 });
 

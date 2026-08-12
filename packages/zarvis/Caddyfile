@@ -14,7 +14,7 @@ http://{$PHASE6_DOMAIN} {
   }
 
   handle {
-    reverse_proxy phase6-api:8080
+    reverse_proxy zarvis-api:8080
   }
 
   log {

@@ -40,7 +40,7 @@ Date: 2026-07-16
 
 This slice is repository-local. It makes the remaining `PENDING_OPERATOR` items explicit and auditable, but it does not fabricate any reviewer, incident, or approval values.
 
-## Supabase read-only Phase 6 API bridge
+## Supabase read-only ZARVIS API bridge
 
 Date: 2026-07-16
 
@@ -48,9 +48,9 @@ Date: 2026-07-16
 |---|---|---|
 | Scope | pass | One repository-local Supabase bridge slice only. |
 | Auth boundary | pass | `/supabase/read` requires the existing Phase 6 bearer token and returns 401 without it. |
-| Read-only data path | pass | The Phase 6 API reads a Supabase Data API table with `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_TABLE`; the anon key is not exposed to the browser. |
+| Read-only data path | pass | The ZARVIS API reads a Supabase Data API table with `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_TABLE`; the anon key is not exposed to the browser. |
 | Failure handling | pass | Missing config, invalid base URL, invalid table name, upstream 403, non-array payload, and out-of-range limit cases are covered deterministically. |
-| Format and tests | pass | `python3 -m pytest services/phase6-api/tests/test_supabase_read.py services/phase6-api/tests/test_github_webhook.py`, `docker compose config --quiet`, and `git diff --check` passed in this worktree. |
+| Format and tests | pass | `python3 -m pytest services/zarvis-api/tests/test_supabase_read.py services/zarvis-api/tests/test_github_webhook.py`, `docker compose config --quiet`, and `git diff --check` passed in this worktree. |
 
 This slice remains repository-local until an approved Supabase project and table are exercised as external evidence for the exact release candidate SHA.
 

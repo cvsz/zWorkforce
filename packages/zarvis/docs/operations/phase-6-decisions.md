@@ -33,7 +33,7 @@ This document records the implemented defaults and the values that still require
 - Audit: append-only event collection exposed only to authenticated service clients.
 - Workspace metadata: durable records plus retention cleanup endpoint.
 - Sandbox: approval-gated `/execute`; mutating grants require restricted sandbox constraints.
-- Supabase read-only bridge: authenticated Phase 6 API route reading a Supabase Data API table using `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_TABLE`; the anon key stays server-side and the route remains read-only.
+- Supabase read-only bridge: authenticated ZARVIS API route reading a Supabase Data API table using `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_TABLE`; the anon key stays server-side and the route remains read-only.
 - Production database/queue/object storage: managed services selected by the infrastructure owner before production traffic.
 
 ## Observability

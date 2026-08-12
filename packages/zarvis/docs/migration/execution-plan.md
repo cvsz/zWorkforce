@@ -122,7 +122,7 @@ Create a clean, secure platform successor to `https://github.com/cvsz/z-platform
 - Verified AI multi-provider routing, fallback quotas, and failover using Redis pool limits.
 - Implemented Cloudflare edge routing and identity proxy configuration; real external account and policy evidence remains **PENDING_EXTERNAL**.
 - Implemented AI streaming, upload/file proxy, multi-provider, and failover verification harnesses; approved-account execution remains **PENDING_EXTERNAL**.
-- Implemented a read-only Supabase Data API bridge in `services/phase6-api` with authenticated access, env-based URL/anon-key/table selection, and deterministic success/failure coverage; real Supabase project evidence remains **PENDING_EXTERNAL**.
+- Implemented a read-only Supabase Data API bridge in `services/zarvis-api` with authenticated access, env-based URL/anon-key/table selection, and deterministic success/failure coverage; real Supabase project evidence remains **PENDING_EXTERNAL**.
 - Implemented browser bundle and HAR credential scanners; actual deployed artifacts remain **PENDING_EXTERNAL**.
 - Implemented automated ZChat accessibility, responsive, session, and external-readiness contracts; human target-environment QA remains **PENDING_EXTERNAL**.
 - Implemented a CodeQL Advanced workflow that runs on the available self-hosted Linux/X64 lane with the broader `security-and-quality` query suite and explicit language toolchain setup, plus repository-local drift tests for the workflow shape and setup ordering.

@@ -1,7 +1,7 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
-metadata: {name: phase6-api}
-spec: {minAvailable: 2, selector: {matchLabels: {app.kubernetes.io/name: phase6-api}}}
+metadata: {name: zarvis-api}
+spec: {minAvailable: 2, selector: {matchLabels: {app.kubernetes.io/name: zarvis-api}}}
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget

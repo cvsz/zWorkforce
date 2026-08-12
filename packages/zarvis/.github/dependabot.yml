@@ -54,7 +54,7 @@ updates:
       interval: "weekly"
 
   - package-ecosystem: "pip"
-    directory: "/services/phase6-api"
+    directory: "/services/zarvis-api"
     schedule:
       interval: "weekly"
 

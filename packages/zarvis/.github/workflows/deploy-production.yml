@@ -24,7 +24,7 @@ jobs:
       GHCR_OAUTH_TOKEN: ${{ secrets.GHCR_OAUTH_TOKEN }}
       Z_PLATFORM_SERVICE_TOKEN: ${{ secrets.Z_PLATFORM_SERVICE_TOKEN }}
       ZC_API_TOKEN: ${{ secrets.ZC_API_TOKEN }}
-      PHASE6_API_TOKEN: ${{ secrets.PHASE6_API_TOKEN || secrets.Z_PLATFORM_SERVICE_TOKEN }}
+      ZARVIS_API_TOKEN: ${{ secrets.ZARVIS_API_TOKEN || secrets.Z_PLATFORM_SERVICE_TOKEN }}
       REDIS_URL: ${{ secrets.REDIS_URL || 'redis://redis:6379/0' }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
@@ -64,7 +64,7 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]
-          for name in GHCR_EFFECTIVE_USERNAME GHCR_EFFECTIVE_TOKEN Z_PLATFORM_SERVICE_TOKEN ZC_API_TOKEN PHASE6_API_TOKEN JWT_SECRET ENCRYPTION_KEY AI_GATEWAY_PROVIDER_TOKEN PHASE6_AI_PROVIDER_ENDPOINTS_JSON PHASE6_AI_PROVIDER_KEYS_JSON; do
+          for name in GHCR_EFFECTIVE_USERNAME GHCR_EFFECTIVE_TOKEN Z_PLATFORM_SERVICE_TOKEN ZC_API_TOKEN ZARVIS_API_TOKEN JWT_SECRET ENCRYPTION_KEY AI_GATEWAY_PROVIDER_TOKEN PHASE6_AI_PROVIDER_ENDPOINTS_JSON PHASE6_AI_PROVIDER_KEYS_JSON; do
             [[ -n "${!name:-}" ]] || { echo "Missing required production secret: $name" >&2; exit 1; }
           done
           node <<'NODE'
@@ -106,7 +106,7 @@ jobs:
           kubectl -n z-platform create secret generic z-platform-runtime \
             --from-literal=Z_PLATFORM_SERVICE_TOKEN="$Z_PLATFORM_SERVICE_TOKEN" \
             --from-literal=ZC_API_TOKEN="$ZC_API_TOKEN" \
-            --from-literal=PHASE6_API_TOKEN="$PHASE6_API_TOKEN" \
+            --from-literal=ZARVIS_API_TOKEN="$ZARVIS_API_TOKEN" \
             --from-literal=REDIS_URL="${REDIS_URL:-redis://redis:6379/0}" \
             --from-literal=AI_PROVIDER_ENDPOINTS="$PHASE6_AI_PROVIDER_ENDPOINTS_JSON" \
             --from-literal=AI_PROVIDER_KEYS_JSON="$PHASE6_AI_PROVIDER_KEYS_JSON" \
@@ -141,7 +141,7 @@ jobs:
           printf '%s' "$GHCR_EFFECTIVE_TOKEN" | docker login ghcr.io --username "$GHCR_EFFECTIVE_USERNAME" --password-stdin >/dev/null
 
           image_overrides=()
-          for name in phase6-api zc-api ai-gateway zchat; do
+          for name in zarvis-api zc-api ai-gateway zchat; do
             image="ghcr.io/${GITHUB_REPOSITORY}/${name}:sha-${RELEASE_SHA}"
             digest="$(docker buildx imagetools inspect "$image" --format '{{.Manifest.Digest}}')"
             [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]] || {
@@ -177,12 +177,12 @@ jobs:
         run: |
           set -euo pipefail
           declare -A probes=(
-            [phase6-api]="health/live"
+            [zarvis-api]="health/live"
             [zc-api]="v1/wire/health/live"
             [ai-gateway]="health"
             [zchat]="health/live"
           )
-          for service in phase6-api zc-api ai-gateway zchat; do
+          for service in zarvis-api zc-api ai-gateway zchat; do
             payload="$(kubectl get --raw "/api/v1/namespaces/z-platform/services/${service}:http/proxy/${probes[$service]}")"
             actual="$(jq -er '.release_sha' <<<"$payload")"
             if [[ "$actual" != "$RELEASE_SHA" ]]; then
