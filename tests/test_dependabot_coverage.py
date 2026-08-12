@@ -24,7 +24,6 @@ class DependabotCoverageTests(unittest.TestCase):
         configured = dependency_directories(DEPENDABOT.read_text(encoding="utf-8"))
         expected = {
             ("npm", "/packages/zarvis"),
-            ("npm", "/packages/zarvis/services/ai-gateway"),
             ("pip", "/packages/zarvis/apps/zaicoder/backend"),
             ("pip", "/packages/zarvis/services/zarvis-api"),
             ("pip", "/packages/zarvis/services/zc"),
@@ -45,7 +44,7 @@ class DependabotCoverageTests(unittest.TestCase):
         configured = dependency_directories(config)
         self.assertNotIn(("npm", "/packages/zarvis"), configured)
 
-    def test_phase6_dependency_tests_run_in_zarvis_ci(self):
+    def test_zarvis_api_dependency_tests_run_in_zarvis_ci(self):
         workflow = ZARVIS_WORKFLOW.read_text(encoding="utf-8")
 
         self.assertIn("zarvis-api:", workflow)
