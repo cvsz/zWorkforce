@@ -338,4 +338,4 @@ v3.0.0 provides real distributed execution through PostgreSQL, multiple API/work
 
 ## License
 
-MIT.
+[MIT](LICENSE). Copyright (c) 2026 cvsz.
