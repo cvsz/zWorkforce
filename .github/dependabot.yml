@@ -45,15 +45,6 @@ updates:
       timezone: Asia/Bangkok
     open-pull-requests-limit: 10
     labels: [dependencies, zarvis]
-  - package-ecosystem: npm
-    directory: /packages/zarvis/services/ai-gateway
-    schedule:
-      interval: weekly
-      day: monday
-      time: "05:45"
-      timezone: Asia/Bangkok
-    open-pull-requests-limit: 5
-    labels: [dependencies, zarvis]
   - package-ecosystem: pip
     directory: /packages/zarvis/apps/zaicoder/backend
     schedule:
