@@ -6,6 +6,7 @@ on:
       - "packages/zarvis/**"
       - "tests/test_zarvis_package.py"
       - "tests/test_dependabot_coverage.py"
+      - "tests/test_zarvis_windows_targeting.py"
       - ".github/workflows/zarvis.yml"
   push:
     branches: [main]
@@ -13,6 +14,7 @@ on:
       - "packages/zarvis/**"
       - "tests/test_zarvis_package.py"
       - "tests/test_dependabot_coverage.py"
+      - "tests/test_zarvis_windows_targeting.py"
       - ".github/workflows/zarvis.yml"
 
 permissions:
@@ -61,3 +63,16 @@ jobs:
           cache-dependency-path: packages/zarvis/services/zarvis-api/requirements.txt
       - run: pip install --no-cache-dir -r requirements.txt pytest
       - run: python -m pytest tests -q
+
+  zarvis-windows-linux-restore:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/zarvis/apps/zarvis-windows
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet restore src/ZARVIS.Windows/ZARVIS.Windows.csproj
+      - run: dotnet restore tests/ZARVIS.Windows.Tests/ZARVIS.Windows.Tests.csproj
