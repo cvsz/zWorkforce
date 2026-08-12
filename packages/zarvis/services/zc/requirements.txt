@@ -1,4 +1,4 @@
-anthropic>=0.75.0
+anthropic>=0.121.0
 # 0.75.0+ needed for client.beta.agents / .environments / .sessions
 # (zAICoder Managed Agents — see zc_agents_sdk.ManagedAgentsClient) and
 # the streaming client used elsewhere. Most other modules in this project
