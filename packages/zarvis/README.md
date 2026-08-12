@@ -32,9 +32,10 @@ pnpm peers check
 pnpm test
 ```
 
-The ZARVIS API additionally runs its Python test suite and dependency audit;
-Windows projects are restored on Ubuntu and built, tested, packaged, and smoke
-tested on the Windows runner. Root GitHub Actions are the authoritative gates.
+The ZARVIS API additionally runs its Python test suite and dependency audit.
+ZARVIS Windows projects are restored on Ubuntu, then built and tested on the
+Windows runner. The Windows workflow separately packages and smoke-tests the
+ZWorkforceClient application. Root GitHub Actions are the authoritative gates.
 
 ## Migration policy
 
