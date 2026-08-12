@@ -56,6 +56,16 @@ class DependabotCoverageTests(unittest.TestCase):
 
         self.assertIn("pnpm peers check", workflow)
 
+    def test_zarvis_workflow_resolves_all_zc_dependency_sets(self):
+        workflow = ZARVIS_WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("zc-dependency-resolution:", workflow)
+        self.assertIn("pip install --dry-run", workflow)
+        self.assertIn("-r app/requirements.txt", workflow)
+        self.assertIn("-r requirements-dev.txt", workflow)
+        self.assertIn("-r requirements-enterprise.txt", workflow)
+        self.assertIn("-r webapp/requirements-web.txt", workflow)
+
     def test_unsupported_node_majors_are_ignored(self):
         config = DEPENDABOT.read_text(encoding="utf-8")
 
