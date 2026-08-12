@@ -18,7 +18,7 @@ blake3>=0.4.0
 msgspec>=0.18.0
 
 # === Delta Sync & Compression ===
-bsdiff4>=1.2.0
+bsdiff4>=1.2.6
 zstandard>=0.23.0
 
 # === Redis Client (Async) ===
