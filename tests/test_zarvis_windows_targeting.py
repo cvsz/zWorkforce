@@ -10,6 +10,7 @@ WINDOWS_APP = (
     / "apps"
     / "zarvis-windows"
 )
+ZARVIS_WORKFLOW = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "zarvis.yml"
 
 
 class ZarvisWindowsTargetingTests(unittest.TestCase):
@@ -24,6 +25,13 @@ class ZarvisWindowsTargetingTests(unittest.TestCase):
             if element.text
         ]
         self.assertIn("true", values)
+
+    def test_linux_ci_restores_source_and_test_projects(self):
+        workflow = ZARVIS_WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("zarvis-windows-linux-restore:", workflow)
+        self.assertIn("dotnet restore src/ZARVIS.Windows/ZARVIS.Windows.csproj", workflow)
+        self.assertIn("dotnet restore tests/ZARVIS.Windows.Tests/ZARVIS.Windows.Tests.csproj", workflow)
 
 
 if __name__ == "__main__":
