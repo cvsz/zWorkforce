@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Dependencies and CI
+- Consolidated the August dependency updates for the Z.A.R.V.I.S. API, ZC services, and Node workspace.
+- Added a peer-dependency compatibility gate to prevent unsupported ESLint and TypeScript major versions from entering the workspace.
+- Enabled Linux restore validation for Windows-targeted Z.A.R.V.I.S. projects and retained the full Windows build, test, package, and smoke gate.
+- Removed invalid Dependabot label assignments and documented compatible-major update policy.
+
+### Documentation
+- Refreshed project, package, release, GitHub contribution, and issue-template documentation for the consolidated `packages/zarvis` layout.
+
 ## 3.0.2 — 2026-08-09
 
 ### Windows client and operations

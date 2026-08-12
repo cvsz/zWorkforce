@@ -1,6 +1,6 @@
-# Z Platform
+# Z.A.R.V.I.S. Package Suite
 
-Z Platform is a clean, security-first platform foundation extracted incrementally from `cvsz/zeaz-platform`.
+This directory is the consolidated Z.A.R.V.I.S. product and platform suite shipped inside `cvsz/zWorkforce` as `packages/zarvis`.
 
 It separates user applications, deployable services, shared packages, infrastructure, and operational documentation. The legacy repository remains unchanged and is the migration source of record.
 
@@ -11,18 +11,31 @@ It separates user applications, deployable services, shared packages, infrastruc
 - Financial boundary: billing and ledger integration only
 - Operations: Cloudflare Zero Trust, GitOps, observability
 
-## Repository layout
+## Package layout
 
 ```text
 apps/       User-facing applications
 services/   Deployable APIs and workers
 packages/   Shared libraries and API contracts
 workers/    Cloudflare Workers
-infra/      Infrastructure definitions and deployment manifests
+infrastructure/ Infrastructure definitions and deployment manifests
 configs/    Non-secret schemas and examples
 docs/       Architecture, ADRs, runbooks and migration records
 tools/      Developer tooling and generators
 ```
+
+## Validation
+
+```bash
+pnpm install --frozen-lockfile
+pnpm peers check
+pnpm test
+```
+
+The ZARVIS API additionally runs its Python test suite and dependency audit.
+ZARVIS Windows projects are restored on Ubuntu, then built and tested on the
+Windows runner. The Windows workflow separately packages and smoke-tests the
+ZWorkforceClient application. Root GitHub Actions are the authoritative gates.
 
 ## Migration policy
 

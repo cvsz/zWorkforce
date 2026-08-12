@@ -1,10 +1,11 @@
 # Requirements Documentation
 
-This directory contains the requirements baseline for `z-platform`.
+This directory contains the requirements baseline for the Z.A.R.V.I.S. suite in
+`packages/zarvis`.
 
 ## Master document
 
-- [Z Platform Master Requirements](master-requirements.md)
+- [Z.A.R.V.I.S. Master Requirements](master-requirements.md)
 
 The master requirements document is the canonical requirements reference for product, architecture, security, migration, GitHub, CI, production, observability, billing, agent orchestration, workspace runtime, and operations gates.
 

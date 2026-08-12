@@ -18,7 +18,7 @@ blake3>=0.4.0
 msgspec>=0.18.0
 
 # === Delta Sync & Compression ===
-bsdiff4>=1.2.0
+bsdiff4>=1.2.6
 zstandard>=0.23.0
 
 # === Redis Client (Async) ===
@@ -51,7 +51,7 @@ asyncpg>=0.31.0
 sqlalchemy[asyncio]>=2.0.35
 
 # === Validation ===
-pydantic>=2.9.0
+pydantic>=2.13.4
 pydantic-settings>=2.5.0
 
 # === Testing ===
@@ -62,4 +62,4 @@ httpx>=0.28.1
 # === Development Tools ===
 black>=24.8.0
 ruff>=0.6.0
-mypy>=1.11.0
+mypy>=2.3.0

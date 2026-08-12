@@ -4,7 +4,7 @@
 
 zWorkforce turns one or more LLM endpoints into a governed AI workforce. A tenant dispatches work to named agents; a cost-aware Luna/Terra/Sol router chooses a model tier; durable workers claim tasks; approvals and policy-as-code gate risky actions; workflows/schedules/events compose tasks; evaluation suites compare model strategies; memory and artifacts preserve knowledge; and the control plane measures cost, SLOs and business outcomes.
 
-## v3.0.0 highlights
+## v3.0.2 highlights
 
 - **PostgreSQL distributed runtime** with `FOR UPDATE SKIP LOCKED` task leasing for cross-host workers; SQLite/WAL remains the zero-config local backend.
 - **Workflow DAG engine** with dependency validation, versioning, templated inputs/results and durable step state.
@@ -25,6 +25,10 @@ zWorkforce turns one or more LLM endpoints into a governed AI workforce. A tenan
 - **Kubernetes deployment** with hardened pods, API/worker scaling, PDBs, persistent artifacts/workspace and default-deny network policy.
 
 All v2 capabilities remain: multi-tenancy, RBAC/scopes, four-eyes approvals, provider failover/circuit breakers, bounded tools, tamper-evident audit chains, budgets, deterministic outcomes, rightsizing recommendations, dashboard, Docker and Python 3.12–3.14 support.
+
+The repository also contains the consolidated Z.A.R.V.I.S. product suite under
+[`packages/zarvis/`](packages/zarvis/), including its API, operator surfaces,
+Windows client, deployment assets, release governance, and package-level CI.
 
 ## Architecture
 

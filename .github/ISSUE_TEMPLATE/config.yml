@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Private security advisory
+    url: https://github.com/cvsz/zWorkforce/security/advisories/new
+    about: Report vulnerabilities privately; do not publish exploitable details in an issue.
+  - name: Project discussions
+    url: https://github.com/cvsz/zWorkforce/discussions
+    about: Ask usage and architecture questions that are not bug reports.

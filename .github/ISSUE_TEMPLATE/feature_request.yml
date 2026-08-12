@@ -1,0 +1,32 @@
+name: Feature request
+description: Propose a bounded product, platform, or operations improvement.
+title: "[Feature] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Describe the user or operator need, not only a preferred implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed outcome
+      description: Describe the smallest useful outcome and acceptance criteria.
+    validations:
+      required: true
+  - type: textarea
+    id: security
+    attributes:
+      label: Security and operations impact
+      description: Note tenant, credential, approval, data, deployment, and rollback implications.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: List simpler options, compatibility constraints, or reasons for rejecting alternatives.
+    validations:
+      required: true

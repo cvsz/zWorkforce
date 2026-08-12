@@ -47,6 +47,7 @@ jobs:
           cache: pnpm
           cache-dependency-path: packages/zarvis/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      - run: pnpm peers check
       - run: pnpm test
 
   zarvis-api:
@@ -61,8 +62,34 @@ jobs:
           python-version: "3.13"
           cache: pip
           cache-dependency-path: packages/zarvis/services/zarvis-api/requirements.txt
-      - run: pip install --no-cache-dir -r requirements.txt pytest
+      - run: pip install --no-cache-dir -r requirements.txt pytest pip-audit
       - run: python -m pytest tests -q
+      - run: pip-audit -r requirements.txt
+
+  zc-dependency-resolution:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/zarvis/services/zc
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            packages/zarvis/services/zc/requirements.txt
+            packages/zarvis/services/zc/app/requirements.txt
+            packages/zarvis/services/zc/requirements-dev.txt
+            packages/zarvis/services/zc/requirements-enterprise.txt
+            packages/zarvis/services/zc/webapp/requirements-web.txt
+      - run: >-
+          pip install --dry-run
+          -r requirements.txt
+          -r app/requirements.txt
+          -r requirements-dev.txt
+          -r requirements-enterprise.txt
+          -r webapp/requirements-web.txt
 
   zarvis-windows-linux-restore:
     runs-on: ubuntu-latest

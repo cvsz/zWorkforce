@@ -1,8 +1,6 @@
 name: Windows client bug
 description: Report a reproducible zWorkforce Windows client problem.
 title: "[Windows client] "
-labels:
-  - windows-client
 body:
   - type: input
     id: client-version

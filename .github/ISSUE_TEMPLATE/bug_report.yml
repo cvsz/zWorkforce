@@ -1,0 +1,54 @@
+name: Bug report
+description: Report a reproducible zWorkforce or Z.A.R.V.I.S. defect.
+title: "[Bug] "
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the failure and affected component without credentials or tenant data.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide the smallest repeatable command or sequence.
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and logs
+      description: Redact tokens, provider keys, customer data, and private infrastructure identifiers.
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Version or commit
+      placeholder: v3.0.2 or full commit SHA
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - zWorkforce control plane
+        - ZARVIS API
+        - ZARVIS Node workspace
+        - Windows client
+        - Deployment or release
+        - Documentation or tooling
+    validations:
+      required: true

@@ -6,6 +6,13 @@ This project follows a human-readable changelog style. Dates use `YYYY-MM-DD`.
 
 ## Unreleased
 
+### Dependencies and release maintenance
+
+- Updated ZARVIS API runtime dependencies, ZC service dependency floors, `eslint-config-next`, and `@types/node` after combined-workspace validation.
+- Added `pnpm peers check` to the root ZARVIS gate and blocked unsupported ESLint and TypeScript major updates until their plugin ecosystems declare compatible peer ranges.
+- Added shared Windows targeting properties plus Ubuntu restore coverage for all ZARVIS Windows projects.
+- Completed the legacy API service rename to `zarvis-api`, `ZARVIS_API_URL`, and `ZARVIS_API_TOKEN` across code, infrastructure, tests, and operations documentation.
+
 ### Added
 
 - Z.A.R.V.I.S. first vertical slice with a voice/text command console, constrained read-only GitHub repository status orchestration, speech-ready responses, versioned contracts, structured audit events, security threat model, operations runbook, and 12 focused tests.
