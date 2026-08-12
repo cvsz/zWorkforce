@@ -23,7 +23,7 @@ prometheus-client>=0.20.0
 ## Security
 pyjwt>=2.8.0
 cryptography>=42.0.0
-python-multipart>=0.0.9
+python-multipart>=0.0.32
 
 ## Testing
 pytest>=8.2.0
