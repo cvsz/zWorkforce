@@ -8,17 +8,17 @@ from prometheus_client import REGISTRY
 
 
 ROOT = Path(__file__).resolve().parents[3]
-APP_PATH = ROOT / "services" / "phase6-api" / "app.py"
+APP_PATH = ROOT / "services" / "zarvis-api" / "app.py"
 
 
 def load_app(monkeypatch):
     for collector in list(REGISTRY._collector_to_names):
         REGISTRY.unregister(collector)
-    monkeypatch.setenv("PHASE6_API_TOKEN", "token")
+    monkeypatch.setenv("ZARVIS_API_TOKEN", "token")
     monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
     monkeypatch.setenv("AI_PROVIDER_ENDPOINTS", "{}")
     monkeypatch.setenv("AI_PROVIDER_KEYS_JSON", "{}")
-    spec = importlib.util.spec_from_file_location("phase6_api_backup_app", APP_PATH)
+    spec = importlib.util.spec_from_file_location("zarvis_api_backup_app", APP_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec and spec.loader
     spec.loader.exec_module(module)

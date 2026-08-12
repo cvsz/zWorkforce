@@ -22,9 +22,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: phase6-api
-            context: services/phase6-api
-            file: services/phase6-api/Dockerfile
+          - name: zarvis-api
+            context: services/zarvis-api
+            file: services/zarvis-api/Dockerfile
           - name: zc-api
             context: .
             file: services/zc/Dockerfile

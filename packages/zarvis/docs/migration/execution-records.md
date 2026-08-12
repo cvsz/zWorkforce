@@ -90,10 +90,10 @@
 - Tests: `scripts/test/operator-governance.test.mjs`, `scripts/test/deployment-readiness-workflows.test.mjs`, and `node scripts/validate-release-templates.mjs` passed in this worktree.
 - Limitations: repository-local validation only; this slice improves the auditability of the operator-owned stack but does not substitute for real operator sign-off.
 
-## 2026-07-16 — Supabase read-only Phase 6 API bridge
+## 2026-07-16 — Supabase read-only ZARVIS API bridge
 
 - Base revision: current branch head after the Supabase bridge patch.
-- Scope: one repository-local Phase 6 API slice.
+- Scope: one repository-local ZARVIS API slice.
 - Implementation: added an authenticated `/supabase/read` endpoint that reads a Supabase Data API table using server-side `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_TABLE` configuration with explicit base-URL, table-name, and limit validation.
 - Compatibility: existing gateway, webhook, compose, and deployment semantics remain unchanged; the bridge is read-only and does not expose the anon key to browser clients.
 - Security: no real credentials were added to source control; the route fails closed on missing config, invalid URL, invalid table, and upstream refusal or malformed payloads.

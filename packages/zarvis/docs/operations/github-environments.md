@@ -63,11 +63,11 @@ Suggested staging secrets:
 | `BILLING_LEDGER_URL` | Staging billing ledger endpoint |
 | `SUPABASE_URL` | Supabase project URL for the read-only Data API bridge |
 | `SUPABASE_ANON_KEY` | Read-only Supabase anon key, kept server-side |
-| `SUPABASE_TABLE` | Exposed Supabase table queried by the Phase 6 API |
+| `SUPABASE_TABLE` | Exposed Supabase table queried by the ZARVIS API |
 
 Secret names are examples. Operator-approved provider names may differ, but browser-visible apps must never receive upstream provider credentials.
 
-The Phase 6 API reads these Supabase values from the loaded `.env`, `.env.phase6`, and `.env.phase6.server` overlays when the helper script refreshes the GitHub environment. Only the anon key is sensitive; the URL and table name are operational configuration.
+The ZARVIS API reads these Supabase values from the loaded `.env`, `.env.phase6`, and `.env.phase6.server` overlays when the helper script refreshes the GitHub environment. Only the anon key is sensitive; the URL and table name are operational configuration.
 
 ## `production` environment
 

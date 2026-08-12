@@ -21,7 +21,7 @@ Status definitions use the issue #1 semantics: **VERIFIED**, **IMPLEMENTED**, **
 | Structured logs and Prometheus metrics | PR #5, PR #7 | Isolated deployed smoke | Isolated Compose | VERIFIED |
 | Dashboard, distributed traces, alert delivery | Platform selection and deployment required | None yet | External staging | PENDING_EXTERNAL |
 | AI non-streaming completion | Gateway evidence request `79a7ce8b-4d50-4ba9-972d-a5d219293b72` | Status `200`, `proxy_success` | Local/staging provider account | VERIFIED |
-| Supabase read-only Data API bridge | Phase 6 API authenticated `/supabase/read` route with env-based URL, anon-key, and table selection | Route-level success and failure-path tests in `services/phase6-api/tests/test_supabase_read.py` | Repository / isolated Compose | IMPLEMENTED |
+| Supabase read-only Data API bridge | ZARVIS API authenticated `/supabase/read` route with env-based URL, anon-key, and table selection | Route-level success and failure-path tests in `services/zarvis-api/tests/test_supabase_read.py` | Repository / isolated Compose | IMPLEMENTED |
 | AI streaming and file upload | Approved upstream account required | None yet | External staging | PENDING_EXTERNAL |
 | Multi-provider failover contracts | PR #12 | Deterministic unit and integration tests | Repository | VERIFIED |
 | Multi-provider external verification | Agent Control Panel UI and Redis Pool Gateway | Real approved-account evidence absent | External staging | PENDING_EXTERNAL |

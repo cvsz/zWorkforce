@@ -80,7 +80,7 @@ If the connector runs from a local `cloudflared` service with a checked-in or op
 
 ## Cloudflare-proxied Phase 6
 
-With the tunnel route in place, Caddy/ACME is not required for `phase6.zeaz.dev`. Cloudflare terminates public TLS and sends traffic through the tunnel to `http://phase6-api:8080`. This avoids exposing ports 80/443 on the private host.
+With the tunnel route in place, Caddy/ACME is not required for `phase6.zeaz.dev`. Cloudflare terminates public TLS and sends traffic through the tunnel to `http://zarvis-api:8080`. This avoids exposing ports 80/443 on the private host.
 
 The GitHub webhook receiver lives on the same host at `https://${var.app_routes.phase6.hostname}/webhooks/github`. Configure GitHub with a repository webhook secret and point the delivery URL at that exact path.
 

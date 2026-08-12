@@ -62,7 +62,7 @@ def ensure_stack(stack:Path):
 
 def write_tfvars(path:Path,v,hostname,origin,port):
     q=json.dumps
-    text=f'''cloudflare_account_id = {q(v["CLOUDFLARE_ACCOUNT_ID"])}\ncloudflare_zone_id    = {q(v["CLOUDFLARE_ZONE_ID"])}\ncloudflare_tunnel_id  = {q(v["CLOUDFLARE_TUNNEL_ID"])}\n\napp_routes = {{\n  phase6 = {{\n    app_id      = "phase6-api"\n    hostname    = {q(hostname)}\n    origin      = {q(origin)}\n    port        = {port}\n    role        = "phase6-readiness"\n    status      = "active"\n    health_path = "/health"\n  }}\n}}\n'''
+    text=f'''cloudflare_account_id = {q(v["CLOUDFLARE_ACCOUNT_ID"])}\ncloudflare_zone_id    = {q(v["CLOUDFLARE_ZONE_ID"])}\ncloudflare_tunnel_id  = {q(v["CLOUDFLARE_TUNNEL_ID"])}\n\napp_routes = {{\n  phase6 = {{\n    app_id      = "zarvis-api"\n    hostname    = {q(hostname)}\n    origin      = {q(origin)}\n    port        = {port}\n    role        = "phase6-readiness"\n    status      = "active"\n    health_path = "/health"\n  }}\n}}\n'''
     path.write_text(text,encoding='utf-8'); path.chmod(stat.S_IRUSR|stat.S_IWUSR)
 
 def exclusions(repo:Path):
@@ -108,7 +108,7 @@ def main():
     p.add_argument('--env-file',type=Path)
     p.add_argument('--branch',default='feat/cloudflare-terraform-stack')
     p.add_argument('--hostname',default='phase6.zeaz.dev')
-    p.add_argument('--origin',default='http://phase6-api:8080')
+    p.add_argument('--origin',default='http://zarvis-api:8080')
     p.add_argument('--port',type=int,default=8080)
     p.add_argument('--skip-checkout',action='store_true')
     p.add_argument('--import-existing',action='store_true')

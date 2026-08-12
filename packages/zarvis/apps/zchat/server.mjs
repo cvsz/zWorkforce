@@ -37,7 +37,7 @@ function serviceUrl(baseUrl, path) {
 }
 
 function backendConfig(env, name) {
-  const prefix = name === "zc" ? "ZC" : "PHASE6";
+  const prefix = name === "zc" ? "ZC" : "ZARVIS";
   return {
     name,
     url: (env[`${prefix}_API_URL`] || env[`Z_PLATFORM_${prefix}_API_URL`])?.trim(),
@@ -47,7 +47,7 @@ function backendConfig(env, name) {
 }
 
 export async function platformStatus(env = process.env, fetchImpl = fetch) {
-  const backends = [backendConfig(env, "phase6"), backendConfig(env, "zc")];
+  const backends = [backendConfig(env, "zarvis"), backendConfig(env, "zc")];
   const results = await Promise.all(backends.map(async (backend) => {
     if (!backend.url) return { service: backend.name, status: "unconfigured" };
     try {

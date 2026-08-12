@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from prometheus_client import Counter, Histogram, generate_latest
 from starlette.responses import Response
 
-TOKEN = os.environ["PHASE6_API_TOKEN"]
+TOKEN = os.environ["ZARVIS_API_TOKEN"]
 REDIS_URL = os.environ["REDIS_URL"]
 MODEL = os.getenv("AI_MODEL", "Qwen/Qwen2.5-Coder-32B-Instruct")
 RAW_PROVIDERS: dict[str, Any] = json.loads(os.environ["AI_PROVIDER_ENDPOINTS"])
@@ -61,8 +61,8 @@ PROVIDERS = normalize_providers(RAW_PROVIDERS)
 r = redis.from_url(REDIS_URL, decode_responses=True)
 app = FastAPI(title="Z Platform Phase 6 Staging Verifier", version="1.0.0")
 
-REQUESTS = Counter("phase6_requests_total", "Requests", ["endpoint", "result"])
-LATENCY = Histogram("phase6_request_seconds", "Request latency", ["endpoint"])
+REQUESTS = Counter("zarvis_api_requests_total", "Requests", ["endpoint", "result"])
+LATENCY = Histogram("zarvis_api_request_seconds", "Request latency", ["endpoint"])
 
 def upstream_request_id(response: httpx.Response, data: Any | None = None) -> str | None:
     if isinstance(data, dict) and isinstance(data.get("id"), str):
@@ -103,7 +103,7 @@ async def health(_: None = Depends(auth)):
 @app.get("/health/live")
 async def health_live():
     """Unauthenticated process liveness endpoint for Kubernetes probes."""
-    return {"status": "alive", "service": "phase6-api", "release_sha": RELEASE_SHA}
+    return {"status": "alive", "service": "zarvis-api", "release_sha": RELEASE_SHA}
 
 @app.get("/health/ready")
 async def health_ready():

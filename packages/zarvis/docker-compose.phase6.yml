@@ -14,7 +14,7 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      phase6-api:
+      zarvis-api:
         condition: service_healthy
       zc-api:
         condition: service_healthy
@@ -23,12 +23,12 @@ services:
       jaeger:
         condition: service_started
 
-  phase6-api:
+  zarvis-api:
     build:
-      context: ./services/phase6-api
+      context: ./services/zarvis-api
     restart: unless-stopped
     environment:
-      PHASE6_API_TOKEN: ${PHASE6_API_TOKEN}
+      ZARVIS_API_TOKEN: ${ZARVIS_API_TOKEN}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       UPLOAD_DIR: /data/uploads
       GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-}
@@ -45,7 +45,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import os, urllib.request; request = urllib.request.Request('http://127.0.0.1:8080/health', headers={'Authorization': 'Bearer ' + os.environ['PHASE6_API_TOKEN']}); urllib.request.urlopen(request).read()"]
+      test: ["CMD", "python", "-c", "import os, urllib.request; request = urllib.request.Request('http://127.0.0.1:8080/health', headers={'Authorization': 'Bearer ' + os.environ['ZARVIS_API_TOKEN']}); urllib.request.urlopen(request).read()"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -116,8 +116,8 @@ services:
       Z_PLATFORM_SERVICE_TOKEN: ${Z_PLATFORM_SERVICE_TOKEN:?set Z_PLATFORM_SERVICE_TOKEN in .env}
       Z_PLATFORM_AI_GATEWAY_URL: http://ai-gateway:8400
       AI_MODEL: ${AI_MODEL:-meta/llama-3.1-8b-instruct}
-      PHASE6_API_URL: http://phase6-api:8080
-      PHASE6_API_TOKEN: ${PHASE6_API_TOKEN:?set PHASE6_API_TOKEN in .env}
+      ZARVIS_API_URL: http://zarvis-api:8080
+      ZARVIS_API_TOKEN: ${ZARVIS_API_TOKEN:?set ZARVIS_API_TOKEN in .env}
       ZC_API_URL: http://zc-api:8420
       ZC_API_TOKEN: ${ZC_API_TOKEN:?set ZC_API_TOKEN in .env}
       ZCHAT_SESSION_TTL_SECONDS: ${ZCHAT_SESSION_TTL_SECONDS:-3600}
@@ -126,7 +126,7 @@ services:
     depends_on:
       ai-gateway:
         condition: service_healthy
-      phase6-api:
+      zarvis-api:
         condition: service_healthy
       zc-api:
         condition: service_healthy
@@ -158,7 +158,7 @@ services:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
     volumes:
-      - ./services/phase6-api/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./services/zarvis-api/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
 
   grafana:
@@ -172,7 +172,7 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: "false"
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./services/phase6-api/grafana-datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+      - ./services/zarvis-api/grafana-datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
     depends_on:
       - prometheus
     healthcheck:

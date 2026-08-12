@@ -16,7 +16,7 @@ This project follows a human-readable changelog style. Dates use `YYYY-MM-DD`.
 - GitHub environment helper and readiness docs now surface the operator-owned review fields (`STAGING_REVIEWER`, `INCIDENT_OWNER`, `ESCALATION_ROUTE`, `WATCH_WINDOW`, and production reviewer selectors) from the dotenv overlays, with repo-local drift tests tied to the current `origin/main` SHA.
 - Release governance now includes an explicit issue-item mapping for the remaining `PENDING_OPERATOR` values so the final-release workflow can point each operator decision at the correct record or workflow without fabricating approvals.
 - Release governance now has repo-level coverage for the operator-signoff path: the phase-6 operator input register, operational ownership record, and production release record are linked by focused validation tests and workflow-shape checks.
-- Phase 6 API now exposes a read-only Supabase Data API bridge at `/supabase/read`, with server-side anon-key handling, base-URL and table validation, and route-level success/failure tests.
+- ZARVIS API now exposes a read-only Supabase Data API bridge at `/supabase/read`, with server-side anon-key handling, base-URL and table validation, and route-level success/failure tests.
 - GitHub environment bootstrap helper now imports populated keys from `.env`, `.env.phase6`, and `.env.phase6.server` into GitHub environment variables and secrets while keeping reviewer selectors explicit.
 - GitHub Actions workflow pins upgraded to Node 24-compatible releases across checkout, setup-node, setup-python, setup-go, and artifact upload steps, with repository tests updated to match the new workflow contracts.
 - Deployment readiness workflows now verify that the requested release SHA exists in `cvsz/z-platform` before checkout, so stale or invalid SHAs fail closed instead of surfacing as broken deployment records.
@@ -24,7 +24,7 @@ This project follows a human-readable changelog style. Dates use `YYYY-MM-DD`.
 - CodeQL Advanced workflow now targets the available self-hosted Linux/X64 runner labels instead of a missing custom label, so the job can start on the current runner pool while keeping security-analysis execution on self-hosted infrastructure.
 - Release template and zctl apiVersion identifiers now use `zeaz.dev` instead of `z-platform.io`.
 - GitHub issue templates, sponsor metadata, and Discussions entry points were added for repository community setup.
-- Phase 6 API now exposes a verified GitHub webhook endpoint at `/webhooks/github` on the Cloudflare-backed Phase 6 hostname, with signature validation and failure-path tests.
+- ZARVIS API now exposes a verified GitHub webhook endpoint at `/webhooks/github` on the Cloudflare-backed Phase 6 hostname, with signature validation and failure-path tests.
 - Cloudflare Terraform examples and installer defaults now use service-named public hostnames such as `phase6.zeaz.dev`, `zchat.zeaz.dev`, and `zai.zeaz.dev`.
 - Shared readiness probe helpers now set `Content-Type: application/json` whenever a JSON body is present, so POST-based external checks are sent with the expected content type.
 - External readiness manifest validation now rejects placeholder HTTPS probe URLs such as `staging.example.invalid` and localhost-style endpoints.

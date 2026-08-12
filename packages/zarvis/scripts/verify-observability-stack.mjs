@@ -22,7 +22,7 @@ try {
   console.log('✅ Jaeger distributed trace propagation verified.');
 
   // Metrics Endpoint Check
-  const metricsData = execSync('docker exec z-platform-phase6-prometheus-1 wget -qO- http://phase6-api:8080/metrics').toString();
+  const metricsData = execSync('docker exec z-platform-phase6-prometheus-1 wget -qO- http://zarvis-api:8080/metrics').toString();
   if (!metricsData.includes('process_cpu_seconds_total')) {
     throw new Error('API metrics not found');
   }
