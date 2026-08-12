@@ -42,8 +42,11 @@ Do not move or reuse an existing release tag. Publish a new patch/minor/major ve
 - GitHub Release with generated release notes and attached artifacts.
 
 The workflow stages the Python artifacts and trusted Windows MSIX in separate
-jobs, then publishes the GHCR image and GitHub Release only after both jobs
-pass. A failed Windows build therefore cannot leave a public partial release.
+jobs, then publishes the GHCR image and GitHub Release after the Python release
+gate passes. Windows MSIX artifacts are attached only when trusted signing
+secrets are configured; if those secrets are absent, the release publishes the
+Python artifacts, SBOM, checksums, container image and release notes without
+Windows packages.
 
 Production deployments should pin the semantic tag or image digest, never `latest`.
 
@@ -55,8 +58,9 @@ created; a green root Python build alone is not a release approval.
 ## Trusted Windows signing
 
 The pull-request Windows workflow deliberately uses a short-lived self-signed
-certificate for package installation smoke tests. A release tag is
-fail-closed unless the repository or protected release environment provides:
+certificate for package installation smoke tests. A release tag publishes
+Windows MSIX artifacts only when the repository or protected release
+environment provides:
 
 - `WINDOWS_MSIX_PFX_BASE64`: base64-encoded organization-issued MSIX signing
   PFX containing its private key;
@@ -67,8 +71,9 @@ fail-closed unless the repository or protected release environment provides:
 The release workflow imports the PFX only on the ephemeral Windows runner,
 patches the package publisher to match the signing identity, and publishes
 only the public `.cer` beside the MSIX. Never commit the PFX, password, or a
-base64 value to the repository. A missing or invalid signing secret blocks the
-release instead of producing a package that users cannot trust.
+base64 value to the repository. Missing signing secrets skip Windows artifacts;
+invalid signing secrets still fail the Windows job instead of producing a
+package that users cannot trust.
 
 ## Release verification
 
