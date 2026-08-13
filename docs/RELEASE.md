@@ -46,7 +46,9 @@ jobs, then publishes the GHCR image and GitHub Release after the Python release
 gate passes. Windows MSIX artifacts are attached only when trusted signing
 secrets are configured; if those secrets are absent, the release publishes the
 Python artifacts, SBOM, checksums, container image and release notes without
-Windows packages.
+Windows packages. The publish job creates an empty `windows-assets` staging
+directory when the optional Windows artifact download is skipped, so unsigned
+repositories can still publish the non-Windows release assets.
 
 Production deployments should pin the semantic tag or image digest, never `latest`.
 
@@ -99,3 +101,6 @@ Application rollback is performed by redeploying the previous immutable image ta
 ## External publication
 
 The repository release workflow publishes to GitHub Releases/GHCR. Publishing to PyPI or another registry is intentionally not automatic until trusted-publishing ownership and release policy for that external registry are configured.
+
+For repository-level release operations, branch/check expectations, package
+cleanup, and GitHub alert triage, see [GITHUB-OPERATIONS.md](GITHUB-OPERATIONS.md).

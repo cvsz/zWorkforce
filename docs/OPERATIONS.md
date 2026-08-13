@@ -33,3 +33,11 @@ Outbox payloads remain durable until delivered. Destination handlers should dedu
 
 ## PostgreSQL
 Monitor connections, storage, locks and backup/PITR status. The application does not replace DB operational controls.
+
+## GitHub operations
+
+Repository branch protection, pull-request gates, dependency maintenance,
+release workflows, GHCR packages, and incident triage are documented in
+[GITHUB-OPERATIONS.md](GITHUB-OPERATIONS.md). Keep that document current when
+adding workflows, required checks, package publishing paths, or GitHub security
+features.

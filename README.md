@@ -73,7 +73,9 @@ Users / OIDC / Signed Proxy / MCP Clients
    OTLP / Prometheus / Grafana / Artifacts / Qdrant / S3
 ```
 
-See [ARCHITECTURE.md](ARCHITECTURE.md), [SECURITY.md](SECURITY.md) and [docs/THREAT-MODEL.md](docs/THREAT-MODEL.md).
+See [ARCHITECTURE.md](ARCHITECTURE.md), [SECURITY.md](SECURITY.md),
+[docs/THREAT-MODEL.md](docs/THREAT-MODEL.md), and
+[docs/GITHUB-OPERATIONS.md](docs/GITHUB-OPERATIONS.md).
 
 ## Quick start — local SQLite
 
@@ -334,7 +336,7 @@ See [SECURITY.md](SECURITY.md).
 
 ## Deployment boundary
 
-v3.0.0 provides real distributed execution through PostgreSQL, multiple API/worker replicas, leader-elected scheduler/outbox services, Kubernetes autoscaling, native OIDC, MCP, S3/Qdrant adapters and observability hooks. External services still need to exist and be operated: PostgreSQL HA, IdP, S3/Qdrant, OTLP collector, model providers and ingress/egress infrastructure. Multi-region database replication and disaster-recovery topology are infrastructure responsibilities rather than simulated inside the Python process.
+v3.0.2 provides real distributed execution through PostgreSQL, multiple API/worker replicas, leader-elected scheduler/outbox services, Kubernetes autoscaling, native OIDC, MCP, S3/Qdrant adapters and observability hooks. External services still need to exist and be operated: PostgreSQL HA, IdP, S3/Qdrant, OTLP collector, model providers and ingress/egress infrastructure. Multi-region database replication and disaster-recovery topology are infrastructure responsibilities rather than simulated inside the Python process.
 
 ## License
 
