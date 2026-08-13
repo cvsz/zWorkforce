@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce GitHub Operations"
+  short_description: "Operate PRs, checks, branches, releases, and packages"
+  default_prompt: "Use $zworkforce-github-operations to inspect and operate zWorkforce GitHub PRs, checks, releases, and packages."

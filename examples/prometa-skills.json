@@ -1,0 +1,98 @@
+[
+  {
+    "id": "repo-review",
+    "version": "1.1.0",
+    "name": "Repository Review",
+    "description": "Review zWorkforce repository changes for correctness, security, release risk, and documentation drift.",
+    "allowed_tools": ["workspace_list", "workspace_read"],
+    "system_prompt_append": "Review like an owner. Lead with concrete findings, cite files and tests, and call out security, reliability, backward-compatibility, release, and operational risks before summary."
+  },
+  {
+    "id": "secure-editing",
+    "version": "1.0.0",
+    "name": "Secure Editing",
+    "description": "Implement scoped zWorkforce changes while preserving tenant isolation, approvals, policy gates, audit boundaries, and validation evidence.",
+    "allowed_tools": ["workspace_list", "workspace_read", "workspace_write", "shell_exec"],
+    "system_prompt_append": "Make the smallest complete change. Preserve fail-closed auth, policy, approval, secret, shell, HTTP, and audit behavior. Add focused tests and report validation."
+  },
+  {
+    "id": "release-verification",
+    "version": "1.0.0",
+    "name": "Release Verification",
+    "description": "Verify release candidates, CI checks, version metadata, artifacts, SBOMs, checksums, packages, and rollback evidence.",
+    "allowed_tools": ["workspace_list", "workspace_read", "shell_exec", "http_get"],
+    "system_prompt_append": "Treat releases as evidence-driven. Verify actual local and GitHub artifacts before declaring GO, NO-GO, or CONDITIONAL."
+  },
+  {
+    "id": "github-operations",
+    "version": "1.0.0",
+    "name": "GitHub Operations",
+    "description": "Operate zWorkforce PRs, review threads, checks, branches, releases, and packages with current-state verification.",
+    "allowed_tools": ["workspace_read", "shell_exec", "http_get"],
+    "system_prompt_append": "Inspect current GitHub state immediately before any mutation. Resolve, merge, delete, or publish only after exact object verification and passing checks."
+  },
+  {
+    "id": "workflow-design",
+    "version": "1.0.0",
+    "name": "Workflow Design",
+    "description": "Design durable workflows, schedules, event rules, idempotency, retries, approvals, and evaluation criteria.",
+    "allowed_tools": ["workspace_list", "workspace_read", "workspace_write"],
+    "system_prompt_append": "Design workflows with explicit dependencies, occurrence keys, retry boundaries, approvals for mutation, success criteria, and rollback evidence."
+  },
+  {
+    "id": "postgres-recovery",
+    "version": "1.0.0",
+    "name": "PostgreSQL Recovery",
+    "description": "Verify PostgreSQL migrations, backup and restore drills, queue recovery, outbox recovery, and rollback evidence.",
+    "allowed_tools": ["workspace_list", "workspace_read", "shell_exec"],
+    "system_prompt_append": "Treat database operations as production-impacting. Verify backups, isolated restore drills, schema compatibility, queue state, outbox state, RPO/RTO risk, and rollback evidence."
+  },
+  {
+    "id": "finops-optimization",
+    "version": "1.0.0",
+    "name": "FinOps Optimization",
+    "description": "Analyze token and credit spend, budgets, chargeback, SLO outcomes, tier rightsizing, capacity forecasts, and cost per successful outcome.",
+    "allowed_tools": ["workspace_list", "workspace_read", "memory_search", "calculator"],
+    "system_prompt_append": "Optimize for successful outcomes per credit. Compare spend, pass rate, outcome score, latency, retries, SLO compliance, and quality risk before recommending tier or provider changes."
+  },
+  {
+    "id": "rag-curation",
+    "version": "1.0.0",
+    "name": "RAG Curation",
+    "description": "Curate tenant-scoped memory, tags, embeddings, vector backends, reindexing, stale knowledge cleanup, and retrieval quality.",
+    "allowed_tools": ["workspace_list", "workspace_read", "workspace_write", "memory_search"],
+    "system_prompt_append": "Keep tenant knowledge useful without crossing privacy or retention boundaries. Cite source records, validate retrieval quality, and audit curator changes."
+  },
+  {
+    "id": "policy-audit",
+    "version": "1.0.0",
+    "name": "Policy Audit",
+    "description": "Audit tenant policy, RBAC, scopes, approvals, tool grants, signed skills, SSRF, shell execution, memory isolation, and audit chain behavior.",
+    "allowed_tools": ["workspace_list", "workspace_read", "memory_search"],
+    "system_prompt_append": "Trace policy from request to tool execution. Confirm deny precedence, fail-closed behavior, tenant isolation, and audit evidence without secret leakage."
+  },
+  {
+    "id": "incident-response",
+    "version": "1.0.0",
+    "name": "Incident Response",
+    "description": "Coordinate zWorkforce incident triage, containment, rollback, recovery validation, communications, and evidence capture.",
+    "allowed_tools": ["workspace_read", "shell_exec", "http_get"],
+    "system_prompt_append": "Prioritize containment and evidence. State severity, impact, facts, hypotheses, rollback decision, owner, next action, and monitoring window."
+  },
+  {
+    "id": "artifact-provenance",
+    "version": "1.0.0",
+    "name": "Artifact Provenance",
+    "description": "Verify artifact hashes, content-addressed metadata, release evidence bundles, SBOMs, checksums, packages, images, and rollback assets.",
+    "allowed_tools": ["workspace_list", "workspace_read", "workspace_write", "shell_exec", "http_get"],
+    "system_prompt_append": "Treat artifacts as evidence. Verify hashes, owners, versions, storage locations, producing tasks or commits, and rollback usability before release or compliance decisions."
+  },
+  {
+    "id": "zarvis-contracts",
+    "version": "1.0.0",
+    "name": "Z.A.R.V.I.S. Contracts",
+    "description": "Validate packages/zarvis contracts, services, local runbooks, zctl, Compose files, release evidence, and Windows client compatibility.",
+    "allowed_tools": ["workspace_list", "workspace_read", "shell_exec"],
+    "system_prompt_append": "Treat packages/zarvis as an independent product boundary. Validate contracts and package-local tests before changing service behavior."
+  }
+]

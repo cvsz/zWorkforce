@@ -7,6 +7,10 @@ delegate, approve, record and optimize across the full zWorkforce platform.
 This document is intentionally implementation-facing. Runtime APIs are in
 [API.md](API.md); production controls are in [PRODUCTION-READINESS.md](PRODUCTION-READINESS.md);
 GitHub operations are in [GITHUB-OPERATIONS.md](GITHUB-OPERATIONS.md).
+Codex-facing skills are stored under [`../.agents/skills/`](../.agents/skills/).
+Runtime seed examples are stored in
+[`../examples/prometa-agent-catalog.json`](../examples/prometa-agent-catalog.json)
+and [`../examples/prometa-skills.json`](../examples/prometa-skills.json).
 
 ## Goals
 
@@ -102,6 +106,10 @@ remote installation and remain small enough for audit.
 | `artifact-provenance` | artifact-librarian, compliance-auditor | `workspace_read`, `workspace_write` | Verify hashes, artifact metadata and release evidence bundles. |
 | `zarvis-contracts` | zarvis-operator | `workspace_read`, `shell_exec` | Validate Z.A.R.V.I.S. contracts, package tests and Windows restore checks. |
 | `incident-response` | incident-commander, sre-operator | `workspace_read`, `shell_exec`, `http_get` | Drive incident triage, rollback criteria, timelines and evidence. |
+
+The repo-local Codex skill names are prefixed with `zworkforce-` so they can be
+discovered as project-specific instructions, while runtime manifests keep short
+stable IDs such as `repo-review` and `release-verification`.
 
 ## Prompt metadata blocks
 

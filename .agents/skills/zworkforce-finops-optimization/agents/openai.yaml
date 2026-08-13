@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce FinOps Optimization"
+  short_description: "Analyze model cost, budgets, SLOs, and capacity"
+  default_prompt: "Use $zworkforce-finops-optimization to analyze zWorkforce cost, budgets, rightsizing, and capacity recommendations."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce ZARVIS Contracts"
+  short_description: "Validate Z.A.R.V.I.S. contracts, services, and client changes"
+  default_prompt: "Use $zworkforce-zarvis-contracts to validate Z.A.R.V.I.S. package contracts, services, and Windows client impact."

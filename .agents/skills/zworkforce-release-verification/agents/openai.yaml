@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce Release Verification"
+  short_description: "Verify release candidates, artifacts, and CI evidence"
+  default_prompt: "Use $zworkforce-release-verification to validate a zWorkforce release candidate before publishing."

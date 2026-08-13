@@ -5,6 +5,7 @@ This supplements the root `AGENTS.md` with a repo-local ECC baseline.
 ## Repo Skill
 
 - Repo-generated Codex skill: `.agents/skills/zWorkforce/SKILL.md`
+- ProMeta support skills: `.agents/skills/zworkforce-*/SKILL.md`
 - Claude-facing companion skill: `.claude/skills/zWorkforce/SKILL.md`
 - Keep user-specific credentials and private MCPs in `~/.codex/config.toml`, not in this repo.
 
@@ -18,6 +19,8 @@ The generated baseline enables GitHub, Context7, Exa, Memory, Playwright, and Se
 - Explorer: read-only evidence gathering
 - Reviewer: correctness, security, and regression review
 - Docs researcher: API and release-note verification
+- ProMeta agents: use `examples/prometa-agent-catalog.json` with
+  `examples/prometa-skills.json` as the runtime seed reference.
 
 ## Workflow Files
 

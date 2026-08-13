@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce Incident Response"
+  short_description: "Coordinate zWorkforce incident triage and recovery"
+  default_prompt: "Use $zworkforce-incident-response to run a zWorkforce incident triage, rollback, and evidence workflow."
