@@ -17,6 +17,7 @@ class ZarvisPackageMigrationTests(unittest.TestCase):
             "apps/zarvis-windows",
             "apps/zvoice",
             "services/zarvis-orchestrator",
+            "services/zarvis-api",
             "services/zarvis-action-gateway",
             "services/zarvis-task-gateway",
             "services/zarvis-memory",

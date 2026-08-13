@@ -2,8 +2,8 @@ import { createHash, randomUUID } from "node:crypto";
 import {
   AgentOrchestrator,
   AgentOrchestratorError,
-} from "../agent-orchestrator/server.mjs";
-import { createDurableFileProviders } from "../agent-orchestrator/durable-adapters.mjs";
+} from "./orchestrator-core.mjs";
+import { createDurableFileProviders } from "./durable-adapters.mjs";
 import { executeGitHubRepositoryStatus } from "../zarvis-orchestrator/src/github-status-tool.mjs";
 
 export const ZARVIS_OWNER_GITHUB_ID = "4076926";

@@ -5,7 +5,7 @@ Issue: #151
 
 ## Decision
 
-Reuse `services/agent-orchestrator` as the single job lifecycle engine. The Z.A.R.V.I.S. task gateway extends that engine rather than introducing a competing task store, queue, approval model, or worker protocol.
+Use `services/zarvis-task-gateway` as the single Z.A.R.V.I.S. task lifecycle boundary. The gateway owns task state, queue handoff, approval model, and worker protocol integration for assistant tasks.
 
 ## Flow
 

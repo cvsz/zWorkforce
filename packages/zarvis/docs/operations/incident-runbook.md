@@ -11,7 +11,7 @@
 
 ## First response
 
-1. Stop external traffic at Cloudflare Access or ingress.
+1. Stop external traffic at the owner-controlled edge or ingress.
 2. Preserve logs and audit events.
 3. Rotate affected service tokens or credentials.
 4. Disable provider adapters involved in the incident.

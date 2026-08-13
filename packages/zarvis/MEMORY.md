@@ -1,35 +1,30 @@
 # Repository Memory
 
-This file captures durable project context for maintainers and coding agents. It is not a place for secrets, credentials, private user data, provider keys, payment data, wallet keys, MPC shares, KYC payloads, or production identifiers.
+This file captures durable Z.A.R.V.I.S. project context for maintainers and coding agents. It is not a place for secrets, credentials, private user data, provider keys, payment data, wallet keys, KYC payloads, or production identifiers.
 
-## Project identity
+## Project Identity
 
-- Repository: `cvsz/z-platform`
-- Migration reference: `cvsz/zeaz-platform`
-- Project type: security-first platform successor
+- Repository: `cvsz/zWorkforce`
+- Package: `packages/zarvis`
+- Project type: security-first Z.A.R.V.I.S. assistant suite
 - Production posture: blocked until operator approval and staging readiness sign-off
 
-## Stable decisions
+## Stable Decisions
 
-- AI provider access is gateway-only through `services/ai-gateway`.
-- Browser clients must not receive provider secrets or service tokens.
-- Agent jobs require durable state, queue-backed execution, approval state, scoped tools, sandbox limits, cancellation, retry idempotency, and audit events.
-- Workspace shell and deploy require explicit approval grants.
-- ZWallet is a billing-ledger adapter only.
-- Billing receives usage, credits, and invoice intents only.
-- Wallet signing, cards, KYC, MPC, and swaps are denied from AI and billing paths.
-- Production external traffic waits for CI, observability, backups, identity, Cloudflare Access, and operator sign-off.
+- Browser and desktop clients must not receive provider secrets or service tokens.
+- Tool execution requires allowlisted adapters, approval state, scoped action grants, timeout handling, and audit events.
+- Memory, perception, and proactive workflows require explicit consent and retention controls.
+- Realtime voice keeps short-lived session tickets at the gateway boundary.
+- Non-Z.A.R.V.I.S. product surfaces and legacy platform services are intentionally out of scope for this package.
 
-## Canonical documents
+## Canonical Documents
 
-- `docs/project/project-overview.md`
+- `README.md`
 - `docs/requirements/master-requirements.md`
-- `docs/operations/production-master.md`
-- `docs/migration/execution-plan.md`
-- `docs/migration/manifest.md`
 - `docs/architecture/README.md`
+- `docs/architecture/zarvis.md`
 - `SECURITY.md`
 
-## Update rules
+## Update Rules
 
 Update this file only for durable project facts. Do not record temporary plans, secrets, credentials, personal data, or speculative decisions.

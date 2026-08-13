@@ -169,7 +169,7 @@ func Run(parent context.Context, args []string, stdout, stderr io.Writer) error 
 }
 
 func defaults(profile string) (config, error) {
-	cfg := config{compose: "compose.yml", project: "z-platform", lock: ".zctl/operation.lock", audit: ".zctl/audit", remote: "origin", branch: "main", sbomDir: ".zctl/sbom", planDir: ".zctl/plans", releaseDir: ".zctl/releases", healthTimeout: 180 * time.Second}
+	cfg := config{compose: "compose.zarvis-local.yml", project: "zarvis", lock: ".zctl/operation.lock", audit: ".zctl/audit", remote: "origin", branch: "main", sbomDir: ".zctl/sbom", planDir: ".zctl/plans", releaseDir: ".zctl/releases", healthTimeout: 180 * time.Second}
 	switch profile {
 	case "local":
 		cfg.env, cfg.allowPurge, cfg.allowBuild = ".env", true, true

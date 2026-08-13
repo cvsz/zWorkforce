@@ -2,9 +2,10 @@
 
 | Service | Endpoint | Expected result | Does not verify |
 |---|---|---|---|
-| AI Gateway | `GET /health` | process reachable; upstream configuration presence | upstream connectivity or credentials |
-| Agent Orchestrator | `GET /health` | process reachable; execution disabled state | queue/database/worker execution |
-| ZChat | `GET /health` | process reachable; gateway configuration presence | provider connectivity or user session |
+| zarvis-orchestrator | `GET /health` | process reachable; command runtime configured | upstream GitHub availability |
+| zarvis-task-gateway | `GET /healthz` | process reachable; durable task runtime configured | worker execution success |
+| voice-gateway | `GET /health` | process reachable; session limits configured | model runtime health |
+| voice-agent | `GET /health` | process reachable; speech runtime configured | browser microphone access |
 
 Health endpoints are unauthenticated only because they expose no secrets, job data, tenant data, or provider configuration values.
 

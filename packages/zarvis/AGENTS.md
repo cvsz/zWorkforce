@@ -1,53 +1,38 @@
 # Agent Instructions
 
-This file defines repository instructions for automated coding agents working in `z-platform`.
+This file defines repository instructions for automated coding agents working in `packages/zarvis`.
 
 ## Mission
 
-Help evolve `z-platform` as a clean, security-first successor to `cvsz/zeaz-platform` while preserving explicit platform boundaries, gateway-only AI access, durable orchestration, and production readiness gates.
+Help evolve Z.A.R.V.I.S. as a focused, security-first assistant suite inside `cvsz/zWorkforce`. Keep the package boundary limited to Z.A.R.V.I.S. applications, services, contracts, voice runtime, memory, perception, task approval, action gateways, and operator tooling.
 
-## Required reading
+## Required Reading
 
 Before changing code, read the relevant files:
 
 - `README.md`
-- `docs/project/project-overview.md`
 - `docs/requirements/master-requirements.md`
 - `docs/architecture/README.md`
-- `docs/migration/execution-plan.md`
-- `docs/migration/manifest.md`
-- `docs/operations/production-master.md`
+- `docs/architecture/zarvis.md`
 - `SECURITY.md`
 
-## Non-negotiable rules
+## Non-Negotiable Rules
 
-- Do not commit secrets, provider keys, service tokens, wallet keys, MPC shares, card data, KYC payloads, or production identifiers.
-- Do not expose upstream provider credentials to browsers, IDE clients, generated projects, logs, traces, or tests.
-- Keep AI provider access behind `services/ai-gateway`.
-- Do not install files, scripts, or configurations outside the `z-platform` directory (e.g., avoid `/opt`, `/usr/local`, or `$HOME/.config`). The stack must remain standalone.
-- Keep mutating agent jobs behind explicit approval state and scoped tool grants.
-- Keep workspace shell and deployment behind explicit `shell` or `deploy` approval grants.
-- Keep ZWallet limited to billing-ledger adapter behavior; reject signing, cards, KYC, MPC, and swaps.
+- Do not commit secrets, provider keys, service tokens, wallet keys, card data, KYC payloads, production identifiers, or private user data.
+- Do not expose provider credentials to browsers, desktop clients, logs, traces, or tests.
+- Keep tool execution behind explicit allowlists, approval state, and scoped action grants.
+- Keep memory, perception, and proactive workflows behind consent and retention controls.
+- Do not reintroduce non-Z.A.R.V.I.S. product surfaces or legacy platform services without a documented owner, tests, security review, and rollback path.
 - Do not apply production infrastructure from an agent without operator approval.
 
-## Work style
+## Work Style
 
 - Prefer small, reviewable changes.
 - Match existing package style and tests.
 - Add or update tests for success, failure, authorization, timeout, and denial paths when behavior changes.
-- Update docs when architecture, operations, migration status, requirements, or security boundaries change.
+- Update docs when architecture, operations, requirements, or security boundaries change.
 - Keep generated files reproducible and free of secret-bearing paths.
 
-## Validation expectations
+## Validation Expectations
 
-Run the relevant package tests locally when available. GitHub Actions must remain the release gate for CI, validation, secret scanning, dependency policy, SBOM generation, and provenance verification.
-
-## Production changes
-
-Production-affecting work must reference:
-
-- `docs/operations/production-master.md`
-- `docs/operations/staging-readiness.md`
-- `docs/requirements/master-requirements.md`
-
-Production traffic remains blocked until operator approval is recorded outside automated agent execution.
+Run the relevant package tests locally when available. GitHub Actions remain the release gate for CI, validation, secret scanning, dependency policy, SBOM generation, and provenance verification.

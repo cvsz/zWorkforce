@@ -9,7 +9,7 @@ import {
   MemoryAuditSink,
   MemoryJobStore,
   MemoryQueueAdapter,
-} from "../../agent-orchestrator/server.mjs";
+} from "../orchestrator-core.mjs";
 import {
   normalizePlan,
   ZarvisTaskRuntime,

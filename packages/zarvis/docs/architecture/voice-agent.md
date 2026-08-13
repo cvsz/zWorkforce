@@ -10,7 +10,7 @@ Initial production-oriented vertical slice. External traffic remains disabled by
 - Local VAD, STT, and TTS, with a local or hosted OpenAI-compatible LLM.
 - Keep model/provider credentials and platform service tokens out of the browser.
 - Preserve `apps -> services -> packages/contracts` dependency direction.
-- Route all LLM traffic through `services/ai-gateway`.
+- Keep provider credentials and model runtime access in server-side services, never in the browser.
 - Support Ollama, llama.cpp, and vLLM without coupling the speech pipeline to one runtime.
 
 ## Components
@@ -28,9 +28,6 @@ services/voice-gateway :8450
 services/voice-agent :8765 (internal only)
   │ VAD -> STT -> LLM -> TTS
   │             │
-  │             ▼
-  │      services/ai-gateway :8400
-  │             │
   │             ├─ Ollama :11434/v1
   │             ├─ llama.cpp :8080/v1
   │             ├─ vLLM :8000/v1
@@ -47,7 +44,7 @@ PCM audio events returned to the browser
 4. The browser sends the ticket through `Sec-WebSocket-Protocol` as `zticket.<ticket>`.
 5. The gateway validates the HMAC, expiry, tenant, subject, and nonce, then consumes the nonce.
 6. The speech runtime has no published host port and only accepts traffic from the internal Compose network.
-7. The speech runtime calls `ai-gateway`; provider credentials remain in gateway/secret storage.
+7. Provider credentials remain server-side in the configured speech/model runtime environment.
 
 The first slice keeps consumed ticket nonces in memory and therefore runs `voice-gateway` as a single replica. Before horizontal scaling, move nonce consumption and active-session admission to Redis using an atomic `SET NX EX` operation.
 
@@ -67,7 +64,7 @@ New user speech stops queued playback immediately, enabling barge-in behavior.
 
 ## Model/runtime profiles
 
-| Profile | Best fit | AI Gateway upstream |
+| Profile | Best fit | OpenAI-compatible upstream |
 |---|---|---|
 | `voice-ollama` | Simple local setup, CPU/GPU, easy model management | `http://ollama:11434/v1` |
 | `voice-llamacpp` | GGUF models, CPU/Metal/CUDA/Vulkan, tight memory control | `http://llama-cpp:8080/v1` |

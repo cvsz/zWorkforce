@@ -22,7 +22,7 @@ Owner browser
     |
     | identity-provider login
     v
-Trusted edge / Cloudflare Access + Worker
+Trusted owner edge
     | 1. verify the exact owner identity
     | 2. remove all incoming x-zarvis-* headers
     | 3. inject owner ID 4076926 and edge secret
@@ -62,7 +62,7 @@ The edge configuration must:
 6. Prevent the browser from reading or setting the secret.
 7. Deny bypass paths to the origin.
 
-Cloudflare Access or another identity-aware proxy is the expected external boundary. A Worker or equivalent trusted proxy should perform header removal and injection.
+An identity-aware owner edge is the expected external boundary. A Worker or equivalent trusted proxy should perform header removal and injection.
 
 ## Origin isolation
 

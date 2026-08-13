@@ -2,26 +2,23 @@
 
 This directory is the consolidated Z.A.R.V.I.S. product and platform suite shipped inside `cvsz/zWorkforce` as `packages/zarvis`.
 
-It separates user applications, deployable services, shared packages, infrastructure, and operational documentation. The legacy repository remains unchanged and is the migration source of record.
+It keeps only the Z.A.R.V.I.S. applications, deployable services, shared contracts, and operational documentation needed to build and operate the assistant suite inside `zWorkforce`.
 
 ## Initial domains
 
-- AI workspace: chat, coding, agent orchestration, research jobs
-- Platform core: identity, tenant boundaries, usage and audit events
-- Financial boundary: billing and ledger integration only
-- Operations: Cloudflare Zero Trust, GitOps, observability
+- Assistant surfaces: browser console, Windows operator client, and realtime voice
+- Orchestration: command validation, task approval, action gateway, audit events
+- Context: memory, perception, proactive signals, and retention controls
+- Operations: release, backup, observability, and owner-domain runbooks
 
 ## Package layout
 
 ```text
-apps/       User-facing applications
-services/   Deployable APIs and workers
+apps/       Z.A.R.V.I.S. user-facing applications
+services/   Z.A.R.V.I.S. APIs, gateways, and workers
 packages/   Shared libraries and API contracts
-workers/    Cloudflare Workers
-infrastructure/ Infrastructure definitions and deployment manifests
-configs/    Non-secret schemas and examples
-docs/       Architecture, ADRs, runbooks and migration records
-tools/      Developer tooling and generators
+docs/       Architecture, runbooks, requirements, and release records
+tools/      Developer and operator tooling
 ```
 
 ## Validation
@@ -37,23 +34,21 @@ ZARVIS Windows projects are restored on Ubuntu, then built and tested on the
 Windows runner. The Windows workflow separately packages and smoke-tests the
 ZWorkforceClient application. Root GitHub Actions are the authoritative gates.
 
-## Migration policy
+## Boundary policy
 
-This repository does not bulk-copy legacy applications. Each migration must have an owner, dependency inventory, tests, security review, and rollback path.
+This package intentionally excludes non-Z.A.R.V.I.S. products and legacy platform services. New additions must have an owner, dependency inventory, tests, security review, and rollback path.
 
 Provider and model allowlists are tracked explicitly. Secrets, payment credentials, wallet keys, and provider API keys stay outside the repository.
 
-- [Provider list](PROVIDER-LIST.md)
-- [Migration manifest](docs/migration/manifest.md)
-- [Full execution plan](docs/migration/execution-plan.md)
+- [Architecture](docs/architecture/README.md)
+- [Release runbook](docs/operations/zarvis-local-release-runbook.md)
 
 ## Local realtime voice
 
-The optional voice stack adds a browser voice surface, short-lived WebSocket ticket gateway, and a local Hugging Face speech pipeline while preserving the AI Gateway as the single LLM policy boundary.
+The optional voice stack adds a browser voice surface, short-lived WebSocket ticket gateway, and a local Hugging Face speech pipeline while keeping LLM access in server-side Z.A.R.V.I.S. services.
 
 ```text
 Browser -> apps/zvoice -> services/voice-gateway -> services/voice-agent
-                                                  -> services/ai-gateway
                                                      -> Ollama / llama.cpp / vLLM
 ```
 

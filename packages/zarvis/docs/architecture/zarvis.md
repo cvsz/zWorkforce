@@ -85,9 +85,9 @@ Contracts are additive and do not modify the existing agent job contracts.
 
 ## Compatibility
 
-- The existing `apps/zvoice`, `services/voice-gateway`, `services/voice-agent`, `services/agent-orchestrator`, and `services/ai-gateway` remain unchanged.
+- The existing `apps/zvoice`, `services/voice-gateway`, and `services/voice-agent` remain available for the realtime voice path.
 - The new console can later exchange browser speech recognition for the existing local real-time voice path without changing the command contract.
-- The new orchestrator is a narrow façade for Z.A.R.V.I.S. sessions. Durable agent plans will reuse or adapt the existing agent-orchestrator boundary in a later vertical slice.
+- The new orchestrator is a narrow façade for Z.A.R.V.I.S. sessions. Durable plans flow through the Z.A.R.V.I.S. task and action gateways.
 
 ## Next slices
 

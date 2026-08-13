@@ -24,9 +24,7 @@ class DependabotCoverageTests(unittest.TestCase):
         configured = dependency_directories(DEPENDABOT.read_text(encoding="utf-8"))
         expected = {
             ("npm", "/packages/zarvis"),
-            ("pip", "/packages/zarvis/apps/zaicoder/backend"),
             ("pip", "/packages/zarvis/services/zarvis-api"),
-            ("pip", "/packages/zarvis/services/zc"),
             ("gomod", "/packages/zarvis/tools/zctl"),
             ("nuget", "/packages/zarvis/apps/zarvis-windows"),
         }
@@ -38,7 +36,7 @@ class DependabotCoverageTests(unittest.TestCase):
   - package-ecosystem: pip
     directory: /packages/zarvis
   - package-ecosystem: npm
-    directory: /packages/zarvis/services/ai-gateway
+    directory: /packages/zarvis/services/zarvis-api
 """
 
         configured = dependency_directories(config)
@@ -56,15 +54,11 @@ class DependabotCoverageTests(unittest.TestCase):
 
         self.assertIn("pnpm peers check", workflow)
 
-    def test_zarvis_workflow_resolves_all_zc_dependency_sets(self):
+    def test_zarvis_workflow_does_not_depend_on_removed_zc_service(self):
         workflow = ZARVIS_WORKFLOW.read_text(encoding="utf-8")
 
-        self.assertIn("zc-dependency-resolution:", workflow)
-        self.assertIn("pip install --dry-run", workflow)
-        self.assertIn("-r app/requirements.txt", workflow)
-        self.assertIn("-r requirements-dev.txt", workflow)
-        self.assertIn("-r requirements-enterprise.txt", workflow)
-        self.assertIn("-r webapp/requirements-web.txt", workflow)
+        self.assertNotIn("zc-dependency-resolution:", workflow)
+        self.assertNotIn("packages/zarvis/services/zc", workflow)
 
     def test_unsupported_node_majors_are_ignored(self):
         config = DEPENDABOT.read_text(encoding="utf-8")

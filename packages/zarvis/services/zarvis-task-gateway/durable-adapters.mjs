@@ -1,12 +1,5 @@
 import { randomUUID } from "node:crypto";
-import {
-  mkdir,
-  readFile,
-  rename,
-  rm,
-  stat,
-  writeFile,
-} from "node:fs/promises";
+import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const MAX_RECORD_BYTES = 1024 * 1024;
@@ -41,11 +34,7 @@ async function atomicWrite(path, value) {
   }
   const temporary = `${path}.${process.pid}.${randomUUID()}.tmp`;
   try {
-    await writeFile(temporary, serialized, {
-      encoding: "utf8",
-      flag: "wx",
-      mode: 0o600,
-    });
+    await writeFile(temporary, serialized, { encoding: "utf8", flag: "wx", mode: 0o600 });
     await rename(temporary, path);
   } finally {
     await rm(temporary, { force: true });
@@ -69,7 +58,7 @@ class SerializedWrites {
 }
 
 export class FileJobStore {
-  constructor({ rootDir = process.env.AGENT_DATA_DIR ?? "./data/agent-orchestrator" } = {}) {
+  constructor({ rootDir = process.env.AGENT_DATA_DIR ?? "./data/zarvis-tasks" } = {}) {
     this.rootDir = resolve(rootDir);
     this.path = resolve(this.rootDir, "jobs.jsonl");
     this.writes = new SerializedWrites();
@@ -121,18 +110,14 @@ export class FileJobStore {
     const line = serializeLine(job, "Job record");
     return this.writes.run(async () => {
       await this.ensureDirectory();
-      await writeFile(this.path, line, {
-        encoding: "utf8",
-        flag: "a",
-        mode: 0o600,
-      });
+      await writeFile(this.path, line, { encoding: "utf8", flag: "a", mode: 0o600 });
       return structuredClone(job);
     });
   }
 }
 
 export class FileQueueAdapter {
-  constructor({ rootDir = process.env.AGENT_DATA_DIR ?? "./data/agent-orchestrator" } = {}) {
+  constructor({ rootDir = process.env.AGENT_DATA_DIR ?? "./data/zarvis-tasks" } = {}) {
     this.rootDir = resolve(rootDir);
     this.path = resolve(this.rootDir, "queue.json");
     this.writes = new SerializedWrites();
@@ -182,7 +167,7 @@ export class FileQueueAdapter {
 }
 
 export class FileAuditSink {
-  constructor({ rootDir = process.env.AGENT_DATA_DIR ?? "./data/agent-orchestrator" } = {}) {
+  constructor({ rootDir = process.env.AGENT_DATA_DIR ?? "./data/zarvis-tasks" } = {}) {
     this.rootDir = resolve(rootDir);
     this.path = resolve(this.rootDir, "audit-events.jsonl");
     this.writes = new SerializedWrites();
@@ -192,26 +177,13 @@ export class FileAuditSink {
     const line = serializeLine(event, "Audit event");
     return this.writes.run(async () => {
       await mkdir(this.rootDir, { recursive: true, mode: 0o700 });
-      await writeFile(this.path, line, {
-        encoding: "utf8",
-        flag: "a",
-        mode: 0o600,
-      });
+      await writeFile(this.path, line, { encoding: "utf8", flag: "a", mode: 0o600 });
       return structuredClone(event);
     });
   }
-
-  async list() {
-    await this.writes.settled();
-    if (!await fileExists(this.path)) return [];
-    const text = await readFile(this.path, "utf8");
-    return text.split("\n").filter(Boolean).map((line) => JSON.parse(line));
-  }
 }
 
-export function createDurableFileProviders({
-  rootDir = process.env.AGENT_DATA_DIR ?? "./data/agent-orchestrator",
-} = {}) {
+export function createDurableFileProviders({ rootDir = process.env.AGENT_DATA_DIR ?? "./data/zarvis-tasks" } = {}) {
   return {
     store: new FileJobStore({ rootDir }),
     queue: new FileQueueAdapter({ rootDir }),
