@@ -20,6 +20,7 @@ classifiers = [
 dependencies = [
   "psycopg[binary]>=3.3.4,<4",
   "PyJWT[crypto]>=2.13,<3",
+  "tzdata>=2025.2",
 ]
 
 [project.optional-dependencies]

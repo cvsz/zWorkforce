@@ -60,6 +60,13 @@ class DependabotCoverageTests(unittest.TestCase):
         self.assertNotIn("zc-dependency-resolution:", workflow)
         self.assertNotIn("packages/zarvis/services/zc", workflow)
 
+    def test_zarvis_workflow_runs_for_zarvis_contract_tests(self):
+        workflow = ZARVIS_WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("tests/test_zarvis_package.py", workflow)
+        self.assertIn("tests/test_zarvis_api_rename.py", workflow)
+        self.assertIn("tests/test_zarvis_windows_targeting.py", workflow)
+
     def test_unsupported_node_majors_are_ignored(self):
         config = DEPENDABOT.read_text(encoding="utf-8")
 

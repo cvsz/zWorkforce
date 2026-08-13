@@ -6,6 +6,7 @@ on:
       - "packages/zarvis/**"
       - "tests/test_zarvis_package.py"
       - "tests/test_dependabot_coverage.py"
+      - "tests/test_zarvis_api_rename.py"
       - "tests/test_zarvis_windows_targeting.py"
       - ".github/workflows/zarvis.yml"
   push:
@@ -14,6 +15,7 @@ on:
       - "packages/zarvis/**"
       - "tests/test_zarvis_package.py"
       - "tests/test_dependabot_coverage.py"
+      - "tests/test_zarvis_api_rename.py"
       - "tests/test_zarvis_windows_targeting.py"
       - ".github/workflows/zarvis.yml"
 
