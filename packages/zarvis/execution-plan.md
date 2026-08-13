@@ -1,5 +1,8 @@
-# Z Platform Execution Plan
+# Z.A.R.V.I.S. Execution Plan
 
-The canonical execution plan is maintained at [docs/migration/execution-plan.md](docs/migration/execution-plan.md).
+The canonical repository-level execution plan is maintained at
+[`../../exec-planning.md`](../../exec-planning.md). Z.A.R.V.I.S. package
+requirements are tracked in
+[`docs/requirements/master-requirements.md`](docs/requirements/master-requirements.md).
 
 This root-level entrypoint exists for stable links and automation.
