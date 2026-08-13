@@ -1,6 +1,8 @@
 # Contributing
 
-Thank you for contributing to `z-platform`. This repository is a security-first platform migration, so contribution quality is measured by correctness, testability, reviewability, and respect for platform boundaries.
+Thank you for contributing to Z.A.R.V.I.S. inside the consolidated zWorkforce
+repository. This package is security-first, so contribution quality is measured
+by correctness, testability, reviewability, and respect for platform boundaries.
 
 ## Before you start
 
@@ -8,10 +10,10 @@ Read:
 
 - `README.md`
 - `AGENTS.md`
-- `docs/project/project-overview.md`
 - `docs/requirements/master-requirements.md`
-- `docs/migration/execution-plan.md`
-- `docs/migration/manifest.md`
+- `execution-plan.md`
+- `docs/operations/README.md`
+- `docs/release/README.md`
 - `SECURITY.md`
 
 ## Contribution rules
@@ -49,4 +51,6 @@ Use package-local tests where available. CI is expected to run Node and Python r
 
 ## Production-affecting changes
 
-Production-affecting changes require operator approval and must satisfy `docs/operations/production-master.md` and `docs/operations/staging-readiness.md`.
+Production-affecting changes require operator approval and must satisfy
+`docs/release/README.md`, `docs/release/production-release-record.md`, and the
+root `docs/PRODUCTION-READINESS.md` before promotion.

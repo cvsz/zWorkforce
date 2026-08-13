@@ -204,7 +204,7 @@ Key settings: {list 3-5 most important env vars}
 
 ## Using with Claude Code
 
-This project includes a \`CLAUDE.md\` that gives Claude Code full context.
+This project includes a `CLAUDE.md` that gives Claude Code full context.
 
 \`\`\`bash
 claude    # Start Claude Code — reads CLAUDE.md automatically

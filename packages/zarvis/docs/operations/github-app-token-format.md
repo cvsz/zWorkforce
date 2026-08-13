@@ -88,5 +88,5 @@ Do not use a real token captured from GitHub, even if expired.
 ## Related documents
 
 - [Master requirements](../requirements/master-requirements.md)
-- [Production master document](production-master.md)
+- [Production release record](../release/production-release-record.md)
 - [Security policy](../../SECURITY.md)

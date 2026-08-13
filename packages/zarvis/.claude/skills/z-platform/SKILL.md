@@ -46,11 +46,11 @@ This skill provides a comprehensive guide to contributing to the `z-platform` co
 **Command:** `/add-doc-guide`
 
 1. Create or update a documentation guide file in `docs/operations/`.
-   - Example: `docs/operations/local-compose.md`
+   - Example path: `docs/operations/local-compose.md`
 2. Update `docs/operations/README.md` to link the new or updated guide.
    - Example:
      ```markdown
-     - [Local Compose Guide](./local-compose.md)
+     - [Local Compose Guide](local-compose.md)
      ```
 3. Optionally, finalize or refresh the guide with further edits.
 

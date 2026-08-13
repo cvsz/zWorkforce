@@ -3,13 +3,17 @@
 ## Unreleased
 
 ### Dependencies and CI
-- Consolidated the August dependency updates for the Z.A.R.V.I.S. API, ZC services, and Node workspace.
+- Consolidated the August dependency updates for the Z.A.R.V.I.S. API and Node workspace.
 - Added a peer-dependency compatibility gate to prevent unsupported ESLint and TypeScript major versions from entering the workspace.
 - Enabled Linux restore validation for Windows-targeted Z.A.R.V.I.S. projects and retained the full Windows build, test, package, and smoke gate.
 - Removed invalid Dependabot label assignments and documented compatible-major update policy.
+- Hardened cross-platform validation, including owner-only Windows ACLs for generated API-key secret files.
+- Fixed release publishing when optional trusted Windows MSIX artifacts are skipped.
 
 ### Documentation
 - Refreshed project, package, release, GitHub contribution, and issue-template documentation for the consolidated `packages/zarvis` layout.
+- Added GitHub operations documentation for branch, check, alert, release, package, GHCR, and cleanup procedures.
+- Refreshed the production readiness execution plan and roadmap for the current `v3.0.2` baseline and candidate `v3.0.3` backlog.
 
 ## 3.0.2 — 2026-08-09
 

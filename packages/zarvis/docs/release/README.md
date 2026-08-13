@@ -39,5 +39,8 @@ The validator enforces template-to-schema mappings, API version and kind consist
 
 ## Current maintenance record
 
-See [August 2026 dependency maintenance](../releases/2026-08-12-dependency-maintenance.md)
-for the integrated dependency set, compatibility decisions, and verification map.
+The current integrated dependency and verification summary is tracked in the
+root [`CHANGELOG.md`](../../../../CHANGELOG.md) and the root
+[`docs/GITHUB-OPERATIONS.md`](../../../../docs/GITHUB-OPERATIONS.md). Package-level
+release records remain in this directory until an operator binds them to a
+specific immutable candidate.
