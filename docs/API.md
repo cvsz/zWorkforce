@@ -25,6 +25,9 @@ POST     /api/v1/agent-templates/{id}/instantiate
 GET/POST /api/v1/policies
 ```
 
+Agent and skill operating conventions are defined in
+[PROMETA-MASTER.md](PROMETA-MASTER.md).
+
 Policy document:
 
 ```json
