@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce Secure Editing"
+  short_description: "Implement scoped zWorkforce changes with validation"
+  default_prompt: "Use $zworkforce-secure-editing to make a scoped zWorkforce change with tests and rollback notes."

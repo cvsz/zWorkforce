@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce Artifact Provenance"
+  short_description: "Verify zWorkforce artifact hashes and evidence"
+  default_prompt: "Use $zworkforce-artifact-provenance to verify zWorkforce artifact metadata, hashes, and release evidence."

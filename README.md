@@ -77,7 +77,11 @@ See [ARCHITECTURE.md](ARCHITECTURE.md), [SECURITY.md](SECURITY.md),
 [docs/THREAT-MODEL.md](docs/THREAT-MODEL.md), and
 [docs/GITHUB-OPERATIONS.md](docs/GITHUB-OPERATIONS.md). The master agent,
 skill and prompt-metadata operating model is documented in
-[docs/PROMETA-MASTER.md](docs/PROMETA-MASTER.md).
+[docs/PROMETA-MASTER.md](docs/PROMETA-MASTER.md). Installable repo-local
+Codex skills live under [`.agents/skills/`](.agents/skills/) and runtime-ready
+ProMeta seed catalogs are provided in
+[`examples/prometa-agent-catalog.json`](examples/prometa-agent-catalog.json)
+and [`examples/prometa-skills.json`](examples/prometa-skills.json).
 
 ## Quick start — local SQLite
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce Repo Review"
+  short_description: "Review zWorkforce code, docs, tests, and operational risk"
+  default_prompt: "Use $zworkforce-repo-review to inspect a zWorkforce repository change for defects, security risk, and missing tests."

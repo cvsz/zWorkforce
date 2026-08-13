@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce Workflow Design"
+  short_description: "Design durable zWorkforce workflows and schedules"
+  default_prompt: "Use $zworkforce-workflow-design to create a zWorkforce workflow, schedule, or event automation plan."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce RAG Curation"
+  short_description: "Curate tenant memory, embeddings, and RAG quality"
+  default_prompt: "Use $zworkforce-rag-curation to curate zWorkforce tenant memory, tags, embeddings, and reindex plans."

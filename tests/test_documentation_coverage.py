@@ -1,7 +1,10 @@
 from pathlib import Path
+import json
 import re
 import subprocess
 import unittest
+
+from zworkforce.skills import validate_manifest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -38,6 +41,49 @@ class DocumentationCoverageTests(unittest.TestCase):
                     "PROMETA-MASTER.md",
                     path.read_text(encoding="utf-8"),
                 )
+
+    def test_prometa_seed_catalogs_are_linked_and_valid(self):
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        master = (ROOT / "docs" / "PROMETA-MASTER.md").read_text(encoding="utf-8")
+        for name in ["prometa-agent-catalog.json", "prometa-skills.json"]:
+            with self.subTest(name=name):
+                self.assertIn(name, readme)
+                self.assertIn(name, master)
+
+        skills = json.loads((ROOT / "examples" / "prometa-skills.json").read_text(encoding="utf-8"))
+        agents = json.loads((ROOT / "examples" / "prometa-agent-catalog.json").read_text(encoding="utf-8"))
+        skill_ids = {skill["id"] for skill in skills}
+
+        for skill in skills:
+            with self.subTest(skill=skill["id"]):
+                validate_manifest(skill)
+                skill_doc = ROOT / ".agents" / "skills" / f"zworkforce-{skill['id']}" / "SKILL.md"
+                self.assertTrue(skill_doc.exists(), f"missing Codex skill for {skill['id']}")
+
+        required_agent_fields = {
+            "id",
+            "name",
+            "description",
+            "department",
+            "default_tier",
+            "max_cost_credits",
+            "max_iterations",
+            "max_subagents",
+            "required_approvals",
+            "requires_approval_for_mutations",
+            "allowed_tools",
+            "approval_tools",
+            "skill_ids",
+            "system_prompt",
+            "enabled",
+        }
+        for agent in agents:
+            with self.subTest(agent=agent["id"]):
+                self.assertLessEqual(required_agent_fields, set(agent))
+                self.assertIn(agent["default_tier"], {"luna", "terra", "sol"})
+                self.assertTrue(set(agent["skill_ids"]) <= skill_ids)
+                if agent["requires_approval_for_mutations"]:
+                    self.assertGreaterEqual(agent["required_approvals"], 1)
 
     def test_readme_deployment_boundary_matches_package_version(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")

@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce PostgreSQL Recovery"
+  short_description: "Run PostgreSQL backup, restore, and migration drills"
+  default_prompt: "Use $zworkforce-postgres-recovery to verify zWorkforce PostgreSQL backup, restore, migration, and recovery evidence."

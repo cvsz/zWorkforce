@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce Policy Audit"
+  short_description: "Audit tenant policy, approvals, RBAC, and tool grants"
+  default_prompt: "Use $zworkforce-policy-audit to audit zWorkforce policy, approvals, RBAC, and tool grant behavior."
