@@ -59,7 +59,7 @@ def normalize_providers(raw: dict[str, Any]) -> dict[str, dict[str, str]]:
 PROVIDERS = normalize_providers(RAW_PROVIDERS)
 
 r = redis.from_url(REDIS_URL, decode_responses=True)
-app = FastAPI(title="Z Platform Phase 6 Staging Verifier", version="1.0.0")
+app = FastAPI(title="Z.A.R.V.I.S. API", version="1.0.0")
 
 REQUESTS = Counter("zarvis_api_requests_total", "Requests", ["endpoint", "result"])
 LATENCY = Histogram("zarvis_api_request_seconds", "Request latency", ["endpoint"])

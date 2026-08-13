@@ -4,14 +4,14 @@
 
 | Domain | Location | Responsibility |
 |---|---|---|
-| Product UI | `apps/*` | User-facing web, desktop, mobile interfaces, including ZOW workspace UI/proxy |
-| AI gateway | `services/ai-gateway` | Provider routing, quotas, policy enforcement |
-| Agent orchestration | `services/agent-orchestrator` | Task lifecycle, durable store/queue adapters, scoped tool policy, sandbox workers, and audit events |
-| Workspace runtime | `services/workspace-runtime` | Approval-gated generated project validation, shell, and deployment boundaries |
-| Research | `services/research-worker` | Isolated research jobs and report output |
-| Billing | `services/billing-ledger` | Idempotent AI usage accounting, credits, limits, and invoice-intent boundary |
+| Product UI | `apps/zarvis-console`, `apps/zarvis-windows`, `apps/zvoice` | Explicit command, native operator, and voice surfaces |
+| Orchestration | `services/zarvis-orchestrator` | Command validation, tool allowlisting, speech-ready summaries, and audit events |
+| Task and action gateways | `services/zarvis-task-gateway`, `services/zarvis-action-gateway` | Approval-scoped task and action execution boundaries |
+| Memory and perception | `services/zarvis-memory`, `services/zarvis-perception`, `services/zarvis-proactive` | Consent-bound context, perception sessions, and proactive signals |
+| Voice runtime | `services/voice-gateway`, `services/voice-agent` | Short-lived voice tickets and internal speech pipeline |
+| Public API | `services/zarvis-api` | HTTP API boundary for external integration |
 | Shared contracts | `packages/contracts` | Versioned API/event schemas |
 
 ## Trust boundaries
 
-Clients never receive provider secrets. Agent workloads execute with least privilege and only after versioned approval events grant bounded tools. Workspace shell and deployment requests are isolated behind explicit approval grants. The billing ledger only receives validated usage events, credits, and invoice intents; it never receives wallet signing authority, card data, KYC payloads, MPC shares, or swap routes.
+Clients never receive provider secrets or service tokens. Tool execution remains allowlisted and least-privilege. Mutating work requires versioned approval events and bounded action grants. Perception and proactive workflows require explicit consent and retention controls.

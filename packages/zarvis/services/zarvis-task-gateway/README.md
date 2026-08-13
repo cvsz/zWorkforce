@@ -2,7 +2,7 @@
 
 Owner-only durable multi-step task and approval surface for Epic #148 / Issue #151.
 
-The gateway reuses `services/agent-orchestrator` as the single task lifecycle engine. It adds Z.A.R.V.I.S.-specific plan validation, immutable owner identity, exact-plan approval proof, pause/resume, fixed-path durable adapters, and a constrained two-step read-only worker fixture.
+The gateway is the Z.A.R.V.I.S. task lifecycle boundary. It adds plan validation, immutable owner identity, exact-plan approval proof, pause/resume, fixed-path durable adapters, and a constrained two-step read-only worker fixture.
 
 ## Security model
 

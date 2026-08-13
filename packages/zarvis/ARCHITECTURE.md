@@ -1,6 +1,6 @@
 # Architecture
 
-`z-platform` is organized as a security-first platform with explicit trust boundaries between browser clients, platform services, AI providers, agent workers, workspace execution, and billing.
+Z.A.R.V.I.S. is organized as a security-first assistant suite with explicit trust boundaries between browser clients, orchestrator services, voice runtimes, perception, memory, task approval, and external APIs.
 
 ## Repository layout
 
@@ -9,7 +9,7 @@
 | `apps/` | User-facing applications and thin UI/proxy surfaces. |
 | `services/` | Deployable APIs and workers with explicit runtime ownership. |
 | `packages/` | Shared libraries and versioned contracts. |
-| `tools/` | Developer tooling, generators, and operations checks. |
+| `tools/` | Developer and operator tooling. |
 | `docs/` | Architecture, requirements, migration plans, runbooks, and project documentation. |
 | `.github/workflows/` | CI, validation, and operations gates. |
 
@@ -17,35 +17,32 @@
 
 | Domain | Runtime | Boundary |
 |---|---|---|
-| AI Gateway | `services/ai-gateway` | Owns upstream provider access, model catalog, attachment/upload adapters, and usage emission. |
-| ZAI Coder | `apps/zaicoder` | Uses gateway-only web and CLI paths. |
-| ZChat | `apps/zchat` | Thin chat UI and server-side gateway proxy. |
-| Agent Orchestrator | `services/agent-orchestrator` | Durable jobs, queue, approval state, scoped tools, sandbox workers, audit events. |
-| Workspace Runtime | `services/workspace-runtime` | Generated project validation, shell/deploy approval boundary, sandbox execution. |
-| Billing Ledger | `services/billing-ledger` | Idempotent usage records, credits, invoice intents. |
-| ZWallet | `apps/zwallet` | Billing-ledger adapter only; unsafe wallet/payment capabilities denied. |
+| Z.A.R.V.I.S. Console | `apps/zarvis-console` | Explicit user command surface. |
+| Z.A.R.V.I.S. Windows | `apps/zarvis-windows` | Native operator client. |
+| Voice | `apps/zvoice`, `services/voice-gateway`, `services/voice-agent` | Browser voice surface, ticket gateway, and speech runtime. |
+| Orchestration | `services/zarvis-orchestrator` | Command validation, tool allowlisting, speech-ready summaries, audit events. |
+| Task Approval | `services/zarvis-task-gateway`, `services/zarvis-action-gateway` | Plan validation and approval-scoped action execution. |
+| Memory and Perception | `services/zarvis-memory`, `services/zarvis-perception`, `services/zarvis-proactive` | Consent-bound context, perception, and proactive signals. |
+| Z.A.R.V.I.S. API | `services/zarvis-api` | HTTP API boundary for external integration. |
 | Contracts | `packages/contracts` | Versioned API and event schemas. |
 
 ## Trust boundaries
 
 - Browsers never receive upstream provider secrets or service tokens.
-- AI requests flow through the AI Gateway.
-- Mutating agent work requires approval and scoped tool grants.
-- Workspace shell/deploy requests require explicit approval grants.
-- Billing receives usage, credits, and invoice intents only.
-- Wallet signing, card data, KYC payloads, MPC shares, and swaps are outside AI and billing paths.
+- Voice and command requests cross server-side service boundaries before any model or tool execution.
+- Mutating work requires approval and scoped action grants.
+- Perception and proactive signals require explicit consent and retention controls.
 - Infrastructure apply actions require operator approval.
 
 ## Event and data model
 
-Shared contracts live in `packages/contracts`. Agent and billing events are versioned and should remain backward compatible unless a migration plan documents the break.
+Shared contracts live in `packages/contracts`. Z.A.R.V.I.S. command, task, memory, perception, and audit events are versioned and should remain backward compatible unless a migration plan documents the break.
 
 ## Production architecture
 
-Production provider choices are operator decisions. Before external traffic, staging must verify identity, Cloudflare Access, secrets, databases, queues, audit pipeline, observability, backups, sandbox runtime, billing, and rollback.
+Production provider choices are operator decisions. Before external traffic, staging must verify identity, secrets, databases, queues, audit pipeline, observability, backups, consent controls, and rollback.
 
 See also:
 
 - `docs/architecture/README.md`
 - `docs/requirements/master-requirements.md`
-- `docs/operations/production-master.md`

@@ -46,13 +46,3 @@ http://prometheus.zeaz.dev {
   }
 }
 
-http://{$ZC_DOMAIN} {
-  encode zstd gzip
-
-  reverse_proxy zc-api:8420
-
-  log {
-    output stdout
-    format json
-  }
-}

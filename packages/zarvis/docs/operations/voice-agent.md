@@ -19,9 +19,9 @@ Set the generated values as `Z_PLATFORM_SERVICE_TOKEN` and `VOICE_TICKET_SECRET`
 ## Ollama path
 
 ```bash
-docker compose --env-file .env.voice   -f compose.yml -f compose.voice.yml   --profile voice-ollama up -d --build
+docker compose --env-file .env.voice -f compose.zarvis-local.yml -f compose.voice.yml --profile voice-ollama up -d --build
 
-docker compose --env-file .env.voice   -f compose.yml -f compose.voice.yml   exec ollama ollama pull qwen3:8b
+docker compose --env-file .env.voice -f compose.zarvis-local.yml -f compose.voice.yml exec ollama ollama pull qwen3:8b
 ```
 
 ## llama.cpp path
@@ -29,7 +29,7 @@ docker compose --env-file .env.voice   -f compose.yml -f compose.voice.yml   exe
 Place a GGUF model at `./models/llama.cpp/model.gguf`, select the llama.cpp block in `.env.voice`, then run:
 
 ```bash
-docker compose --env-file .env.voice   -f compose.yml -f compose.voice.yml   --profile voice-llamacpp up -d --build
+docker compose --env-file .env.voice -f compose.zarvis-local.yml -f compose.voice.yml --profile voice-llamacpp up -d --build
 ```
 
 ## vLLM path
@@ -37,7 +37,7 @@ docker compose --env-file .env.voice   -f compose.yml -f compose.voice.yml   --p
 Select the vLLM block in `.env.voice`, verify the NVIDIA runtime, then run:
 
 ```bash
-docker compose --env-file .env.voice   -f compose.yml -f compose.voice.yml   --profile voice-vllm up -d --build
+docker compose --env-file .env.voice -f compose.zarvis-local.yml -f compose.voice.yml --profile voice-vllm up -d --build
 ```
 
 ## Validate
@@ -77,7 +77,7 @@ Validate all of the following:
 | WebSocket returns 401 | Ticket expired, replayed, or malformed | Request a new session; inspect gateway rejection logs |
 | Voice agent unhealthy for several minutes | Initial model download or insufficient RAM/disk | Inspect `voice-agent` logs and model-cache volume |
 | No transcription | Wrong STT model/language or no microphone frames | Confirm browser permission and test a smaller Whisper model |
-| LLM 503 from AI Gateway | Provider key pool not seeded | Verify `AI_PROVIDER_KEYS_JSON`, `AI_DEFAULT_PROVIDER`, and upstream URL |
+| LLM 503 from voice-agent | Model runtime is unavailable | Verify the selected Ollama, llama.cpp, vLLM, or hosted OpenAI-compatible upstream URL |
 | High response latency | CPU-only STT/TTS/LLM or oversized model | Move one stage to GPU, reduce model size, and benchmark stages separately |
 | Audio overlaps after interruption | Client did not stop queued sources | Confirm `speech_started` events reach the browser and clear playback queue |
 
@@ -85,7 +85,7 @@ Validate all of the following:
 
 Do not expose the port publicly until:
 
-- Cloudflare/OIDC identity supplies stable tenant and subject headers;
+- the owner-controlled edge supplies stable tenant and subject headers;
 - `VOICE_ALLOW_ANONYMOUS=false`;
 - TLS terminates at a reviewed reverse proxy;
 - ticket replay state is moved to Redis for multi-replica operation;

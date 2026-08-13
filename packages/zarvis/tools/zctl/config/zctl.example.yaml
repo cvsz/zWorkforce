@@ -2,14 +2,14 @@ apiVersion: control.zeaz.dev/v1alpha1
 kind: ZControlConfig
 
 project:
-  name: z-platform
-  repository: cvsz/z-platform
+  name: zarvis
+  repository: cvsz/zWorkforce
   defaultBranch: main
 
 runtime:
   provider: docker-compose
-  composeFile: compose.yml
-  projectName: z-platform
+  composeFile: compose.zarvis-local.yml
+  projectName: zarvis
   healthTimeout: 180s
 
 profiles:

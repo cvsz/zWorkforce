@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { randomUUID, timingSafeEqual } from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { AgentOrchestratorError } from "../agent-orchestrator/server.mjs";
+import { AgentOrchestratorError } from "./orchestrator-core.mjs";
 import {
   ZarvisTaskRuntime,
   ZARVIS_OWNER_GITHUB_ID,
