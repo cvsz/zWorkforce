@@ -21,6 +21,8 @@ The generated baseline enables GitHub, Context7, Exa, Memory, Playwright, and Se
 - Docs researcher: API and release-note verification
 - ProMeta agents: use `examples/prometa-agent-catalog.json` with
   `examples/prometa-skills.json` as the runtime seed reference.
+- Full runtime install: `zworkforce prometa-install` also installs
+  `examples/prometa-agent-templates.json` and `examples/prometa-workflows.json`.
 
 ## Workflow Files
 

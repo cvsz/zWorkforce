@@ -18,6 +18,7 @@ from .evaluation_suite import EvaluationRunner
 from .metrics import prometheus
 from .mcp import MCP_PROTOCOL_VERSION, handle_mcp
 from .policy import PolicyError, validate_policy
+from .prometa import install_prometa_catalog
 from .rag import build_semantic_memory
 from .scheduler import Scheduler
 from .security import AuthManager, RateLimiter, resolve_tenant
@@ -421,6 +422,16 @@ class App:
                         skill=app.db.upsert_skill(tenant_id,manifest,signature,principal.name,bool(body.get("enabled",True)))
                         app.db.audit(tenant_id,principal.name,"skill.upsert","skill",manifest["id"],{"version":manifest["version"]})
                         return self._json(201,skill)
+                    if path == "/api/v1/prometa/install":
+                        ctx,response=self._principal("admin","agent:write")
+                        if response:return response
+                        principal,tenant_id=ctx;body=self._body()
+                        sign_skills=bool(body.get("sign_skills",False))
+                        if sign_skills and not app.settings.skill_signing_key:raise ValueError("skill signing key is required when sign_skills is true")
+                        result=install_prometa_catalog(app.db,tenant_id,principal.name,
+                                                       signing_key=app.settings.skill_signing_key,sign_skills=sign_skills)
+                        app.db.audit(tenant_id,principal.name,"prometa.install","prometa","default",result)
+                        return self._json(201,result)
 
                     if path == "/api/v1/policies":
                         ctx,response=self._principal("admin","policy:write")

@@ -23,10 +23,13 @@ GET      /api/v1/agents/{id}/versions
 GET/POST /api/v1/agent-templates
 POST     /api/v1/agent-templates/{id}/instantiate
 GET/POST /api/v1/policies
+POST     /api/v1/prometa/install
 ```
 
 Agent and skill operating conventions are defined in
 [PROMETA-MASTER.md](PROMETA-MASTER.md).
+`POST /api/v1/prometa/install` idempotently installs the built-in ProMeta
+agents, skills, agent templates and workflows for the authenticated tenant.
 
 Policy document:
 

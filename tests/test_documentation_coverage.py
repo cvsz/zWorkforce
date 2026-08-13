@@ -45,14 +45,17 @@ class DocumentationCoverageTests(unittest.TestCase):
     def test_prometa_seed_catalogs_are_linked_and_valid(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         master = (ROOT / "docs" / "PROMETA-MASTER.md").read_text(encoding="utf-8")
-        for name in ["prometa-agent-catalog.json", "prometa-skills.json"]:
+        for name in ["prometa-agent-catalog.json", "prometa-skills.json", "prometa-agent-templates.json", "prometa-workflows.json"]:
             with self.subTest(name=name):
                 self.assertIn(name, readme)
                 self.assertIn(name, master)
 
         skills = json.loads((ROOT / "examples" / "prometa-skills.json").read_text(encoding="utf-8"))
         agents = json.loads((ROOT / "examples" / "prometa-agent-catalog.json").read_text(encoding="utf-8"))
+        templates = json.loads((ROOT / "examples" / "prometa-agent-templates.json").read_text(encoding="utf-8"))
+        workflows = json.loads((ROOT / "examples" / "prometa-workflows.json").read_text(encoding="utf-8"))
         skill_ids = {skill["id"] for skill in skills}
+        agent_ids = {agent["id"] for agent in agents}
 
         for skill in skills:
             with self.subTest(skill=skill["id"]):
@@ -84,6 +87,20 @@ class DocumentationCoverageTests(unittest.TestCase):
                 self.assertTrue(set(agent["skill_ids"]) <= skill_ids)
                 if agent["requires_approval_for_mutations"]:
                     self.assertGreaterEqual(agent["required_approvals"], 1)
+        for template in templates:
+            with self.subTest(template=template["id"]):
+                self.assertTrue(set(template["agent"]["skill_ids"]) <= skill_ids)
+        for workflow in workflows:
+            with self.subTest(workflow=workflow["id"]):
+                for step in workflow["definition"]["steps"]:
+                    self.assertIn(step["agent_id"], agent_ids)
+
+        for name in ["prometa-agent-catalog.json", "prometa-skills.json", "prometa-agent-templates.json", "prometa-workflows.json"]:
+            with self.subTest(package_data=name):
+                self.assertEqual(
+                    (ROOT / "examples" / name).read_text(encoding="utf-8"),
+                    (ROOT / "zworkforce" / "prometa_data" / name).read_text(encoding="utf-8"),
+                )
 
     def test_readme_deployment_boundary_matches_package_version(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")

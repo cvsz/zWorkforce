@@ -22,6 +22,7 @@ from .identity import build_oidc_from_env
 from .mcp import RemoteMCPClient
 from .outbox import OutboxDispatcher
 from .providers import build_provider
+from .prometa import install_prometa_catalog, load_prometa_catalog
 from .rag import build_semantic_memory
 from .scheduler import Scheduler
 from .secret_store import SecretResolver
@@ -108,6 +109,12 @@ def parser() -> argparse.ArgumentParser:
     install.add_argument("url")
     install.add_argument("--tenant", default="")
     install.add_argument("--actor", default="cli")
+
+    prometa = sub.add_parser("prometa-install", help="Install the built-in ProMeta agents, skills, templates and workflows")
+    prometa.add_argument("--tenant", default="")
+    prometa.add_argument("--actor", default="cli")
+    prometa.add_argument("--sign-skills", action="store_true", help="Sign installed skill manifests with ZWORKFORCE_SKILL_SIGNING_KEY")
+    prometa.add_argument("--dry-run", action="store_true", help="Validate and summarize the built-in ProMeta catalog without writing")
 
     wf_upsert = sub.add_parser("workflow-upsert", help="Create/update a workflow DAG from JSON")
     wf_upsert.add_argument("file")
@@ -332,6 +339,17 @@ def main(argv=None):
             hosts = tuple(x.strip() for x in os.getenv("ZWORKFORCE_SKILL_REGISTRY_ALLOWLIST", "").split(",") if x.strip())
             registry = RemoteSkillRegistry(db, settings.skill_signing_key, hosts)
             result = registry.install(_tenant(args, settings), args.url, args.actor, require_signature=True)
+            print(json.dumps(result, indent=2, ensure_ascii=False)); return 0
+        if cmd == "prometa-install":
+            if args.dry_run:
+                catalog = load_prometa_catalog()
+                print(json.dumps({"ok": True, "agents": len(catalog["agents"]), "skills": len(catalog["skills"]),
+                                  "agent_templates": len(catalog["templates"]), "workflows": len(catalog["workflows"])},
+                                 indent=2, ensure_ascii=False)); return 0
+            if args.sign_skills and not settings.skill_signing_key:
+                raise ValueError("ZWORKFORCE_SKILL_SIGNING_KEY is required with --sign-skills")
+            result = install_prometa_catalog(db, _tenant(args, settings), args.actor,
+                                             signing_key=settings.skill_signing_key, sign_skills=bool(args.sign_skills))
             print(json.dumps(result, indent=2, ensure_ascii=False)); return 0
         if cmd == "worker":
             engine.recover(); worker_id = args.id.strip() or f"worker-{socket.gethostname()}"

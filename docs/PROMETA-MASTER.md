@@ -10,7 +10,12 @@ GitHub operations are in [GITHUB-OPERATIONS.md](GITHUB-OPERATIONS.md).
 Codex-facing skills are stored under [`../.agents/skills/`](../.agents/skills/).
 Runtime seed examples are stored in
 [`../examples/prometa-agent-catalog.json`](../examples/prometa-agent-catalog.json)
-and [`../examples/prometa-skills.json`](../examples/prometa-skills.json).
+[`../examples/prometa-skills.json`](../examples/prometa-skills.json),
+[`../examples/prometa-agent-templates.json`](../examples/prometa-agent-templates.json)
+and [`../examples/prometa-workflows.json`](../examples/prometa-workflows.json).
+Install the baseline with `zworkforce prometa-install`; use
+`--sign-skills` when `ZWORKFORCE_SKILL_SIGNING_KEY` is configured and signed
+local skill records are required.
 
 ## Goals
 
