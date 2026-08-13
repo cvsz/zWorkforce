@@ -1,0 +1,60 @@
+[
+  {
+    "id": "prometa-repo-change",
+    "name": "ProMeta repository change",
+    "description": "Plan, implement, review, validate, and prepare GitHub operations for a zWorkforce repository change.",
+    "definition": {
+      "steps": [
+        {"id": "triage", "agent_id": "intake-triage", "prompt": "Classify this repository change request and identify affected domains: {{input.request}}"},
+        {"id": "plan", "agent_id": "planner", "depends_on": ["triage"], "prompt": "Create implementation steps and acceptance criteria from: {{steps.triage.result}}"},
+        {"id": "implement", "agent_id": "implementation-engineer", "depends_on": ["plan"], "prompt": "Implement the approved scoped change with tests: {{steps.plan.result}}", "mutating": true},
+        {"id": "review", "agent_id": "code-reviewer", "depends_on": ["implement"], "prompt": "Review the implementation for bugs, regressions, and missing tests: {{steps.implement.result}}"},
+        {"id": "security", "agent_id": "security-reviewer", "depends_on": ["implement"], "prompt": "Review security boundaries and policy impact: {{steps.implement.result}}"},
+        {"id": "release", "agent_id": "release-engineer", "depends_on": ["review", "security"], "prompt": "Run release validation and summarize readiness: {{steps.review.result}} {{steps.security.result}}", "mutating": true}
+      ]
+    },
+    "enabled": true
+  },
+  {
+    "id": "prometa-release-readiness",
+    "name": "ProMeta release readiness",
+    "description": "Verify release, artifact provenance, GitHub checks, and compliance evidence.",
+    "definition": {
+      "steps": [
+        {"id": "verify", "agent_id": "release-engineer", "prompt": "Verify release candidate {{input.version}} with local and GitHub evidence.", "mutating": true},
+        {"id": "artifacts", "agent_id": "artifact-librarian", "depends_on": ["verify"], "prompt": "Verify release artifacts, SBOMs, checksums, packages, and rollback evidence: {{steps.verify.result}}", "mutating": true},
+        {"id": "github", "agent_id": "github-operator", "depends_on": ["verify"], "prompt": "Inspect PRs, checks, branches, releases, and package state for release {{input.version}}.", "mutating": true},
+        {"id": "audit", "agent_id": "compliance-auditor", "depends_on": ["artifacts", "github"], "prompt": "Produce GO, NO-GO, or CONDITIONAL release governance decision from: {{steps.artifacts.result}} {{steps.github.result}}"}
+      ]
+    },
+    "enabled": true
+  },
+  {
+    "id": "prometa-incident-response",
+    "name": "ProMeta incident response",
+    "description": "Coordinate zWorkforce production incident triage, database checks, security review, rollback, and evidence.",
+    "definition": {
+      "steps": [
+        {"id": "command", "agent_id": "incident-commander", "prompt": "Open incident loop for {{input.incident}}. State severity, impact, containment, and next checks.", "mutating": true},
+        {"id": "sre", "agent_id": "sre-operator", "depends_on": ["command"], "prompt": "Check health, queues, schedulers, outbox, providers, and deploy state: {{steps.command.result}}", "mutating": true},
+        {"id": "database", "agent_id": "database-operator", "depends_on": ["command"], "prompt": "Verify PostgreSQL health, backup posture, migrations, and recovery risk: {{steps.command.result}}", "mutating": true},
+        {"id": "security", "agent_id": "security-reviewer", "depends_on": ["command"], "prompt": "Check auth, secrets, policy, audit, and suspicious events: {{steps.command.result}}"},
+        {"id": "closure", "agent_id": "compliance-auditor", "depends_on": ["sre", "database", "security"], "prompt": "Validate timeline, evidence, rollback decision, residual risk, and follow-up tasks."}
+      ]
+    },
+    "enabled": true
+  },
+  {
+    "id": "prometa-zarvis-validation",
+    "name": "ProMeta Z.A.R.V.I.S. validation",
+    "description": "Validate Z.A.R.V.I.S. contracts, package-local services, release evidence, and Windows compatibility.",
+    "definition": {
+      "steps": [
+        {"id": "contracts", "agent_id": "zarvis-operator", "prompt": "Validate packages/zarvis contracts, services, apps, zctl, docs, and Windows compatibility for {{input.scope}}.", "mutating": true},
+        {"id": "security", "agent_id": "security-reviewer", "depends_on": ["contracts"], "prompt": "Review Z.A.R.V.I.S. security, secrets, local action, memory, perception, and owner-domain boundaries: {{steps.contracts.result}}"},
+        {"id": "release", "agent_id": "release-engineer", "depends_on": ["contracts", "security"], "prompt": "Verify package release readiness and evidence from: {{steps.contracts.result}} {{steps.security.result}}", "mutating": true}
+      ]
+    },
+    "enabled": true
+  }
+]

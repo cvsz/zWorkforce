@@ -81,7 +81,10 @@ skill and prompt-metadata operating model is documented in
 Codex skills live under [`.agents/skills/`](.agents/skills/) and runtime-ready
 ProMeta seed catalogs are provided in
 [`examples/prometa-agent-catalog.json`](examples/prometa-agent-catalog.json)
-and [`examples/prometa-skills.json`](examples/prometa-skills.json).
+[`examples/prometa-skills.json`](examples/prometa-skills.json),
+[`examples/prometa-agent-templates.json`](examples/prometa-agent-templates.json)
+and [`examples/prometa-workflows.json`](examples/prometa-workflows.json).
+Install the full ProMeta runtime baseline with `zworkforce prometa-install`.
 
 ## Quick start — local SQLite
 
@@ -326,6 +329,7 @@ zWorkforce tracks token/credit spend by tenant, department, agent, provider and 
 serve | worker | scheduler | doctor | init
 tenant-create | key-create | audit-verify
 skill-sign | skill-install
+prometa-install
 workflow-upsert | workflow-run | workflow-tick
 schedule-upsert | event-rule-upsert | event-emit
 eval-upsert | eval-run | eval-tick

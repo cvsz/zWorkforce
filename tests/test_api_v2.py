@@ -56,6 +56,17 @@ class ApiV2Tests(unittest.TestCase):
         self.req("/api/v1/tenants","POST",{"id":"acme","name":"Acme"})
         _,_,data=self.req("/api/v1/agents",headers={"X-Tenant-ID":"acme"})
         self.assertEqual(len(data["items"]),6)
+    def test_prometa_install_endpoint_installs_full_catalog(self):
+        status,_,data=self.req("/api/v1/prometa/install","POST",{})
+        self.assertEqual(status,201)
+        self.assertEqual(data["agents"],18)
+        self.assertEqual(data["skills"],12)
+        self.assertEqual(data["agent_templates"],3)
+        self.assertEqual(data["workflows"],4)
+        _,_,agents=self.req("/api/v1/agents")
+        self.assertTrue(any(item["id"]=="incident-commander" for item in agents["items"]))
+        _,_,skills=self.req("/api/v1/skills")
+        self.assertTrue(any(item["id"]=="release-verification" for item in skills["items"]))
     def test_tool_events_require_admin_role(self):
         _,secret=self.auth.create_key("default","viewer","viewer",["workforce:read","audit:read"])
         req=urllib.request.Request(self.base+"/api/v1/tool-events",headers={"Authorization":"Bearer "+secret})

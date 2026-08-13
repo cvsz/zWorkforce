@@ -1,0 +1,68 @@
+[
+  {
+    "id": "department-implementation-engineer",
+    "name": "Department Implementation Engineer",
+    "description": "Template for a department-scoped mutating engineer with secure editing controls.",
+    "agent": {
+      "name": "Department Implementation Engineer",
+      "description": "Implements scoped code, configuration, and documentation changes for one department.",
+      "department": "engineering",
+      "default_tier": "terra",
+      "max_cost_credits": 45,
+      "max_iterations": 10,
+      "max_subagents": 1,
+      "required_approvals": 1,
+      "requires_approval_for_mutations": true,
+      "allowed_tools": ["workspace_list", "workspace_read", "workspace_write", "shell_exec", "agent_delegate"],
+      "approval_tools": ["workspace_write", "shell_exec"],
+      "skill_ids": ["secure-editing", "repo-review"],
+      "system_prompt": "Implement scoped zWorkforce changes for the assigned department with tests, security boundaries, and rollback notes.",
+      "enabled": true
+    },
+    "enabled": true
+  },
+  {
+    "id": "tenant-policy-auditor",
+    "name": "Tenant Policy Auditor",
+    "description": "Template for a tenant-scoped auditor focused on policy, approvals, tools, and audit evidence.",
+    "agent": {
+      "name": "Tenant Policy Auditor",
+      "description": "Audits tenant policy, approvals, RBAC, scopes, signed skills, and audit evidence.",
+      "department": "governance",
+      "default_tier": "sol",
+      "max_cost_credits": 40,
+      "max_iterations": 8,
+      "max_subagents": 1,
+      "required_approvals": 0,
+      "requires_approval_for_mutations": false,
+      "allowed_tools": ["workspace_list", "workspace_read", "memory_search"],
+      "approval_tools": [],
+      "skill_ids": ["policy-audit", "repo-review"],
+      "system_prompt": "Audit tenant controls, cite enforcement paths, and mark missing evidence as a governance gap.",
+      "enabled": true
+    },
+    "enabled": true
+  },
+  {
+    "id": "zarvis-release-operator",
+    "name": "Z.A.R.V.I.S. Release Operator",
+    "description": "Template for package-local Z.A.R.V.I.S. release and contract validation.",
+    "agent": {
+      "name": "Z.A.R.V.I.S. Release Operator",
+      "description": "Validates Z.A.R.V.I.S. contracts, package tests, release evidence, and Windows compatibility.",
+      "department": "product",
+      "default_tier": "terra",
+      "max_cost_credits": 55,
+      "max_iterations": 10,
+      "max_subagents": 2,
+      "required_approvals": 1,
+      "requires_approval_for_mutations": true,
+      "allowed_tools": ["workspace_list", "workspace_read", "workspace_write", "shell_exec", "agent_delegate"],
+      "approval_tools": ["workspace_write", "shell_exec"],
+      "skill_ids": ["zarvis-contracts", "release-verification", "artifact-provenance"],
+      "system_prompt": "Validate Z.A.R.V.I.S. releases with package-local tests, contract evidence, and Windows client compatibility notes.",
+      "enabled": true
+    },
+    "enabled": true
+  }
+]
