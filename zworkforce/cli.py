@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import os
 from pathlib import Path
 import socket
+import subprocess
 import sys
 from urllib.parse import urlsplit, urlunsplit
 
@@ -230,6 +232,7 @@ def _write_secret_file(path: Path, secret: str) -> Path:
             handle.write(secret + "\n")
             handle.flush()
             os.fsync(handle.fileno())
+        _restrict_secret_file_permissions(path)
     except Exception:
         if descriptor >= 0:
             os.close(descriptor)
@@ -239,6 +242,28 @@ def _write_secret_file(path: Path, secret: str) -> Path:
             pass
         raise
     return path
+
+
+def _restrict_secret_file_permissions(path: Path) -> None:
+    if os.name != "nt":
+        return
+    raw = subprocess.check_output(
+        ["whoami", "/user", "/fo", "csv", "/nh"],
+        text=True,
+        encoding="utf-8",
+    ).strip()
+    rows = list(csv.reader([raw]))
+    sid = rows[0][1] if rows and len(rows[0]) >= 2 else ""
+    if not sid:
+        raise RuntimeError("unable to determine current Windows user SID")
+    subprocess.run(
+        ["icacls", str(path), "/inheritance:r", "/grant:r", f"*{sid}:F"],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+    )
 
 
 def main(argv=None):

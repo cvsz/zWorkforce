@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+import sys
 import unittest
 
 from common import stack
@@ -50,7 +52,8 @@ class SecurityV2Tests(unittest.TestCase):
         with self.assertRaises(ToolError): tools._validate_url("http://localhost:8080/x")
     def test_shell_does_not_inherit_secrets(self):
         from dataclasses import replace
-        os.environ["TOP_SECRET_FOR_TEST"]="do-not-leak"; settings=replace(self.settings,shell_enabled=True,shell_allowlist=("python3",),shell_env_allowlist=("PATH",)); tools=ToolExecutor(settings,self.db)
-        result=tools.execute("shell_exec",{"command":"python3","args":["-c","import os; print(os.getenv('TOP_SECRET_FOR_TEST','missing'))"]},tenant_id="default",agent_id="software-engineer",actor="test"); self.assertIn("missing",result["stdout"])
+        python_command = Path(sys.executable).name
+        os.environ["TOP_SECRET_FOR_TEST"]="do-not-leak"; settings=replace(self.settings,shell_enabled=True,shell_allowlist=(python_command,),shell_env_allowlist=("PATH",)); tools=ToolExecutor(settings,self.db)
+        result=tools.execute("shell_exec",{"command":python_command,"args":["-c","import os; print(os.getenv('TOP_SECRET_FOR_TEST','missing'))"]},tenant_id="default",agent_id="software-engineer",actor="test"); self.assertIn("missing",result["stdout"])
 
 if __name__ == "__main__": unittest.main()

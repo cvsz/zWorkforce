@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import stat
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -37,7 +38,10 @@ class CliSecurityTests(unittest.TestCase):
             self.assertNotIn("secret", payload)
             secret_path = Path(payload["secret_file"])
             self.assertTrue(secret_path.is_file())
-            self.assertEqual(stat.S_IMODE(secret_path.stat().st_mode), 0o600)
+            if os.name != "nt":
+                self.assertEqual(stat.S_IMODE(secret_path.stat().st_mode), 0o600)
+            else:
+                self.assert_windows_acl_is_owner_only(secret_path)
             secret = secret_path.read_text(encoding="utf-8").strip()
             self.assertTrue(secret.startswith("zwf_"))
             self.assertNotIn(secret, output)
@@ -52,7 +56,19 @@ class CliSecurityTests(unittest.TestCase):
             self.assertEqual(output, "")
             self.assertIn("secret file already exists", error)
             self.assertEqual(target.read_text(encoding="utf-8"), "keep-me\n")
-            self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o644)
+            if os.name != "nt":
+                self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o644)
+
+    def assert_windows_acl_is_owner_only(self, path: Path) -> None:
+        output = subprocess.check_output(["icacls", str(path)], text=True, encoding="utf-8")
+        access_lines = [
+            line.strip()
+            for line in output.splitlines()
+            if line.strip() and not line.startswith("Successfully processed")
+        ]
+        self.assertEqual(len(access_lines), 1, output)
+        self.assertNotIn("(I)", access_lines[0], output)
+        self.assertIn("(F)", access_lines[0], output)
 
 
 if __name__ == "__main__":
