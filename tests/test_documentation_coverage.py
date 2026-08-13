@@ -25,6 +25,20 @@ class DocumentationCoverageTests(unittest.TestCase):
                     path.read_text(encoding="utf-8"),
                 )
 
+    def test_prometa_master_document_is_linked_from_primary_docs(self):
+        required = [
+            ROOT / "README.md",
+            ROOT / "docs" / "API.md",
+            ROOT / "ROADMAP.md",
+        ]
+
+        for path in required:
+            with self.subTest(path=path.relative_to(ROOT)):
+                self.assertIn(
+                    "PROMETA-MASTER.md",
+                    path.read_text(encoding="utf-8"),
+                )
+
     def test_readme_deployment_boundary_matches_package_version(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
 

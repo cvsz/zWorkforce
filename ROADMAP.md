@@ -66,6 +66,8 @@ skills, tamper-evident audit, outcome economics and hardened operations.
 - Fixed release publishing when trusted Windows MSIX signing secrets are absent.
 - Added `docs/GITHUB-OPERATIONS.md` for branch, check, alert, release, package,
   GHCR, and cleanup operations.
+- Added `docs/PROMETA-MASTER.md` as the master agent, skill and prompt-metadata
+  operating model.
 - Refreshed `exec-planning.md` for the current `main` baseline and remaining
   production evidence.
 

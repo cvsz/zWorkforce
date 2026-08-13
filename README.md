@@ -75,7 +75,9 @@ Users / OIDC / Signed Proxy / MCP Clients
 
 See [ARCHITECTURE.md](ARCHITECTURE.md), [SECURITY.md](SECURITY.md),
 [docs/THREAT-MODEL.md](docs/THREAT-MODEL.md), and
-[docs/GITHUB-OPERATIONS.md](docs/GITHUB-OPERATIONS.md).
+[docs/GITHUB-OPERATIONS.md](docs/GITHUB-OPERATIONS.md). The master agent,
+skill and prompt-metadata operating model is documented in
+[docs/PROMETA-MASTER.md](docs/PROMETA-MASTER.md).
 
 ## Quick start — local SQLite
 
