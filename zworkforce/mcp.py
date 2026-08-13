@@ -5,6 +5,7 @@ import urllib.parse
 import urllib.request
 from typing import Any
 
+from .prometa import install_prometa_catalog
 from .security import AuthManager
 
 MCP_PROTOCOL_VERSION = "2026-07-28"
@@ -43,6 +44,12 @@ MCP_TOOLS: dict[str, dict[str, Any]] = {
         "name": "workforce.emit_event", "description": "Emit a durable event for event-triggered workflows and agents.",
         "inputSchema": {"type": "object", "properties": {"event_type": {"type": "string"}, "source": {"type": "string"}, "dedupe_key": {"type": "string"}, "payload": {"type": "object"}}, "required": ["event_type", "payload"]},
         "annotations": {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": True},
+    },
+    "workforce.install_prometa": {
+        "name": "workforce.install_prometa",
+        "description": "Install the built-in ProMeta agents, skills, agent templates and workflows for the tenant.",
+        "inputSchema": {"type": "object", "properties": {"sign_skills": {"type": "boolean"}}},
+        "annotations": {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False},
     },
 }
 
@@ -100,6 +107,15 @@ def _call_tool(app, principal, tenant_id: str, name: str, args: dict[str, Any]) 
         if not isinstance(payload, dict):
             raise ValueError("payload must be an object")
         return app.db.emit_event(tenant_id, str(args.get("event_type", "")), str(args.get("source") or "mcp"), payload, str(args.get("dedupe_key") or ""))
+    if name == "workforce.install_prometa":
+        _require(principal, "admin", "agent:write")
+        sign_skills = bool(args.get("sign_skills", False))
+        if sign_skills and not app.settings.skill_signing_key:
+            raise ValueError("skill signing key is required when sign_skills is true")
+        result = install_prometa_catalog(app.db, tenant_id, principal.name,
+                                         signing_key=app.settings.skill_signing_key, sign_skills=sign_skills)
+        app.db.audit(tenant_id, principal.name, "prometa.mcp_install", "prometa", "default", result)
+        return result
     raise ValueError(f"unknown MCP tool: {name}")
 
 

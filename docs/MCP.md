@@ -19,6 +19,7 @@ Headers include `MCP-Protocol-Version` and may include `Mcp-Method` / `Mcp-Name`
 - `workforce.search_memory` — viewer + `workforce:read`
 - `workforce.run_workflow` — operator + `automation:write`
 - `workforce.emit_event` — operator + `automation:write`
+- `workforce.install_prometa` — admin + `agent:write`
 
 MCP uses the same tenant isolation and credentials as REST. Remote non-local endpoints must use HTTPS.
 

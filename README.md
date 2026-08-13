@@ -297,6 +297,7 @@ workforce.get_task
 workforce.search_memory
 workforce.run_workflow
 workforce.emit_event
+workforce.install_prometa
 ```
 
 CLI:
