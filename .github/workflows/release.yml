@@ -221,6 +221,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p windows-assets
           python - <<'PY'
           from pathlib import Path
 
@@ -272,6 +273,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p windows-assets
           mapfile -t assets < <(find dist windows-assets -type f -print)
           ((${#assets[@]} > 0))
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
