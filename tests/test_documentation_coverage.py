@@ -4,6 +4,7 @@ import re
 import subprocess
 import unittest
 
+from zworkforce import __version__
 from zworkforce.skills import validate_manifest
 
 
@@ -105,9 +106,8 @@ class DocumentationCoverageTests(unittest.TestCase):
     def test_readme_deployment_boundary_matches_package_version(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
-        self.assertIn("## v3.0.2 highlights", readme)
-        self.assertIn("v3.0.2 provides real distributed execution", readme)
-        self.assertNotIn("v3.0.0 provides real distributed execution", readme)
+        self.assertIn(f"## v{__version__} highlights", readme)
+        self.assertIn(f"v{__version__} provides real distributed execution", readme)
 
     def test_github_operations_lists_current_workflows(self):
         doc = (ROOT / "docs" / "GITHUB-OPERATIONS.md").read_text(encoding="utf-8")
@@ -123,6 +123,7 @@ class DocumentationCoverageTests(unittest.TestCase):
             "codeql",
             "dependency-review",
             "release",
+            "publish-container",
         }:
             with self.subTest(workflow=expected):
                 self.assertIn(expected, workflows)
@@ -134,6 +135,9 @@ class DocumentationCoverageTests(unittest.TestCase):
             "CodeQL Advanced",
             "Dependency Review",
             "release.yml",
+            "publish-container.yml",
+            ".github/rulesets/main.json",
+            "PRODUCTION-EVIDENCE.md",
         ]:
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, doc)
