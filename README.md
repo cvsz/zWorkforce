@@ -4,7 +4,7 @@
 
 zWorkforce turns one or more LLM endpoints into a governed AI workforce. A tenant dispatches work to named agents; a cost-aware Luna/Terra/Sol router chooses a model tier; durable workers claim tasks; approvals and policy-as-code gate risky actions; workflows/schedules/events compose tasks; evaluation suites compare model strategies; memory and artifacts preserve knowledge; and the control plane measures cost, SLOs and business outcomes.
 
-## v3.0.2 highlights
+## v3.0.3 highlights
 
 - **PostgreSQL distributed runtime** with `FOR UPDATE SKIP LOCKED` task leasing for cross-host workers; SQLite/WAL remains the zero-config local backend.
 - **Workflow DAG engine** with dependency validation, versioning, templated inputs/results and durable step state.
@@ -23,6 +23,8 @@ zWorkforce turns one or more LLM endpoints into a governed AI workforce. A tenan
 - **Signed remote skill registry** over HTTPS.
 - **Durable webhook outbox** with HMAC signatures, retry/backoff and leader election.
 - **Kubernetes deployment** with hardened pods, API/worker scaling, PDBs, persistent artifacts/workspace and default-deny network policy.
+- **Release-governance hardening** with a dedicated documentation/policy CI gate, desired-state default-branch ruleset contract, stronger release verifier, and explicit production evidence ledger.
+- **Refreshed native WinUI operator shell and Overview dashboard** while preserving existing API and view-model contracts.
 
 All v2 capabilities remain: multi-tenancy, RBAC/scopes, four-eyes approvals, provider failover/circuit breakers, bounded tools, tamper-evident audit chains, budgets, deterministic outcomes, rightsizing recommendations, dashboard, Docker and Python 3.12–3.14 support.
 
@@ -77,8 +79,9 @@ See [ARCHITECTURE.md](ARCHITECTURE.md), [SECURITY.md](SECURITY.md),
 [docs/THREAT-MODEL.md](docs/THREAT-MODEL.md), and
 [docs/GITHUB-OPERATIONS.md](docs/GITHUB-OPERATIONS.md). The master agent,
 skill and prompt-metadata operating model is documented in
-[docs/PROMETA-MASTER.md](docs/PROMETA-MASTER.md). Installable repo-local
-Codex skills live under [`.agents/skills/`](.agents/skills/) and runtime-ready
+[docs/PROMETA-MASTER.md](docs/PROMETA-MASTER.md). Production release evidence
+is recorded in [docs/PRODUCTION-EVIDENCE.md](docs/PRODUCTION-EVIDENCE.md).
+Installable repo-local Codex skills live under [`.agents/skills/`](.agents/skills/) and runtime-ready
 ProMeta seed catalogs are provided in
 [`examples/prometa-agent-catalog.json`](examples/prometa-agent-catalog.json)
 [`examples/prometa-skills.json`](examples/prometa-skills.json),
@@ -347,7 +350,7 @@ See [SECURITY.md](SECURITY.md).
 
 ## Deployment boundary
 
-v3.0.2 provides real distributed execution through PostgreSQL, multiple API/worker replicas, leader-elected scheduler/outbox services, Kubernetes autoscaling, native OIDC, MCP, S3/Qdrant adapters and observability hooks. External services still need to exist and be operated: PostgreSQL HA, IdP, S3/Qdrant, OTLP collector, model providers and ingress/egress infrastructure. Multi-region database replication and disaster-recovery topology are infrastructure responsibilities rather than simulated inside the Python process.
+v3.0.3 provides real distributed execution through PostgreSQL, multiple API/worker replicas, leader-elected scheduler/outbox services, Kubernetes autoscaling, native OIDC, MCP, S3/Qdrant adapters and observability hooks. External services still need to exist and be operated: PostgreSQL HA, IdP, S3/Qdrant, OTLP collector, model providers and ingress/egress infrastructure. Multi-region database replication and disaster-recovery topology are infrastructure responsibilities rather than simulated inside the Python process. Release readiness for those external boundaries is recorded as real operator evidence in [docs/PRODUCTION-EVIDENCE.md](docs/PRODUCTION-EVIDENCE.md); repository CI does not claim those services are provisioned or exercised.
 
 ## License
 
