@@ -1,0 +1,13 @@
+{
+  "name": "@z-platform/zarvis-voice-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Browser-safe realtime voice primitives shared by ZVoice and zWorkforce dashboard",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}
