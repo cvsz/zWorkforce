@@ -25,6 +25,7 @@ from .security import AuthManager, RateLimiter, resolve_tenant
 from .skills import SkillError, validate_manifest, verify_manifest
 from .tools import TOOL_DEFINITIONS
 from .workflow import WorkflowOrchestrator
+from .zarvis_voice import ZarvisVoiceError, build_zarvis_voice_service
 
 AGENT_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{1,62}$")
 REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
@@ -32,6 +33,7 @@ STATIC_CONTENT_TYPES = {
     "index.html": "text/html; charset=utf-8",
     "app.js": "text/javascript; charset=utf-8",
     "styles.css": "text/css; charset=utf-8",
+    "zarvis-voice-worklet.js": "text/javascript; charset=utf-8",
 }
 
 
@@ -54,6 +56,7 @@ class App:
         self.evaluations = EvaluationRunner(db, engine)
         self.rag = build_semantic_memory(db)
         self.artifacts = build_artifact_store(settings, db)
+        self.voice = build_zarvis_voice_service()
 
     def handler(self):
         app = self
@@ -81,8 +84,10 @@ class App:
                 self.send_header("X-Content-Type-Options", "nosniff")
                 self.send_header("X-Frame-Options", "DENY")
                 self.send_header("Referrer-Policy", "no-referrer")
-                self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
-                self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'")
+                microphone_policy = "microphone=(self)" if app.voice.microphone_enabled else "microphone=()"
+                self.send_header("Permissions-Policy", f"camera=(), {microphone_policy}, geolocation=()")
+                connect_sources = " ".join(("'self'", *app.voice.csp_connect_sources))
+                self.send_header("Content-Security-Policy", f"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src {connect_sources}; frame-ancestors 'none'; base-uri 'none'")
                 self.send_header("X-Request-ID", _sanitize_header_value(self.request_id))
                 if self._cors_origin:
                     self.send_header("Access-Control-Allow-Origin", _sanitize_header_value(self._cors_origin))
@@ -185,7 +190,7 @@ class App:
                 try:
                     if path == "/":
                         return self._static("index.html")
-                    if path in {"/app.js", "/styles.css"}:
+                    if path in {"/app.js", "/styles.css", "/zarvis-voice-worklet.js"}:
                         return self._static(path[1:])
                     if path == "/health":
                         return self._json(200, {"status": "ok", "version": __version__})
@@ -216,6 +221,10 @@ class App:
 
             def _get_api(self, path: str):
                 q = self._query()
+                if path == "/api/v1/zarvis/voice":
+                    ctx, response = self._principal("viewer", "voice:use")
+                    if response: return response
+                    return self._json(200, app.voice.snapshot())
                 if path == "/api/v1/tenants":
                     ctx, response = self._principal("superadmin", "tenant:read")
                     if response: return response
@@ -318,6 +327,23 @@ class App:
                         if not isinstance(body, dict): raise ValueError("MCP request must be a JSON object")
                         result = handle_mcp(app, principal, tenant_id, body, self.headers.get("Mcp-Method", ""), self.headers.get("Mcp-Name", ""))
                         return self._json(200, result, {"MCP-Protocol-Version": MCP_PROTOCOL_VERSION})
+                    if path == "/api/v1/zarvis/voice/session":
+                        ctx, response = self._principal("viewer", "voice:use")
+                        if response: return response
+                        principal, tenant_id = ctx
+                        body = self._body()
+                        try:
+                            result = app.voice.issue_session(
+                                tenant_id=tenant_id,
+                                subject_id=f"{principal.key_id}:{principal.name}"[:256],
+                                request_id=self.request_id,
+                                model=str(body.get("model") or "") or None,
+                            )
+                        except ZarvisVoiceError as exc:
+                            return self._error(exc.status, exc.code, str(exc))
+                        app.db.audit(tenant_id, principal.name, "zarvis.voice.session", "voice_session", self.request_id,
+                                     {"expires_at": result["expires_at"], "model": result["model"], "transport": result["transport"]})
+                        return self._json(201, result)
                     if path == "/api/v1/tenants":
                         ctx, response = self._principal("superadmin", "tenant:write")
                         if response: return response
