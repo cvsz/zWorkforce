@@ -8,10 +8,41 @@
     Title="zWorkforce Client">
     <NavigationView
         x:Name="RootNavigationView"
-        IsSettingsVisible="False"
+        AlwaysShowHeader="False"
+        Background="{ThemeResource ZwfCanvasBrush}"
+        CompactPaneLength="56"
         IsBackButtonVisible="Collapsed"
-        PaneDisplayMode="Auto"
+        IsSettingsVisible="False"
+        OpenPaneLength="264"
+        PaneDisplayMode="LeftCompact"
         SelectionChanged="OnNavigationSelectionChanged">
+
+        <NavigationView.PaneHeader>
+            <StackPanel Margin="14,18,12,18" Spacing="3">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Border
+                        Width="32"
+                        Height="32"
+                        Background="{ThemeResource AccentFillColorDefaultBrush}"
+                        CornerRadius="9">
+                        <FontIcon
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="16"
+                            Foreground="White"
+                            Glyph="&#xE950;" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock FontSize="16" FontWeight="SemiBold" Text="zWorkforce" />
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="{ThemeResource ZwfMutedTextBrush}"
+                            Text="AI CONTROL PLANE" />
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </NavigationView.PaneHeader>
+
         <NavigationView.MenuItems>
             <NavigationViewItem Content="Connection" Tag="connection">
                 <NavigationViewItem.Icon><SymbolIcon Symbol="Link" /></NavigationViewItem.Icon>
@@ -35,11 +66,13 @@
                 <NavigationViewItem.Icon><SymbolIcon Symbol="Permissions" /></NavigationViewItem.Icon>
             </NavigationViewItem>
         </NavigationView.MenuItems>
+
         <NavigationView.FooterMenuItems>
             <NavigationViewItem Content="Settings" Tag="settings">
                 <NavigationViewItem.Icon><SymbolIcon Symbol="Setting" /></NavigationViewItem.Icon>
             </NavigationViewItem>
         </NavigationView.FooterMenuItems>
-        <Frame x:Name="ContentFrame" />
+
+        <Frame x:Name="ContentFrame" Background="{ThemeResource ZwfCanvasBrush}" />
     </NavigationView>
 </Window>
