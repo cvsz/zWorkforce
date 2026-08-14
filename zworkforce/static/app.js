@@ -34,9 +34,12 @@ let zarvisMediaStream = null;
 let zarvisCaptureNode = null;
 let zarvisMediaSource = null;
 let zarvisPttActive = false;
+let zarvisPttGeneration = 0;
 let zarvisTransportPromise = null;
 let zarvisPlayhead = 0;
 let zarvisActiveSources = new Set();
+let zarvisTranscriptBuffer = '';
+let zarvisReplyBuffer = '';
 
 function setZarvisState(next, message){
   const card=$('zarvisCard');
@@ -96,22 +99,22 @@ function handleZarvisRealtimeEvent(event){
       if(!zarvisPttActive)setZarvisState('ready','Voice ready — hold to talk');
       break;
     case 'input_audio_buffer.speech_started':
-      stopZarvisPlayback();setZarvisState('listening','Listening…');break;
+      zarvisTranscriptBuffer='';zarvisReplyBuffer='';stopZarvisPlayback();setZarvisState('listening','Listening…');break;
     case 'input_audio_buffer.speech_stopped':
       setZarvisState('transcribing','Transcribing…');break;
     case 'conversation.item.input_audio_transcription.delta':
-      if(payload.delta)$('zarvisTranscript').textContent=payload.delta;break;
+      if(payload.delta){zarvisTranscriptBuffer+=payload.delta;$('zarvisTranscript').textContent=zarvisTranscriptBuffer;}break;
     case 'conversation.item.input_audio_transcription.completed':
-      $('zarvisTranscript').textContent=payload.transcript||payload.text||'—';setZarvisState('thinking','Z.A.R.V.I.S. is thinking…');break;
+      zarvisTranscriptBuffer=payload.transcript||payload.text||zarvisTranscriptBuffer;$('zarvisTranscript').textContent=zarvisTranscriptBuffer||'—';setZarvisState('thinking','Z.A.R.V.I.S. is thinking…');break;
     case 'response.audio.delta':
     case 'response.output_audio.delta':
       setZarvisState('speaking','Z.A.R.V.I.S. is speaking…');$('zarvisCancel').disabled=false;void queueZarvisAudio(payload.delta);break;
     case 'response.audio_transcript.delta':
     case 'response.output_audio_transcript.delta':
-      if(payload.delta)$('zarvisReply').textContent=payload.delta;break;
+      if(payload.delta){zarvisReplyBuffer+=payload.delta;$('zarvisReply').textContent=zarvisReplyBuffer;}break;
     case 'response.audio_transcript.done':
     case 'response.output_audio_transcript.done':
-      $('zarvisReply').textContent=payload.transcript||payload.text||$('zarvisReply').textContent;break;
+      zarvisReplyBuffer=payload.transcript||payload.text||zarvisReplyBuffer;$('zarvisReply').textContent=zarvisReplyBuffer||$('zarvisReply').textContent;break;
     case 'approval.required':
     case 'zarvis.approval_required':
       setZarvisState('approval_required','Approval required — review in the task panel');break;
@@ -183,25 +186,29 @@ async function stopZarvisMicrophone(){
 
 async function beginZarvisPtt(){
   if(zarvisPttActive||!zarvisAvailable||!state.key)return;
+  const generation=++zarvisPttGeneration;
   zarvisPttActive=true;$('zarvisPtt').setAttribute('aria-pressed','true');$('zarvisPttLabel').textContent='Release to send';
   try{
     await ensureZarvisTransport();
+    if(!zarvisPttActive||generation!==zarvisPttGeneration)return;
     cancelZarvisResponse();
     await startZarvisMicrophone();
+    if(!zarvisPttActive||generation!==zarvisPttGeneration){await stopZarvisMicrophone();return;}
     setZarvisState('listening','Listening… release to send');
-  }catch(error){zarvisPttActive=false;await stopZarvisMicrophone();setZarvisState('error',error instanceof Error?error.message:'Unable to start voice');$('zarvisPtt').setAttribute('aria-pressed','false');$('zarvisPttLabel').textContent='Hold to talk';}
+  }catch(error){if(generation!==zarvisPttGeneration)return;zarvisPttActive=false;zarvisPttGeneration+=1;await stopZarvisMicrophone();setZarvisState('error',error instanceof Error?error.message:'Unable to start voice');$('zarvisPtt').setAttribute('aria-pressed','false');$('zarvisPttLabel').textContent='Hold to talk';}
 }
 
 async function endZarvisPtt(){
   if(!zarvisPttActive)return;
-  zarvisPttActive=false;$('zarvisPtt').setAttribute('aria-pressed','false');$('zarvisPttLabel').textContent='Hold to talk';
+  zarvisPttActive=false;zarvisPttGeneration+=1;$('zarvisPtt').setAttribute('aria-pressed','false');$('zarvisPttLabel').textContent='Hold to talk';
   sendZarvisSilenceBurst();
   await stopZarvisMicrophone();
-  setZarvisState('transcribing','Transcribing…');
+  if(zarvisSessionConfigured)setZarvisState('transcribing','Transcribing…');
+  else setZarvisState('ready','Voice ready — hold to talk');
 }
 
 async function stopZarvisVoiceTransport(){
-  zarvisPttActive=false;zarvisSessionConfigured=false;zarvisTransportPromise=null;
+  zarvisPttActive=false;zarvisPttGeneration+=1;zarvisSessionConfigured=false;zarvisTransportPromise=null;
   await stopZarvisMicrophone();stopZarvisPlayback();
   if(zarvisSocket&&zarvisSocket.readyState<WebSocket.CLOSING)zarvisSocket.close(1000,'dashboard_stop');
   zarvisSocket=null;
