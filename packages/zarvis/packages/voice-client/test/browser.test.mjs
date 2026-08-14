@@ -24,6 +24,13 @@ async function loadClient(path = new URL("../src/browser.js", import.meta.url)) 
   return context.ZarvisVoiceClient;
 }
 
+class FakeTarget {
+  constructor() { this.listeners = new Map(); this.disabled = false; }
+  addEventListener(type, handler) { const list = this.listeners.get(type) || []; list.push(handler); this.listeners.set(type, list); }
+  removeEventListener(type, handler) { this.listeners.set(type, (this.listeners.get(type) || []).filter((item) => item !== handler)); }
+  emit(type, event = {}) { for (const handler of this.listeners.get(type) || []) handler({ preventDefault() {}, detail: 1, repeat: false, target: null, ...event }); }
+}
+
 test("PCM16 helpers round-trip and clamp", async () => {
   const client = await loadClient();
   const pcm = client.resampleToPcm16(new Float32Array([-2, -0.5, 0, 0.5, 2]), 16000, 16000);
@@ -53,13 +60,44 @@ test("realtime decoder ignores malformed frames", async () => {
   assert.equal(client.decodeRealtimeEvent({ data: JSON.stringify({ type: "response.done" }) }).type, "response.done");
 });
 
-test("consumer distributions expose the same public API", async () => {
-  const canonical = await loadClient();
-  const zvoice = await loadClient(new URL("../../../apps/zvoice/public/voice-client.js", import.meta.url));
-  const dashboard = await loadClient(new URL("../../../../../zworkforce/static/zarvis-voice-client.js", import.meta.url));
-  const keys = Object.keys(canonical).sort();
-  assert.deepEqual(Object.keys(zvoice).sort(), keys);
-  assert.deepEqual(Object.keys(dashboard).sort(), keys);
-  assert.equal(zvoice.SAMPLE_RATE, 16000);
-  assert.equal(dashboard.SAMPLE_RATE, 16000);
+test("push-to-talk controller shares pointer, keyboard and cancel semantics", async () => {
+  const client = await loadClient();
+  const button = new FakeTarget();
+  const keyboard = new FakeTarget();
+  let starts = 0;
+  let stops = 0;
+  let cancels = 0;
+  const ptt = client.bindPushToTalk({
+    button,
+    keyTarget: keyboard,
+    editable: () => false,
+    onStart: () => { starts += 1; },
+    onStop: () => { stops += 1; },
+    onCancel: () => { cancels += 1; },
+  });
+  button.emit("pointerdown", { pointerId: 1 });
+  button.emit("pointerup", { pointerId: 1 });
+  keyboard.emit("keydown", { code: "Space" });
+  keyboard.emit("keyup", { code: "Space" });
+  keyboard.emit("keydown", { code: "Escape" });
+  assert.equal(starts, 2);
+  assert.equal(stops, 2);
+  assert.equal(cancels, 1);
+  assert.equal(ptt.active, false);
+  ptt.destroy();
+});
+
+test("dashboard and ZVoice consume the shared client primitives", async () => {
+  const zvoice = await readFile(new URL("../../../apps/zvoice/public/app.js", import.meta.url), "utf8");
+  const dashboard = await readFile(new URL("../../../../../zworkforce/static/app.js", import.meta.url), "utf8");
+  for (const source of [zvoice, dashboard]) {
+    assert.match(source, /ZarvisVoiceClient/);
+    assert.match(source, /\.createAudioCapture\(/);
+    assert.match(source, /\.openRealtimeSocket\(/);
+    assert.equal((source.match(/function resampleToPcm16/g) || []).length, 1);
+    assert.equal((source.match(/function bytesToBase64/g) || []).length, 1);
+  }
+  assert.match(dashboard, /\.bindPushToTalk\(/);
+  assert.match(dashboard, /\.createStateMachine\(/);
+  assert.match(zvoice, /\.createStateMachine\(/);
 });
