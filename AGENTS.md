@@ -1,5 +1,8 @@
 # AGENTS.md
 
+## Release status
+Full Final Release (v3.0.2)
+
 ## Repository intent
 zWorkforce is a production AI Workforce control plane. Changes must preserve tenant isolation, server-side secrets, bounded execution, explicit mutation authorization and durable state transitions.
 
