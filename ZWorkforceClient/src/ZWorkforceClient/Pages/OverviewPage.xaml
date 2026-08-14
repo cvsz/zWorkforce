@@ -2,23 +2,53 @@
     x:Class="ZWorkforceClient.Pages.OverviewPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:ZWorkforceClient.Pages">
-    <ScrollViewer>
-        <StackPanel Padding="{ThemeResource PagePaddingThickness}" Spacing="18">
-            <Grid ColumnSpacing="12">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel Spacing="4">
-                    <TextBlock Text="OVERVIEW" Style="{StaticResource CaptionTextBlockStyle}" />
-                    <TextBlock Text="Control plane health" Style="{StaticResource TitleTextBlockStyle}" />
-                </StackPanel>
-                <Button Grid.Column="1" Content="Refresh" Click="OnRefreshClick" />
-            </Grid>
+    xmlns:local="using:ZWorkforceClient.Pages"
+    xmlns:viewModels="using:ZWorkforceClient.ViewModels">
+    <ScrollViewer Background="{ThemeResource ZwfCanvasBrush}">
+        <StackPanel
+            MaxWidth="{ThemeResource PageMaxWidth}"
+            Padding="{ThemeResource PagePaddingThickness}"
+            Spacing="18">
 
-            <InfoBar x:Name="OverviewInfo" IsOpen="False" IsClosable="False" />
-            <ProgressRing x:Name="LoadingRing" IsActive="False" HorizontalAlignment="Left" />
+            <Border
+                Padding="24"
+                Background="{ThemeResource ZwfHeroBrush}"
+                BorderBrush="{ThemeResource ZwfStrokeBrush}"
+                BorderThickness="1"
+                CornerRadius="18">
+                <Grid ColumnSpacing="18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="7">
+                        <TextBlock Text="WORKFORCE OVERVIEW" Style="{StaticResource ZwfSectionLabelStyle}" />
+                        <TextBlock
+                            FontSize="30"
+                            FontWeight="SemiBold"
+                            Text="Control plane health" />
+                        <TextBlock
+                            MaxWidth="680"
+                            Foreground="{ThemeResource ZwfMutedTextBrush}"
+                            Text="Live operational visibility across tasks, providers and execution outcomes."
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Button
+                        Grid.Column="1"
+                        MinWidth="110"
+                        VerticalAlignment="Center"
+                        Click="OnRefreshClick"
+                        Style="{StaticResource AccentButtonStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <SymbolIcon Symbol="Refresh" />
+                            <TextBlock Text="Refresh" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <InfoBar x:Name="OverviewInfo" IsClosable="False" IsOpen="False" />
+            <ProgressRing x:Name="LoadingRing" HorizontalAlignment="Left" IsActive="False" />
 
             <Grid ColumnSpacing="12" RowSpacing="12">
                 <Grid.ColumnDefinitions>
@@ -27,27 +57,116 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10">
-                    <StackPanel><TextBlock Text="ACTIVE TASKS" Style="{StaticResource CaptionTextBlockStyle}" /><TextBlock x:Name="ActiveTasksText" Text="—" Style="{StaticResource SubtitleTextBlockStyle}" /></StackPanel>
+
+                <Border Style="{StaticResource ZwfCardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="ACTIVE TASKS" Style="{StaticResource ZwfSectionLabelStyle}" />
+                        <TextBlock x:Name="ActiveTasksText" Text="—" Style="{StaticResource ZwfMetricValueStyle}" />
+                        <TextBlock Margin="0,6,0,0" Foreground="{ThemeResource ZwfMutedTextBrush}" Text="Running now" />
+                    </StackPanel>
                 </Border>
-                <Border Grid.Column="1" Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10">
-                    <StackPanel><TextBlock Text="TASKS / 24H" Style="{StaticResource CaptionTextBlockStyle}" /><TextBlock x:Name="Tasks24hText" Text="—" Style="{StaticResource SubtitleTextBlockStyle}" /></StackPanel>
+                <Border Grid.Column="1" Style="{StaticResource ZwfCardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="TASKS / 24H" Style="{StaticResource ZwfSectionLabelStyle}" />
+                        <TextBlock x:Name="Tasks24hText" Text="—" Style="{StaticResource ZwfMetricValueStyle}" />
+                        <TextBlock Margin="0,6,0,0" Foreground="{ThemeResource ZwfMutedTextBrush}" Text="Execution volume" />
+                    </StackPanel>
                 </Border>
-                <Border Grid.Column="2" Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10">
-                    <StackPanel><TextBlock Text="SUCCESS RATE" Style="{StaticResource CaptionTextBlockStyle}" /><TextBlock x:Name="SuccessRateText" Text="—" Style="{StaticResource SubtitleTextBlockStyle}" /></StackPanel>
+                <Border Grid.Column="2" Style="{StaticResource ZwfCardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="SUCCESS RATE" Style="{StaticResource ZwfSectionLabelStyle}" />
+                        <TextBlock x:Name="SuccessRateText" Foreground="{ThemeResource ZwfSuccessBrush}" Text="—" Style="{StaticResource ZwfMetricValueStyle}" />
+                        <TextBlock Margin="0,6,0,0" Foreground="{ThemeResource ZwfMutedTextBrush}" Text="Completed outcomes" />
+                    </StackPanel>
                 </Border>
-                <Border Grid.Column="3" Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10">
-                    <StackPanel><TextBlock Text="DEAD LETTERS" Style="{StaticResource CaptionTextBlockStyle}" /><TextBlock x:Name="DeadLettersText" Text="—" Style="{StaticResource SubtitleTextBlockStyle}" /></StackPanel>
+                <Border Grid.Column="3" Style="{StaticResource ZwfCardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="DEAD LETTERS" Style="{StaticResource ZwfSectionLabelStyle}" />
+                        <TextBlock x:Name="DeadLettersText" Foreground="{ThemeResource ZwfWarningBrush}" Text="—" Style="{StaticResource ZwfMetricValueStyle}" />
+                        <TextBlock Margin="0,6,0,0" Foreground="{ThemeResource ZwfMutedTextBrush}" Text="Needs attention" />
+                    </StackPanel>
                 </Border>
             </Grid>
 
-            <Grid ColumnSpacing="16">
-                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10">
-                    <StackPanel Spacing="10"><TextBlock Text="PROVIDERS" Style="{StaticResource SubtitleTextBlockStyle}" /><ListView x:Name="ProvidersList" IsItemClickEnabled="False" /></StackPanel>
+            <Grid ColumnSpacing="14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="5*" />
+                    <ColumnDefinition Width="7*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Style="{StaticResource ZwfCardStyle}">
+                    <StackPanel Spacing="14">
+                        <Grid>
+                            <StackPanel>
+                                <TextBlock Text="PROVIDERS" Style="{StaticResource ZwfSectionLabelStyle}" />
+                                <TextBlock Margin="0,5,0,0" FontSize="18" FontWeight="SemiBold" Text="Model routing" />
+                            </StackPanel>
+                            <Border
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Padding="8,4"
+                                Background="{ThemeResource ZwfSurfaceMutedBrush}"
+                                CornerRadius="999">
+                                <TextBlock FontSize="11" Foreground="{ThemeResource ZwfMutedTextBrush}" Text="LIVE" />
+                            </Border>
+                        </Grid>
+                        <ListView x:Name="ProvidersList" IsItemClickEnabled="False" SelectionMode="None">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="viewModels:ProviderRow">
+                                    <Grid Padding="2,9" ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Spacing="2">
+                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind Name}" />
+                                            <TextBlock FontSize="12" Foreground="{ThemeResource ZwfMutedTextBrush}" Text="{x:Bind Kind}" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" HorizontalAlignment="Right" Spacing="2">
+                                            <TextBlock HorizontalAlignment="Right" FontSize="12" Text="{x:Bind Priority}" />
+                                            <TextBlock HorizontalAlignment="Right" FontSize="11" Foreground="{ThemeResource ZwfMutedTextBrush}" Text="{x:Bind Available}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
                 </Border>
-                <Border Grid.Column="1" Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10">
-                    <StackPanel Spacing="10"><TextBlock Text="RECENT TASKS" Style="{StaticResource SubtitleTextBlockStyle}" /><ListView x:Name="RecentTasksList" IsItemClickEnabled="False" /></StackPanel>
+
+                <Border Grid.Column="1" Style="{StaticResource ZwfCardStyle}">
+                    <StackPanel Spacing="14">
+                        <StackPanel>
+                            <TextBlock Text="RECENT TASKS" Style="{StaticResource ZwfSectionLabelStyle}" />
+                            <TextBlock Margin="0,5,0,0" FontSize="18" FontWeight="SemiBold" Text="Latest executions" />
+                        </StackPanel>
+                        <ListView x:Name="RecentTasksList" IsItemClickEnabled="False" SelectionMode="None">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="viewModels:TaskRow">
+                                    <Grid Padding="2,9" ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Spacing="2">
+                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind Id}" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock FontSize="11" Foreground="{ThemeResource ZwfMutedTextBrush}" Text="{x:Bind CreatedAt}" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Spacing="2">
+                                            <TextBlock FontSize="12" Text="{x:Bind Status}" />
+                                            <TextBlock FontSize="11" Foreground="{ThemeResource ZwfMutedTextBrush}" Text="{x:Bind Outcome}" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="2">
+                                            <TextBlock FontSize="12" Text="{x:Bind Agent}" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock FontSize="11" Foreground="{ThemeResource ZwfMutedTextBrush}" Text="{x:Bind Tier}" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="3" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Text="{x:Bind Cost}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
                 </Border>
             </Grid>
         </StackPanel>
