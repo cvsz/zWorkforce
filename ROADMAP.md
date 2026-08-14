@@ -58,7 +58,7 @@ skills, tamper-evident audit, outcome economics and hardened operations.
   release governance, API tests, Node workspace tests, and Windows restore
   checks.
 
-## Current main — post-v3.0.2 hardening
+## v3.0.3 — repository candidate prepared
 
 - Pruned duplicated/obsolete Z.A.R.V.I.S. product surfaces from the consolidated
   package boundary.
@@ -68,21 +68,46 @@ skills, tamper-evident audit, outcome economics and hardened operations.
   GHCR, and cleanup operations.
 - Added `docs/PROMETA-MASTER.md` as the master agent, skill and prompt-metadata
   operating model.
-- Refreshed `exec-planning.md` for the current `main` baseline and remaining
-  production evidence.
+- Refreshed the native WinUI zWorkforce shell and Overview control-plane UI.
+- Promoted package/module/Makefile/dashboard/Compose/Kubernetes/manual container
+  publishing metadata and release documentation to the `3.0.3` candidate.
+- Added a dedicated `documentation-contract` CI job for Markdown link and
+  repository-policy validation.
+- Added `.github/rulesets/main.json` as an API-compatible desired-state default
+  branch protection contract and `tests/test_repository_policy.py` to prevent
+  required-check drift.
+- Excluded path-filtered ZARVIS jobs from global required contexts to avoid
+  blocking unrelated pull requests with checks that are never emitted.
+- Strengthened `scripts/verify_release.py` to validate GitHub operations,
+  package publishing guards, ruleset policy, production evidence paths,
+  dashboard/Makefile/deployment version consistency, and required release files.
+- Added `docs/PRODUCTION-EVIDENCE.md` to separate CI evidence from real external
+  PostgreSQL/PITR, identity, provider, storage, observability, Windows, and
+  release-decision evidence.
 
-## Candidate v3.0.3 backlog
+The immutable `v3.0.3` tag is intentionally **not** created as part of repository
+candidate preparation. It is authorized only after the candidate is merged to
+`main`, all mandatory checks and reviews are green, the desired GitHub ruleset
+is reconciled server-side, mandatory external evidence is recorded, and a GO
+decision is approved.
 
-- Decide whether current post-v3.0.2 hardening should ship as `v3.0.3`.
-- Update version metadata, `CHANGELOG.md`, Compose/Kubernetes image references,
-  and release notes for the new patch release.
-- Add a markdown link checker or documentation linter to CI.
-- Add repository ruleset or branch-protection evidence as code when GitHub
-  settings are exported.
-- Extend release verification to assert GitHub operations documentation coverage
-  for every workflow and package-publishing path.
-- Record a live PostgreSQL integration run against an operator-owned service,
-  not only GitHub's ephemeral CI service.
+## Remaining production/operator work
+
+These are external operational concerns, not unimplemented in-process features:
+
+- run the PostgreSQL integration and recovery suite against an operator-owned
+  staging/production-equivalent service rather than only GitHub's ephemeral CI
+  service;
+- prove managed PostgreSQL backups, restore and PITR and record observed RPO/RTO;
+- reconcile the checked-in desired GitHub ruleset with the actual repository
+  ruleset using administration permission and record the resulting ruleset ID;
+- validate production OIDC/credential lifecycle and provider failover;
+- validate external S3/Qdrant/OTLP/alert routes when those backends are enabled;
+- run HA lease/failure drills for workers, scheduler and outbox;
+- validate trusted Windows package signing and live HTTPS operator flow when a
+  production MSIX is in scope;
+- record immutable image digest, package checksums, owners, rollback target, and
+  GO/NO-GO decision in the release evidence record.
 
 ## Infrastructure adapters / future compatibility
 
