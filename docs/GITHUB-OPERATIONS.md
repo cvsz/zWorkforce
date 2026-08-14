@@ -17,28 +17,41 @@ documents.
 
 Before merging a pull request, verify:
 
-1. CI, CodeQL, Dependency Review, and affected package workflows are green.
+1. CI, CodeQL, Dependency Review, Windows client, and any affected package workflows are green.
 2. Review threads are resolved.
 3. Documentation, release notes, and runbooks are updated when behavior,
    operations, workflows, packages, or security posture changed.
 4. No credentials, private keys, customer data, generated secret files, or
    local environment files are committed.
 
-## Required checks
+## Required checks and ruleset contract
+
+The desired default-branch release-protection contract is versioned in
+[`.github/rulesets/main.json`](../.github/rulesets/main.json). The file is a
+repository-side desired state: it must be reconciled with GitHub Rulesets by an
+operator or automation that has repository administration permission. Merely
+committing the JSON does not prove the server-side ruleset is applied.
+
+Global required checks must only include checks that are emitted for every pull
+request. In particular, `ZARVIS` uses path filters and its package-specific jobs
+must **not** be configured as global required contexts; they are mandatory when
+the workflow is triggered by affected paths.
 
 The repository uses these GitHub Actions as release and merge evidence:
 
 | Workflow | Purpose |
 | --- | --- |
-| `CI` | Python 3.12/3.13/3.14 tests, PostgreSQL integration, release integrity, container build, security invariants. |
-| `ZARVIS` | Z.A.R.V.I.S. package migration contract, Node workspace tests, API tests/audit, Windows restore checks. |
+| `CI` | Python 3.12/3.13/3.14 tests, PostgreSQL integration, documentation/repository policy, release integrity, container build, security invariants. |
+| `ZARVIS` | Z.A.R.V.I.S. package migration contract, Node workspace tests, API tests/audit, Windows restore checks for affected paths. |
 | `Windows client` | Native client restore, build, core tests, MSIX package, launch smoke check, artifact upload. |
 | `CodeQL Advanced` | Static analysis for Actions and Python surfaces. |
 | `Dependency Review` | Blocks vulnerable or disallowed dependency changes in pull requests. |
 | `Automatic Dependency Submission` | Submits dependency graph data for NuGet and related ecosystems. |
 
-If a workflow is added, renamed, or removed, update this table and the pull
-request template.
+The canonical globally required contexts are recorded in the ruleset contract
+and regression-tested by `tests/test_repository_policy.py`. If a workflow or
+job is added, renamed, path-filtered, or removed, update the ruleset contract,
+this table, and the policy test in the same pull request.
 
 ## Dependency maintenance
 
@@ -85,6 +98,14 @@ The release workflow verifies tag/version consistency, builds Python
 distributions, produces checksums and a CycloneDX SBOM, attests provenance,
 publishes the GHCR image, and creates or updates the GitHub Release.
 
+`.github/workflows/publish-container.yml` is the guarded manual container-only
+publication path. Its `ref` must exactly equal `v<version>`, the tag must resolve
+to a commit on `main`, `scripts/verify_release.py` must pass from that tag, and
+existing immutable semantic image tags are refused rather than overwritten.
+Use this workflow only when a container publication must be repaired or
+replayed independently of the normal tag-driven release; it is not a shortcut
+around the release evidence gate.
+
 The Windows MSIX release artifact is optional and requires trusted signing
 secrets:
 
@@ -100,6 +121,13 @@ publishing an untrusted package.
 GHCR packages should be kept to immutable semantic tags and active operational
 tags. Remove obsolete experimental images only after confirming no deployment,
 release note, or rollback record references their digest.
+
+For a production release, fill in
+[`docs/PRODUCTION-EVIDENCE.md`](PRODUCTION-EVIDENCE.md) with the exact candidate
+SHA, workflow/check URLs, immutable image digest, package checksums, and any
+required external staging/production drill evidence. CI evidence must not be
+used to claim that an external PostgreSQL HA/PITR, IdP, provider, object store,
+vector store, alert route, or production Windows deployment has been exercised.
 
 ## Repository cleanup
 
