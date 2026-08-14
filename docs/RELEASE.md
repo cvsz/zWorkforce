@@ -7,12 +7,13 @@ zWorkforce releases are tag-driven and must originate from a commit reachable fr
 Before creating a release tag:
 
 1. Merge the intended release commit to `main`.
-2. Confirm CI, ZARVIS, Windows client, Dependency Review, and CodeQL are green.
-3. Confirm `pyproject.toml`, `zworkforce.__version__`, Compose/Kubernetes image references and `CHANGELOG.md` carry the same version.
+2. Confirm CI, Windows client, Dependency Review, CodeQL, and every affected path-filtered package workflow are green.
+3. Confirm `pyproject.toml`, `zworkforce.__version__`, Makefile, dashboard, Compose/Kubernetes image references, publication defaults, and `CHANGELOG.md` carry the same version.
 4. Run `python scripts/verify_release.py` locally or rely on the mandatory CI release-integrity job.
-5. Confirm production migration/rollback notes are current.
-6. Run `pnpm peers check` from `packages/zarvis` and reject dependency updates with unresolved peer constraints.
-7. Confirm the Z.A.R.V.I.S. API audit and test suite pass for the exact release commit.
+5. Confirm production migration/rollback notes are current and complete the mandatory environment evidence in `docs/PRODUCTION-EVIDENCE.md`.
+6. Run `pnpm peers check` from `packages/zarvis` when Z.A.R.V.I.S. paths changed and reject dependency updates with unresolved peer constraints.
+7. Confirm the Z.A.R.V.I.S. API audit and test suite pass for the exact release commit when those paths changed.
+8. Reconcile `.github/rulesets/main.json` with the server-side GitHub Ruleset using repository administration permissions; the checked-in desired-state file alone is not proof that GitHub enforcement is active.
 
 ## Tag format
 
@@ -21,8 +22,8 @@ Use an immutable semantic version tag:
 ```bash
 git checkout main
 git pull --ff-only
-git tag -a v3.0.2 -m 'zWorkforce v3.0.2'
-git push origin v3.0.2
+git tag -a v3.0.3 -m 'zWorkforce v3.0.3'
+git push origin v3.0.3
 ```
 
 Do not move or reuse an existing release tag. Publish a new patch/minor/major version instead.
@@ -55,7 +56,20 @@ Production deployments should pin the semantic tag or image digest, never `lates
 The `packages/zarvis` tree is shipped from the same immutable repository commit.
 Its package manifests, lockfile, Windows artifacts, release-governance records,
 and service images must therefore be validated before the root release tag is
-created; a green root Python build alone is not a release approval.
+created when those paths changed; a green root Python build alone is not a
+release approval.
+
+## Manual container-only publication
+
+`.github/workflows/publish-container.yml` exists for controlled repair/replay of
+the GHCR artifact independently of the normal release workflow. It requires
+`ref == v<version>`, checks that the immutable tag is reachable from `main`,
+runs `scripts/verify_release.py --expected <version>`, and refuses to overwrite
+existing immutable semantic image tags.
+
+Do not use the manual container workflow to publish an unmerged candidate or to
+bypass missing production evidence. The normal tag-driven release remains the
+canonical release path.
 
 ## Trusted Windows signing
 
@@ -87,8 +101,8 @@ After the workflow finishes:
 4. Pull the exact image tag/digest and run `zworkforce --version`.
 5. Deploy first to a staging environment backed by PostgreSQL.
 6. Run `zworkforce doctor` and `scripts/smoke-test.sh`.
-7. Exercise one durable task, one workflow, one approval path, scheduler
-   occurrence deduplication, and outbox claim/retry behavior before promotion.
+7. Exercise one durable task, one workflow, one approval path, scheduler occurrence deduplication, and outbox claim/retry behavior before promotion.
+8. Record the exact candidate SHA, workflow/check URLs, GHCR digest, checksums, and external environment drill evidence in `docs/PRODUCTION-EVIDENCE.md` or the immutable release record.
 
 ## Hotfixes
 
