@@ -19,7 +19,7 @@ docker compose up -d --build
 For an immutable published release, set `ZWORKFORCE_IMAGE` and do not rebuild on the production host:
 
 ```bash
-export ZWORKFORCE_IMAGE=ghcr.io/cvsz/zworkforce:v3.0.2
+export ZWORKFORCE_IMAGE=ghcr.io/cvsz/zworkforce:v3.0.3
 docker compose pull
 docker compose up -d --no-build
 ```
@@ -51,7 +51,7 @@ Use `.env.production.example` as a field inventory only; replace all placeholder
 - non-root/read-only/capability-drop security contexts;
 - workspace/artifact PVCs;
 - default-deny network policy;
-- immutable `v3.0.2` GHCR image references for this release.
+- immutable `v3.0.3` GHCR image references for this release candidate.
 
 ```bash
 kubectl apply -k deploy/kubernetes
@@ -88,7 +88,7 @@ ZWORKFORCE_BASE_URL=https://zwf.zeaz.dev bash scripts/smoke-test.sh
 
 If the smoke path requires API authentication, also set `ZWORKFORCE_API_KEY`.
 
-Production promotion should satisfy every item in `docs/PRODUCTION-READINESS.md`.
+Production promotion should satisfy every item in `docs/PRODUCTION-READINESS.md` and record the environment-specific proof in `docs/PRODUCTION-EVIDENCE.md` or an immutable release/incident record. CI simulations do not prove that external PostgreSQL HA/PITR, IdP, provider, S3/Qdrant, OTLP, DNS/ingress, or alert-routing infrastructure exists or has been exercised.
 
 ## Backup and recovery
 

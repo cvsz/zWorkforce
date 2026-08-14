@@ -65,7 +65,7 @@ script temporarily applies the version to the package manifest and restores
 the source file before it exits:
 
 ```powershell
-.\build\windows\Package-Client.ps1 -Configuration Release -Platform x64 -Version 3.0.2
+.\build\windows\Package-Client.ps1 -Configuration Release -Platform x64 -Version 3.0.3
 ```
 
 The project is a packaged app. The normal IDE launch path is Visual Studio F5,
@@ -162,6 +162,11 @@ Release automation builds and smoke-tests the versioned MSIX from the same
 protected version tag, generates SHA-256 checksums, and uploads the package,
 public sideload certificate, and checksum to the existing GitHub Release. The
 tag must be created only after the required Windows check is green.
+
+A production release should additionally record the exact Windows check URL,
+artifact name, trusted publisher/signature state, deployed HTTPS endpoint, and
+functional smoke result in `docs/PRODUCTION-EVIDENCE.md` or the immutable
+release record.
 
 ## Package signing
 
