@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 3.0.3 — 2026-08-14
+
+### Release readiness and operator experience
+- Promoted active Python, Compose, Kubernetes, container-publishing, dashboard, and Makefile metadata to the `v3.0.3` release candidate.
+- Refreshed the native WinUI zWorkforce shell and Overview control-plane dashboard while preserving the existing API, event-handler, and view-model contracts.
+- Added a dedicated documentation and repository-policy CI gate, a desired-state main-branch ruleset contract, and regression tests for required check contexts.
+- Extended release-integrity policy so package, deployment, GitHub operations, package publication, and production evidence paths are checked together.
+- Added an explicit production-evidence checklist so environment-dependent PostgreSQL/PITR, identity, provider, object/vector storage, observability, and Windows-client drills cannot be marked complete without operator evidence.
+
 ### Dependencies and CI
 - Consolidated the August dependency updates for the Z.A.R.V.I.S. API and Node workspace.
 - Added a peer-dependency compatibility gate to prevent unsupported ESLint and TypeScript major versions from entering the workspace.
@@ -9,11 +18,12 @@
 - Removed invalid Dependabot label assignments and documented compatible-major update policy.
 - Hardened cross-platform validation, including owner-only Windows ACLs for generated API-key secret files.
 - Fixed release publishing when optional trusted Windows MSIX artifacts are skipped.
+- Removed release-version magic strings from API and CI contracts where the package metadata can be used as the source of truth.
 
 ### Documentation
 - Refreshed project, package, release, GitHub contribution, and issue-template documentation for the consolidated `packages/zarvis` layout.
 - Added GitHub operations documentation for branch, check, alert, release, package, GHCR, and cleanup procedures.
-- Refreshed the production readiness execution plan and roadmap for the current `v3.0.2` baseline and candidate `v3.0.3` backlog.
+- Refreshed the production readiness execution plan and roadmap from the `v3.0.2` baseline to the `v3.0.3` release-readiness candidate.
 
 ## 3.0.2 — 2026-08-09
 
