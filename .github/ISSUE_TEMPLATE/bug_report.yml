@@ -36,7 +36,7 @@ body:
     id: revision
     attributes:
       label: Version or commit
-      placeholder: v3.0.2 or full commit SHA
+      placeholder: v3.0.3 or full commit SHA
     validations:
       required: true
   - type: dropdown
