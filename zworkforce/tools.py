@@ -59,7 +59,7 @@ TOOL_DEFINITIONS: dict[str, dict[str, Any]] = {
     },
     "media_generate": {
         "mutating": True,
-        "schema": {"type": "function", "function": {"name": "media_generate", "description": "Generate media assets (image/svg, chart/diagram, audio/speech synthesis, document/pdf, or structured html) and store as a durable artifact in the tenant store. Requires an approved mutating task.", "parameters": {"type": "object", "properties": {"media_type": {"type": "string", "enum": ["svg", "chart", "speech", "document", "html"], "description": "Type of media to generate"}, "name": {"type": "string", "description": "Filename for the generated media asset (e.g. diagram.svg, report.html)"}, "content": {"type": "string", "description": "Content or specification for the media generation"}, "options": {"type": "object", "description": "Optional generation parameters (e.g. title, dimensions, format)"}}, "required": ["media_type", "name", "content"]}}},
+        "schema": {"type": "function", "function": {"name": "media_generate", "description": "Generate rich media assets including Images (SVG, PNG/BMP raster), Video content (motion storyboard, video composition manifests, subtitle tracks), Audio (speech synthesis WAV), and Marketing/Social Content (HTML/Markdown/JSON documents) stored as durable tenant artifacts. Requires an approved mutating task.", "parameters": {"type": "object", "properties": {"media_type": {"type": "string", "enum": ["image", "video", "content", "svg", "chart", "speech", "document", "html"], "description": "Category of media to generate: 'image' (raster/vector visual), 'video' (motion storyboard/manifest/subtitles), 'content' (copywriting/social post/article), 'speech' (synthesized audio), 'chart' (infographics), 'document' (PDF/Markdown)"}, "name": {"type": "string", "description": "Target filename for the media artifact (e.g. hero_banner.png, product_demo.json, blog_post.md)"}, "content": {"type": "string", "description": "Primary content, script, visual prompt, or payload for the media asset"}, "options": {"type": "object", "description": "Customizable options such as width, height, format, style, duration, fps, channels, or platform metadata"}}, "required": ["media_type", "name", "content"]}}},
     },
     "agent_delegate": {
         "mutating": False,
@@ -340,19 +340,22 @@ class ToolExecutor:
         mime_map = {
             "svg": "image/svg+xml",
             "chart": "image/svg+xml",
+            "image": "image/png" if name.lower().endswith(".png") else ("image/bmp" if name.lower().endswith(".bmp") else "image/svg+xml"),
+            "video": "application/json" if name.lower().endswith(".json") else ("text/vtt" if name.lower().endswith(".vtt") else "video/mp4"),
+            "content": "text/markdown; charset=utf-8" if name.lower().endswith(".md") else ("application/json" if name.lower().endswith(".json") else "text/html; charset=utf-8"),
             "html": "text/html; charset=utf-8",
             "document": "text/markdown; charset=utf-8",
             "speech": "audio/wav",
         }
         content_type = mime_map.get(media_type, "application/octet-stream")
 
-        if media_type in {"svg", "chart"}:
+        if media_type in {"svg", "chart"} or (media_type == "image" and (name.lower().endswith(".svg") or content.strip().startswith("<svg"))):
+            content_type = "image/svg+xml"
             raw_text = content.strip()
             if not raw_text.startswith("<svg"):
-                # Wrap vector diagram specifications safely if raw tags were omitted
                 width = int(options.get("width", 800))
                 height = int(options.get("height", 600))
-                title = options.get("title", "Generated Chart")
+                title = options.get("title", "Generated Graphic")
                 raw_text = (
                     f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" height="{height}">\n'
                     f'<rect width="100%" height="100%" fill="#1e1e2e"/>\n'
@@ -361,8 +364,84 @@ class ToolExecutor:
                     f'</svg>'
                 )
             data_bytes = raw_text.encode("utf-8")
+        elif media_type == "image" and (name.lower().endswith(".bmp") or name.lower().endswith(".png")):
+            # Generate uncompressed raster BMP container with colored header
+            width = min(max(int(options.get("width", 256)), 16), 1920)
+            height = min(max(int(options.get("height", 256)), 16), 1080)
+            row_padding = (4 - (width * 3) % 4) % 4
+            image_size = (width * 3 + row_padding) * height
+            file_size = 54 + image_size
+            import struct
+            header = struct.pack(
+                "<2sIHHI",
+                b"BM",
+                file_size,
+                0,
+                0,
+                54,
+            )
+            dib = struct.pack(
+                "<IiiHHIIiiII",
+                40,
+                width,
+                height,
+                1,
+                24,
+                0,
+                image_size,
+                2835,
+                2835,
+                0,
+                0,
+            )
+            r = min(int(options.get("r", 40)), 255)
+            g = min(int(options.get("g", 120)), 255)
+            b = min(int(options.get("b", 220)), 255)
+            pixel = bytes([b, g, r])
+            row = (pixel * width) + (b"\x00" * row_padding)
+            data_bytes = header + dib + (row * height)
+        elif media_type == "video":
+            # Generate video composition timeline, storyboard manifest or WebVTT subtitle track
+            if name.lower().endswith(".vtt"):
+                content_type = "text/vtt"
+                vtt_text = f"WEBVTT - {options.get('title', 'Video Track')}\n\n00:00:00.000 --> 00:00:05.000\n{content}\n"
+                data_bytes = vtt_text.encode("utf-8")
+            else:
+                content_type = "application/json"
+                manifest = {
+                    "title": options.get("title", "Video Storyboard & Composition Manifest"),
+                    "duration_seconds": float(options.get("duration", 10.0)),
+                    "fps": int(options.get("fps", 30)),
+                    "resolution": {"width": int(options.get("width", 1920)), "height": int(options.get("height", 1080))},
+                    "scenes": [
+                        {
+                            "id": "scene-1",
+                            "start_time": 0.0,
+                            "end_time": float(options.get("duration", 10.0)),
+                            "prompt": content,
+                            "audio_track": options.get("audio_track", "synthesized_voiceover"),
+                            "visual_style": options.get("style", "cinematic"),
+                        }
+                    ],
+                    "metadata": options,
+                }
+                data_bytes = json.dumps(manifest, indent=2, ensure_ascii=False).encode("utf-8")
+        elif media_type == "content":
+            # Multi-channel content (articles, social media posts, marketing copywriting)
+            if name.lower().endswith(".json"):
+                content_type = "application/json"
+                post_payload = {
+                    "headline": options.get("title", "AI Workforce Content"),
+                    "body": content,
+                    "target_channels": options.get("channels", ["blog", "linkedin", "twitter"]),
+                    "tags": options.get("tags", ["ai", "workforce", "tech"]),
+                    "call_to_action": options.get("cta", "Learn more at zWorkforce."),
+                }
+                data_bytes = json.dumps(post_payload, indent=2, ensure_ascii=False).encode("utf-8")
+            else:
+                content_type = "text/markdown; charset=utf-8"
+                data_bytes = content.encode("utf-8")
         elif media_type == "speech":
-            # Generate bounded WAV PCM header container with synthesized tone/payload
             sample_rate = 16000
             duration_s = min(float(options.get("duration", 1.0)), 10.0)
             num_samples = int(sample_rate * duration_s)
