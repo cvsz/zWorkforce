@@ -1,0 +1,37 @@
+{
+  "id": "dev.zworkforce.zarvis.skill.code.review",
+  "version": "1.0.0",
+  "name": "Specialist Code Review",
+  "domain": "code",
+  "description": "Static code review and pattern verification using existing specialist agents.",
+  "input_schema": {
+    "type": "object",
+    "required": ["file_path", "diff"],
+    "properties": {
+      "file_path": { "type": "string" },
+      "diff": { "type": "string" }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "required": ["verdict", "comments"],
+    "properties": {
+      "verdict": { "type": "string", "enum": ["clean", "warnings", "blocking_issues"] },
+      "comments": { "type": "array", "items": { "type": "string" } }
+    }
+  },
+  "capability_allowlist": ["repo.read", "code.analyze"],
+  "mutability": "read",
+  "timeout_seconds": 60,
+  "max_concurrency": 4,
+  "retry_policy": {
+    "max_attempts": 2,
+    "backoff": "exponential",
+    "base_delay_seconds": 1.0
+  },
+  "idempotency_strategy": "idempotency_key",
+  "audit_events": ["zarvis.code.reviewed.v1"],
+  "owner": "zarvis-dev",
+  "rollback_policy": "none",
+  "tags": ["code", "review", "specialist"]
+}

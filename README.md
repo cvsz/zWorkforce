@@ -28,9 +28,10 @@ zWorkforce turns one or more LLM endpoints into a governed AI workforce. A tenan
 
 All v2 capabilities remain: multi-tenancy, RBAC/scopes, four-eyes approvals, provider failover/circuit breakers, bounded tools, tamper-evident audit chains, budgets, deterministic outcomes, rightsizing recommendations, dashboard, Docker and Python 3.12–3.14 support.
 
-The repository also contains the consolidated Z.A.R.V.I.S. product suite under
-[`packages/zarvis/`](packages/zarvis/), including its API, operator surfaces,
-Windows client, deployment assets, release governance, and package-level CI.
+The repository also contains:
+- The consolidated **Z.A.R.V.I.S.** product suite under [`packages/zarvis/`](packages/zarvis/), including its realtime voice client, speech provider registry, runtime skill catalog, API, operator surfaces, Windows client, and package-level CI.
+- The **Zeto** AI Content Factory & M11/M12 Neural Operator Stack under [`packages/zeto/`](packages/zeto/), including ProMeta prompt compilers, multi-platform publishing adapters, QA scorecards, point-cloud canvas HUD, and M12 tool registry.
+
 
 ## Architecture
 

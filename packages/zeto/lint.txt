@@ -1,0 +1,19 @@
+
+> @zeaz/zeto@2.0.0-alpha.1 lint
+> eslint src public/js test
+
+
+/home/cvsz/zeto/src/providers/ai/aiProvider.js
+  71:18  error  'request' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+
+/home/cvsz/zeto/src/providers/ai/aiProviderRegistry.js
+  11:1  error  Parsing error: 'import' and 'export' may appear only with 'sourceType: module'
+
+/home/cvsz/zeto/test/aiProvider.test.js
+  6:1  error  Parsing error: 'import' and 'export' may appear only with 'sourceType: module'
+
+/home/cvsz/zeto/test/mentionClassification.test.js
+  6:1  error  Parsing error: 'import' and 'export' may appear only with 'sourceType: module'
+
+✖ 4 problems (4 errors, 0 warnings)
+

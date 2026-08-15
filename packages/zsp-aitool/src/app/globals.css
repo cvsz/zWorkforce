@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-cyber-bg text-slate-100 font-sans selection:bg-cyber-violet selection:text-white;
+}
+
+.glass-panel {
+  @apply bg-glass-gradient backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl;
+}
+
+.cyber-card {
+  @apply bg-cyber-surface border border-cyber-cyan/30 rounded-xl hover:border-cyber-cyan/80 transition-colors shadow-[0_0_15px_rgba(0,240,255,0.1)] hover:shadow-[0_0_20px_rgba(0,240,255,0.2)];
+}
+
+.cyber-button-primary {
+  @apply bg-cyber-cyan text-cyber-bg font-bold py-2 px-4 rounded-lg hover:bg-white hover:shadow-[0_0_15px_rgba(0,240,255,0.8)] transition-all;
+}
+
+.cyber-button-secondary {
+  @apply bg-cyber-surface2 text-cyber-cyan border border-cyber-cyan/50 font-bold py-2 px-4 rounded-lg hover:bg-cyber-cyan/10 transition-all;
+}
+
+/* Remove old light theme variables to force dark mode universally across the app during this migration */

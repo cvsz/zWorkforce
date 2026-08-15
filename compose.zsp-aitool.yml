@@ -1,0 +1,50 @@
+# ==============================================================================
+# zWorkforce + ZSP-AITool (Shopee Affiliate & HyperFrames Video Studio)
+# ==============================================================================
+
+services:
+  zsp-studio:
+    build:
+      context: ./packages/zsp-aitool
+      dockerfile: Dockerfile
+    container_name: zworkforce-zsp-studio
+    ports:
+      - "${ZSP_STUDIO_PORT:-3001}:3001"
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      DATABASE_URL: postgresql://zworkforce:${ZWORKFORCE_POSTGRES_PASSWORD}@postgres:5432/zworkforce
+      # Point to zWorkforce Unlocked Multi-Model AI Gateway (Zero token cost)
+      OPENAI_API_BASE_URL: "http://api:9569/v1"
+      OPENAI_API_KEY: "${ZWORKFORCE_API_KEY:-bootstrap-enterprise-key}"
+      DEFAULT_AI_MODEL: "anthropic/claude-fable-5"
+      STUDIO_PUBLIC_URL: "${STUDIO_PUBLIC_URL:-https://studio.zeaz.dev}"
+      STUDIO_LOCAL_URL: "http://127.0.0.1:3001"
+      SKIP_PUBLIC_EDGE_SMOKE: "true"
+      ADMIN_PANEL_ENABLED: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  zsp-hyperframes-worker:
+    build:
+      context: ./packages/zsp-aitool
+      dockerfile: Dockerfile
+    container_name: zworkforce-hyperframes-worker
+    command: ["npm", "run", "hyperframes:worker"]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://zworkforce:${ZWORKFORCE_POSTGRES_PASSWORD}@postgres:5432/zworkforce
+      WORKER_POLL_INTERVAL_MS: "3000"
+      WORKER_STALL_TIMEOUT_SEC: "600"
+      MAX_CONCURRENT_RENDERS: "2"
+    volumes:
+      - hyperframes-renders:/var/lib/zsp-aitool/renders
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  hyperframes-renders:

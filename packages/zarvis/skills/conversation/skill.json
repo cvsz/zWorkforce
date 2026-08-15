@@ -1,0 +1,47 @@
+{
+  "id": "dev.zworkforce.zarvis.skill.conversation.summarize",
+  "version": "1.0.0",
+  "name": "Conversation Summarizer",
+  "domain": "conversation",
+  "description": "Spoken turn conversation shaping, transcript condensation, and dialogue summarization.",
+  "input_schema": {
+    "type": "object",
+    "required": ["turns"],
+    "properties": {
+      "turns": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["role", "content"],
+          "properties": {
+            "role": { "type": "string", "enum": ["user", "assistant", "system"] },
+            "content": { "type": "string" }
+          }
+        }
+      },
+      "max_length": { "type": "integer", "default": 200 }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "required": ["summary", "key_points"],
+    "properties": {
+      "summary": { "type": "string" },
+      "key_points": { "type": "array", "items": { "type": "string" } }
+    }
+  },
+  "capability_allowlist": ["conversation.summarize"],
+  "mutability": "read",
+  "timeout_seconds": 15,
+  "max_concurrency": 10,
+  "retry_policy": {
+    "max_attempts": 2,
+    "backoff": "exponential",
+    "base_delay_seconds": 0.5
+  },
+  "idempotency_strategy": "idempotency_key",
+  "audit_events": ["zarvis.conversation.summarized.v1"],
+  "owner": "zarvis-core",
+  "rollback_policy": "none",
+  "tags": ["conversation", "voice", "summary"]
+}

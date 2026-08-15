@@ -1,0 +1,35 @@
+{
+  "id": "dev.zworkforce.zarvis.skill.productivity.briefing",
+  "version": "1.0.0",
+  "name": "Operator Morning Briefing",
+  "domain": "productivity",
+  "description": "Scheduled morning digest combining outstanding approvals, queue depth, and metrics.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "timezone": { "type": "string", "default": "UTC" }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "required": ["headline", "sections"],
+    "properties": {
+      "headline": { "type": "string" },
+      "sections": { "type": "array", "items": { "type": "object" } }
+    }
+  },
+  "capability_allowlist": ["briefing.read_queue", "briefing.read_approvals"],
+  "mutability": "read",
+  "timeout_seconds": 25,
+  "max_concurrency": 5,
+  "retry_policy": {
+    "max_attempts": 2,
+    "backoff": "exponential",
+    "base_delay_seconds": 2.0
+  },
+  "idempotency_strategy": "idempotency_key",
+  "audit_events": ["zarvis.productivity.briefing_generated.v1"],
+  "owner": "zarvis-productivity",
+  "rollback_policy": "none",
+  "tags": ["briefing", "schedule", "productivity"]
+}

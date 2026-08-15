@@ -1,0 +1,1595 @@
+{
+  "version": 4,
+  "terraform_version": "1.15.8",
+  "serial": 134,
+  "lineage": "5050b1ce-0cde-f543-d9ee-b756c7ded2e2",
+  "outputs": {
+    "arin_url": {
+      "value": "https://arin.zeaz.dev",
+      "type": "string"
+    },
+    "auth_url": {
+      "value": "https://auth.zeaz.dev",
+      "type": "string"
+    },
+    "autoc_url": {
+      "value": "https://autoc.zeaz.dev",
+      "type": "string"
+    },
+    "chat_url": {
+      "value": "https://chat.zeaz.dev",
+      "type": "string"
+    },
+    "cloudflared_ingress": {
+      "value": [
+        {
+          "hostname": "moopiew.zeaz.dev",
+          "service": "http://127.0.0.1:8080"
+        },
+        {
+          "hostname": "zttshop.zeaz.dev",
+          "service": "http://127.0.0.1:8080"
+        },
+        {
+          "hostname": "qwen.zeaz.dev",
+          "service": "http://127.0.0.1:8091"
+        },
+        {
+          "hostname": "chat.zeaz.dev",
+          "service": "http://127.0.0.1:3000"
+        },
+        {
+          "hostname": "piewdash.zeaz.dev",
+          "service": "http://127.0.0.1:80"
+        },
+        {
+          "hostname": "zdash.zeaz.dev",
+          "service": "http://127.0.0.1:18080"
+        },
+        {
+          "hostname": "zerp.zeaz.dev",
+          "service": "http://127.0.0.1:80"
+        },
+        {
+          "hostname": "cme.zeaz.dev",
+          "service": "http://127.0.0.1:8001"
+        },
+        {
+          "hostname": "arin.zeaz.dev",
+          "service": "http://127.0.0.1:8080"
+        },
+        {
+          "hostname": "zai.zeaz.dev",
+          "service": "http://127.0.0.1:8765"
+        },
+        {
+          "hostname": "auth.zeaz.dev",
+          "service": "http://127.0.0.1:8080"
+        },
+        {
+          "hostname": "laps.zeaz.dev",
+          "service": "http://127.0.0.1:8080"
+        },
+        {
+          "service": "http_status:404"
+        }
+      ],
+      "type": [
+        "tuple",
+        [
+          [
+            "object",
+            {
+              "hostname": "string",
+              "service": "string"
+            }
+          ],
+          [
+            "object",
+            {
+              "hostname": "string",
+              "service": "string"
+            }
+          ],
+          [
+            "object",
+            {
+              "hostname": "string",
+              "service": "string"
+            }
+          ],
+          [
+            "object",
+            {
+              "hostname": "string",
+              "service": "string"
+            }
+          ],
+          [
+            "object",
+            {
+              "hostname": "string",
+              "service": "string"
+            }
+          ],
+          [
+            "object",
+            {
+              "hostname": "string",
+              "service": "string"
+            }
+          ],
+          [
+            "object",
+            {
+              "hostname": "string",
+              "service": "string"
+            }
+          ],
+          [
+            "object",
+            {
+              "hostname": "string",
+              "service": "string"
+            }
+          ],
+          [
+            "object",
+            {
+              "hostname": "string",
+              "service": "string"
+            }
+          ],
+          [
+            "object",
+            {
+              "hostname": "string",
+              "service": "string"
+            }
+          ],
+          [
+            "object",
+            {
+              "hostname": "string",
+              "service": "string"
+            }
+          ],
+          [
+            "object",
+            {
+              "hostname": "string",
+              "service": "string"
+            }
+          ],
+          [
+            "object",
+            {
+              "service": "string"
+            }
+          ]
+        ]
+      ]
+    },
+    "cmeerp_url": {
+      "value": "https://cme.zeaz.dev",
+      "type": "string"
+    },
+    "laps_url": {
+      "value": "https://laps.zeaz.dev",
+      "type": "string"
+    },
+    "moopiew_url": {
+      "value": "https://moopiew.zeaz.dev",
+      "type": "string"
+    },
+    "piewdash_access_audience": {
+      "value": "59204d4cb538bb739c3c076bab5e5f2c083871a13ac0b8b6065ad58a76de2420",
+      "type": "string"
+    },
+    "piewdash_url": {
+      "value": "https://piewdash.zeaz.dev",
+      "type": "string"
+    },
+    "qwen_url": {
+      "value": "https://qwen.zeaz.dev",
+      "type": "string"
+    },
+    "zai_url": {
+      "value": "https://zai.zeaz.dev",
+      "type": "string"
+    },
+    "zdash_access_audience": {
+      "value": "f179f06450f22eab64479d71844c725f284021e1f4f865fdc97be714c6d3a218",
+      "type": "string"
+    },
+    "zdash_url": {
+      "value": "https://zdash.zeaz.dev",
+      "type": "string"
+    },
+    "zeaz_one_api_url": {
+      "value": "https://api.zeaz.dev/v1/products/zeaz-one",
+      "type": "string"
+    },
+    "zeaz_one_corporate_url": {
+      "value": "https://www.zeaz.dev/products/zeaz-one",
+      "type": "string"
+    },
+    "zeaz_one_support_url": {
+      "value": "https://support.zeaz.dev/zeaz-one",
+      "type": "string"
+    },
+    "zeaz_one_url": {
+      "value": "https://one.zeaz.dev",
+      "type": "string"
+    },
+    "zerp_url": {
+      "value": "https://zerp.zeaz.dev",
+      "type": "string"
+    },
+    "zttshop_url": {
+      "value": "https://zttshop.zeaz.dev",
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "mode": "managed",
+      "type": "cloudflare_dns_record",
+      "name": "arin",
+      "provider": "provider[\"registry.terraform.io/cloudflare/cloudflare\"]",
+      "instances": [
+        {
+          "schema_version": 500,
+          "attributes": {
+            "comment": "Arin static site via Cloudflare Tunnel",
+            "comment_modified_on": "2026-08-12T19:08:19Z",
+            "content": "45667e7e-7383-4265-b53e-6a9e770a8554.cfargotunnel.com",
+            "created_on": "2026-08-12T19:08:19Z",
+            "data": null,
+            "id": "b7801a02f34164569d8d0d541b1b72d0",
+            "meta": "{}",
+            "modified_on": "2026-08-12T19:08:19Z",
+            "name": "arin.zeaz.dev",
+            "priority": null,
+            "private_routing": null,
+            "proxiable": true,
+            "proxied": true,
+            "settings": {
+              "flatten_cname": false,
+              "ipv4_only": false,
+              "ipv6_only": false
+            },
+            "tags": [],
+            "tags_modified_on": null,
+            "ttl": 1,
+            "type": "CNAME",
+            "zone_id": "92d9bfd6cbe3c327519d520e56268cba"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "cloudflare_dns_record",
+      "name": "auth",
+      "provider": "provider[\"registry.terraform.io/cloudflare/cloudflare\"]",
+      "instances": [
+        {
+          "schema_version": 500,
+          "attributes": {
+            "comment": "ZEAZ Authentication Portal via Cloudflare Tunnel",
+            "comment_modified_on": "2026-08-05T16:22:17Z",
+            "content": "45667e7e-7383-4265-b53e-6a9e770a8554.cfargotunnel.com",
+            "created_on": "2026-06-20T07:30:48Z",
+            "data": null,
+            "id": "6ba6edeac75f5f5ba628356a21ad5bb0",
+            "meta": "{}",
+            "modified_on": "2026-08-05T16:22:17Z",
+            "name": "auth.zeaz.dev",
+            "priority": null,
+            "private_routing": null,
+            "proxiable": true,
+            "proxied": true,
+            "settings": {
+              "flatten_cname": false,
+              "ipv4_only": false,
+              "ipv6_only": false
+            },
+            "tags": [],
+            "tags_modified_on": null,
+            "ttl": 1,
+            "type": "CNAME",
+            "zone_id": "92d9bfd6cbe3c327519d520e56268cba"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "cloudflare_dns_record",
+      "name": "autoc",
+      "provider": "provider[\"registry.terraform.io/cloudflare/cloudflare\"]",
+      "instances": [
+        {
+          "schema_version": 500,
+          "attributes": {
+            "comment": "Protected autoc operations dashboard via Cloudflare Tunnel",
+            "comment_modified_on": "2026-08-12T19:08:19Z",
+            "content": "45667e7e-7383-4265-b53e-6a9e770a8554.cfargotunnel.com",
+            "created_on": "2026-08-12T19:08:19Z",
+            "data": null,
+            "id": "52fdf1fc9d455929d8e1dde400094513",
+            "meta": "{}",
+            "modified_on": "2026-08-12T19:08:19Z",
+            "name": "autoc.zeaz.dev",
+            "priority": null,
+            "private_routing": null,
+            "proxiable": true,
+            "proxied": true,
+            "settings": {
+              "flatten_cname": false,
+              "ipv4_only": false,
+              "ipv6_only": false
+            },
+            "tags": [],
+            "tags_modified_on": null,
+            "ttl": 1,
+            "type": "CNAME",
+            "zone_id": "92d9bfd6cbe3c327519d520e56268cba"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "cloudflare_dns_record",
+      "name": "chat",
+      "provider": "provider[\"registry.terraform.io/cloudflare/cloudflare\"]",
+      "instances": [
+        {
+          "schema_version": 500,
+          "attributes": {
+            "comment": "OpenWebUI chat via Cloudflare Tunnel",
+            "comment_modified_on": "2026-08-12T19:08:19Z",
+            "content": "45667e7e-7383-4265-b53e-6a9e770a8554.cfargotunnel.com",
+            "created_on": "2026-08-02T08:09:53Z",
+            "data": null,
+            "id": "f9041b5627c869915d7154fd96d3bd80",
+            "meta": "{}",
+            "modified_on": "2026-08-12T19:08:19Z",
+            "name": "chat.zeaz.dev",
+            "priority": null,
+            "private_routing": null,
+            "proxiable": true,
+            "proxied": true,
+            "settings": {
+              "flatten_cname": false,
+              "ipv4_only": false,
+              "ipv6_only": false
+            },
+            "tags": [],
+            "tags_modified_on": null,
+            "ttl": 1,
+            "type": "CNAME",
+            "zone_id": "92d9bfd6cbe3c327519d520e56268cba"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "cloudflare_dns_record",
+      "name": "cmeerp",
+      "provider": "provider[\"registry.terraform.io/cloudflare/cloudflare\"]",
+      "instances": [
+        {
+          "schema_version": 500,
+          "attributes": {
+            "comment": "CME Pro ERP via Cloudflare Tunnel",
+            "comment_modified_on": "2026-08-01T17:55:53Z",
+            "content": "45667e7e-7383-4265-b53e-6a9e770a8554.cfargotunnel.com",
+            "created_on": "2026-07-30T01:41:30Z",
+            "data": null,
+            "id": "38f80160079df2a7f8c3e088485d7400",
+            "meta": "{}",
+            "modified_on": "2026-08-01T17:55:53Z",
+            "name": "cme.zeaz.dev",
+            "priority": null,
+            "private_routing": null,
+            "proxiable": true,
+            "proxied": true,
+            "settings": {
+              "flatten_cname": false,
+              "ipv4_only": false,
+              "ipv6_only": false
+            },
+            "tags": [],
+            "tags_modified_on": null,
+            "ttl": 1,
+            "type": "CNAME",
+            "zone_id": "92d9bfd6cbe3c327519d520e56268cba"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "cloudflare_dns_record",
+      "name": "laps",
+      "provider": "provider[\"registry.terraform.io/cloudflare/cloudflare\"]",
+      "instances": [
+        {
+          "schema_version": 500,
+          "attributes": {
+            "comment": "ZEAZ LAPS service via Cloudflare Tunnel",
+            "comment_modified_on": "2026-08-12T19:08:19Z",
+            "content": "45667e7e-7383-4265-b53e-6a9e770a8554.cfargotunnel.com",
+            "created_on": "2026-08-12T19:08:19Z",
+            "data": null,
+            "id": "11ad84ee1645f98de31fbbe2449aabb5",
+            "meta": "{}",
+            "modified_on": "2026-08-12T19:08:19Z",
+            "name": "laps.zeaz.dev",
+            "priority": null,
+            "private_routing": null,
+            "proxiable": true,
+            "proxied": true,
+            "settings": {
+              "flatten_cname": false,
+              "ipv4_only": false,
+              "ipv6_only": false
+            },
+            "tags": [],
+            "tags_modified_on": null,
+            "ttl": 1,
+            "type": "CNAME",
+            "zone_id": "92d9bfd6cbe3c327519d520e56268cba"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "cloudflare_dns_record",
+      "name": "moopiew",
+      "provider": "provider[\"registry.terraform.io/cloudflare/cloudflare\"]",
+      "instances": [
+        {
+          "schema_version": 500,
+          "attributes": {
+            "comment": "Moopiew preorder via Cloudflare Tunnel",
+            "comment_modified_on": "2026-08-12T19:08:19Z",
+            "content": "45667e7e-7383-4265-b53e-6a9e770a8554.cfargotunnel.com",
+            "created_on": "2026-08-12T19:08:19Z",
+            "data": null,
+            "id": "fa7d6ca429a170b2bca8c9249eee60ad",
+            "meta": "{}",
+            "modified_on": "2026-08-12T19:08:19Z",
+            "name": "moopiew.zeaz.dev",
+            "priority": null,
+            "private_routing": null,
+            "proxiable": true,
+            "proxied": true,
+            "settings": {
+              "flatten_cname": false,
+              "ipv4_only": false,
+              "ipv6_only": false
+            },
+            "tags": [],
+            "tags_modified_on": null,
+            "ttl": 1,
+            "type": "CNAME",
+            "zone_id": "92d9bfd6cbe3c327519d520e56268cba"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "cloudflare_dns_record",
+      "name": "piewdash",
+      "provider": "provider[\"registry.terraform.io/cloudflare/cloudflare\"]",
+      "instances": [
+        {
+          "schema_version": 500,
+          "attributes": {
+            "comment": "MooPiew engineering dashboard via Cloudflare Tunnel",
+            "comment_modified_on": "2026-08-12T19:08:19Z",
+            "content": "45667e7e-7383-4265-b53e-6a9e770a8554.cfargotunnel.com",
+            "created_on": "2026-08-12T19:08:19Z",
+            "data": null,
+            "id": "7d84452e9ddb892484f85313d75f63f8",
+            "meta": "{}",
+            "modified_on": "2026-08-12T19:08:19Z",
+            "name": "piewdash.zeaz.dev",
+            "priority": null,
+            "private_routing": null,
+            "proxiable": true,
+            "proxied": true,
+            "settings": {
+              "flatten_cname": false,
+              "ipv4_only": false,
+              "ipv6_only": false
+            },
+            "tags": [],
+            "tags_modified_on": null,
+            "ttl": 1,
+            "type": "CNAME",
+            "zone_id": "92d9bfd6cbe3c327519d520e56268cba"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "cloudflare_dns_record",
+      "name": "qwen",
+      "provider": "provider[\"registry.terraform.io/cloudflare/cloudflare\"]",
+      "instances": [
+        {
+          "schema_version": 500,
+          "attributes": {
+            "comment": "Qwen chat interface via Cloudflare Tunnel",
+            "comment_modified_on": "2026-08-01T04:06:40Z",
+            "content": "45667e7e-7383-4265-b53e-6a9e770a8554.cfargotunnel.com",
+            "created_on": "2026-08-01T03:09:25Z",
+            "data": null,
+            "id": "391435f6acadfe7f07db0cda3e263a42",
+            "meta": "{}",
+            "modified_on": "2026-08-01T04:06:40Z",
+            "name": "qwen.zeaz.dev",
+            "priority": null,
+            "private_routing": null,
+            "proxiable": true,
+            "proxied": true,
+            "settings": {
+              "flatten_cname": false,
+              "ipv4_only": false,
+              "ipv6_only": false
+            },
+            "tags": [],
+            "tags_modified_on": null,
+            "ttl": 1,
+            "type": "CNAME",
+            "zone_id": "92d9bfd6cbe3c327519d520e56268cba"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "cloudflare_dns_record",
+      "name": "zai",
+      "provider": "provider[\"registry.terraform.io/cloudflare/cloudflare\"]",
+      "instances": [
+        {
+          "schema_version": 500,
+          "attributes": {
+            "comment": "ZEAZ AI Command Center via Cloudflare Tunnel",
+            "comment_modified_on": "2026-08-05T16:22:17Z",
+            "content": "45667e7e-7383-4265-b53e-6a9e770a8554.cfargotunnel.com",
+            "created_on": "2026-06-28T09:55:59Z",
+            "data": null,
+            "id": "2a6d9cac0f9f9461b9868c7dec9369bf",
+            "meta": "{}",
+            "modified_on": "2026-08-05T16:22:17Z",
+            "name": "zai.zeaz.dev",
+            "priority": null,
+            "private_routing": null,
+            "proxiable": true,
+            "proxied": true,
+            "settings": {
+              "flatten_cname": false,
+              "ipv4_only": false,
+              "ipv6_only": false
+            },
+            "tags": [],
+            "tags_modified_on": null,
+            "ttl": 1,
+            "type": "CNAME",
+            "zone_id": "92d9bfd6cbe3c327519d520e56268cba"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "cloudflare_dns_record",
+      "name": "zdash",
+      "provider": "provider[\"registry.terraform.io/cloudflare/cloudflare\"]",
+      "instances": [
+        {
+          "schema_version": 500,
+          "attributes": {
+            "comment": "Protected zDash operations dashboard via Cloudflare Tunnel",
+            "comment_modified_on": "2026-08-05T16:22:17Z",
+            "content": "45667e7e-7383-4265-b53e-6a9e770a8554.cfargotunnel.com",
+            "created_on": "2026-06-20T07:30:49Z",
+            "data": null,
+            "id": "db185c95cec13b8de9397eb1af005881",
+            "meta": "{}",
+            "modified_on": "2026-08-05T16:22:17Z",
+            "name": "zdash.zeaz.dev",
+            "priority": null,
+            "private_routing": null,
+            "proxiable": true,
+            "proxied": true,
+            "settings": {
+              "flatten_cname": false,
+              "ipv4_only": false,
+              "ipv6_only": false
+            },
+            "tags": [],
+            "tags_modified_on": null,
+            "ttl": 1,
+            "type": "CNAME",
+            "zone_id": "92d9bfd6cbe3c327519d520e56268cba"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "cloudflare_dns_record",
+      "name": "zerp",
+      "provider": "provider[\"registry.terraform.io/cloudflare/cloudflare\"]",
+      "instances": [
+        {
+          "schema_version": 500,
+          "attributes": {
+            "comment": "ZEAZ ERP via Cloudflare Tunnel",
+            "comment_modified_on": "2026-08-12T19:08:19Z",
+            "content": "45667e7e-7383-4265-b53e-6a9e770a8554.cfargotunnel.com",
+            "created_on": "2026-08-12T19:08:19Z",
+            "data": null,
+            "id": "cc4323317dc729cb364828579b6d0bc4",
+            "meta": "{}",
+            "modified_on": "2026-08-12T19:08:19Z",
+            "name": "zerp.zeaz.dev",
+            "priority": null,
+            "private_routing": null,
+            "proxiable": true,
+            "proxied": true,
+            "settings": {
+              "flatten_cname": false,
+              "ipv4_only": false,
+              "ipv6_only": false
+            },
+            "tags": [],
+            "tags_modified_on": null,
+            "ttl": 1,
+            "type": "CNAME",
+            "zone_id": "92d9bfd6cbe3c327519d520e56268cba"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "cloudflare_dns_record",
+      "name": "zttshop",
+      "provider": "provider[\"registry.terraform.io/cloudflare/cloudflare\"]",
+      "instances": [
+        {
+          "schema_version": 500,
+          "attributes": {
+            "comment": "zttshop public app via Cloudflare Tunnel",
+            "comment_modified_on": "2026-08-01T17:55:53Z",
+            "content": "45667e7e-7383-4265-b53e-6a9e770a8554.cfargotunnel.com",
+            "created_on": "2026-08-01T17:55:53Z",
+            "data": null,
+            "id": "a44ee6ae50f4d0914a89dcaef88b29de",
+            "meta": "{}",
+            "modified_on": "2026-08-01T17:55:53Z",
+            "name": "zttshop.zeaz.dev",
+            "priority": null,
+            "private_routing": null,
+            "proxiable": true,
+            "proxied": true,
+            "settings": {
+              "flatten_cname": false,
+              "ipv4_only": false,
+              "ipv6_only": false
+            },
+            "tags": [],
+            "tags_modified_on": null,
+            "ttl": 1,
+            "type": "CNAME",
+            "zone_id": "92d9bfd6cbe3c327519d520e56268cba"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "cloudflare_zero_trust_access_application",
+      "name": "autoc",
+      "provider": "provider[\"registry.terraform.io/cloudflare/cloudflare\"]",
+      "instances": [
+        {
+          "schema_version": 500,
+          "attributes": {
+            "account_id": "9afd03fff02846b4ca89caeff350ce56",
+            "allow_authenticate_via_warp": null,
+            "allow_iframe": null,
+            "allowed_idps": null,
+            "app_launcher_logo_url": null,
+            "app_launcher_visible": false,
+            "aud": "669a5ec9944ae40668c997c1339f6f54d0210d98c9d72de70a76f6bdb6901ebc",
+            "auto_redirect_to_identity": null,
+            "bg_color": null,
+            "cors_headers": null,
+            "custom_deny_message": null,
+            "custom_deny_url": null,
+            "custom_non_identity_deny_url": null,
+            "custom_pages": null,
+            "destinations": [
+              {
+                "cidr": null,
+                "hostname": null,
+                "l4_protocol": null,
+                "mcp_server_id": null,
+                "port_range": null,
+                "type": "public",
+                "uri": "autoc.zeaz.dev",
+                "vnet_id": null
+              }
+            ],
+            "domain": "autoc.zeaz.dev",
+            "enable_binding_cookie": true,
+            "footer_links": null,
+            "header_bg_color": null,
+            "http_only_cookie_attribute": true,
+            "id": "1d5c0970-3bc8-4e1c-ad4c-8d600d3ba552",
+            "landing_page_design": null,
+            "logo_url": null,
+            "mfa_config": null,
+            "name": "Autoc Operations Dashboard",
+            "oauth_configuration": null,
+            "options_preflight_bypass": null,
+            "path_cookie_attribute": null,
+            "policies": [
+              {
+                "connection_rules": null,
+                "decision": "allow",
+                "exclude": null,
+                "id": null,
+                "include": [
+                  {
+                    "any_valid_service_token": null,
+                    "auth_context": null,
+                    "auth_method": null,
+                    "azure_ad": null,
+                    "certificate": null,
+                    "common_name": null,
+                    "device_posture": null,
+                    "email": {
+                      "email": "seaza@msn.com"
+                    },
+                    "email_domain": null,
+                    "email_list": null,
+                    "everyone": null,
+                    "external_evaluation": null,
+                    "geo": null,
+                    "github_organization": null,
+                    "group": null,
+                    "gsuite": null,
+                    "ip": null,
+                    "ip_list": null,
+                    "linked_app_token": null,
+                    "login_method": null,
+                    "oidc": null,
+                    "okta": null,
+                    "saml": null,
+                    "service_token": null
+                  }
+                ],
+                "mfa_config": null,
+                "name": "Approved autoc operators",
+                "precedence": 1,
+                "require": null
+              }
+            ],
+            "read_service_tokens_from_header": null,
+            "saas_app": null,
+            "same_site_cookie_attribute": null,
+            "scim_config": null,
+            "self_hosted_domains": [
+              "autoc.zeaz.dev"
+            ],
+            "service_auth_401_redirect": null,
+            "session_duration": "8h",
+            "skip_app_launcher_login_page": null,
+            "skip_interstitial": null,
+            "tags": null,
+            "target_criteria": null,
+            "type": "self_hosted",
+            "zone_id": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "cloudflare_zero_trust_access_application",
+      "name": "piewdash",
+      "provider": "provider[\"registry.terraform.io/cloudflare/cloudflare\"]",
+      "instances": [
+        {
+          "schema_version": 500,
+          "attributes": {
+            "account_id": "9afd03fff02846b4ca89caeff350ce56",
+            "allow_authenticate_via_warp": null,
+            "allow_iframe": null,
+            "allowed_idps": null,
+            "app_launcher_logo_url": null,
+            "app_launcher_visible": false,
+            "aud": "59204d4cb538bb739c3c076bab5e5f2c083871a13ac0b8b6065ad58a76de2420",
+            "auto_redirect_to_identity": null,
+            "bg_color": null,
+            "cors_headers": null,
+            "custom_deny_message": null,
+            "custom_deny_url": null,
+            "custom_non_identity_deny_url": null,
+            "custom_pages": null,
+            "destinations": [
+              {
+                "cidr": null,
+                "hostname": null,
+                "l4_protocol": null,
+                "mcp_server_id": null,
+                "port_range": null,
+                "type": "public",
+                "uri": "piewdash.zeaz.dev",
+                "vnet_id": null
+              }
+            ],
+            "domain": "piewdash.zeaz.dev",
+            "enable_binding_cookie": true,
+            "footer_links": null,
+            "header_bg_color": null,
+            "http_only_cookie_attribute": true,
+            "id": "ff7e9e0e-edaa-4bab-9e93-155c37bd086c",
+            "landing_page_design": null,
+            "logo_url": null,
+            "mfa_config": null,
+            "name": "MooPiew Engineering Dashboard",
+            "oauth_configuration": null,
+            "options_preflight_bypass": null,
+            "path_cookie_attribute": null,
+            "policies": [
+              {
+                "connection_rules": null,
+                "decision": "allow",
+                "exclude": null,
+                "id": null,
+                "include": [
+                  {
+                    "any_valid_service_token": null,
+                    "auth_context": null,
+                    "auth_method": null,
+                    "azure_ad": null,
+                    "certificate": null,
+                    "common_name": null,
+                    "device_posture": null,
+                    "email": {
+                      "email": "seaza@msn.com"
+                    },
+                    "email_domain": null,
+                    "email_list": null,
+                    "everyone": null,
+                    "external_evaluation": null,
+                    "geo": null,
+                    "github_organization": null,
+                    "group": null,
+                    "gsuite": null,
+                    "ip": null,
+                    "ip_list": null,
+                    "linked_app_token": null,
+                    "login_method": null,
+                    "oidc": null,
+                    "okta": null,
+                    "saml": null,
+                    "service_token": null
+                  }
+                ],
+                "mfa_config": null,
+                "name": "Approved dashboard operators",
+                "precedence": 1,
+                "require": null
+              }
+            ],
+            "read_service_tokens_from_header": null,
+            "saas_app": null,
+            "same_site_cookie_attribute": null,
+            "scim_config": null,
+            "self_hosted_domains": [
+              "piewdash.zeaz.dev"
+            ],
+            "service_auth_401_redirect": null,
+            "session_duration": "8h",
+            "skip_app_launcher_login_page": null,
+            "skip_interstitial": null,
+            "tags": null,
+            "target_criteria": null,
+            "type": "self_hosted",
+            "zone_id": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "cloudflare_zero_trust_access_application",
+      "name": "zdash",
+      "provider": "provider[\"registry.terraform.io/cloudflare/cloudflare\"]",
+      "instances": [
+        {
+          "schema_version": 500,
+          "attributes": {
+            "account_id": "9afd03fff02846b4ca89caeff350ce56",
+            "allow_authenticate_via_warp": null,
+            "allow_iframe": null,
+            "allowed_idps": null,
+            "app_launcher_logo_url": null,
+            "app_launcher_visible": false,
+            "aud": "f179f06450f22eab64479d71844c725f284021e1f4f865fdc97be714c6d3a218",
+            "auto_redirect_to_identity": null,
+            "bg_color": null,
+            "cors_headers": null,
+            "custom_deny_message": null,
+            "custom_deny_url": null,
+            "custom_non_identity_deny_url": null,
+            "custom_pages": null,
+            "destinations": [
+              {
+                "cidr": null,
+                "hostname": null,
+                "l4_protocol": null,
+                "mcp_server_id": null,
+                "port_range": null,
+                "type": "public",
+                "uri": "zdash.zeaz.dev",
+                "vnet_id": null
+              }
+            ],
+            "domain": "zdash.zeaz.dev",
+            "enable_binding_cookie": true,
+            "footer_links": null,
+            "header_bg_color": null,
+            "http_only_cookie_attribute": true,
+            "id": "96b2315d-da21-4905-b5ba-c6ca1e505296",
+            "landing_page_design": null,
+            "logo_url": null,
+            "mfa_config": null,
+            "name": "zDash Operations Dashboard",
+            "oauth_configuration": null,
+            "options_preflight_bypass": null,
+            "path_cookie_attribute": null,
+            "policies": [
+              {
+                "connection_rules": null,
+                "decision": "allow",
+                "exclude": null,
+                "id": null,
+                "include": [
+                  {
+                    "any_valid_service_token": null,
+                    "auth_context": null,
+                    "auth_method": null,
+                    "azure_ad": null,
+                    "certificate": null,
+                    "common_name": null,
+                    "device_posture": null,
+                    "email": {
+                      "email": "seaza@msn.com"
+                    },
+                    "email_domain": null,
+                    "email_list": null,
+                    "everyone": null,
+                    "external_evaluation": null,
+                    "geo": null,
+                    "github_organization": null,
+                    "group": null,
+                    "gsuite": null,
+                    "ip": null,
+                    "ip_list": null,
+                    "linked_app_token": null,
+                    "login_method": null,
+                    "oidc": null,
+                    "okta": null,
+                    "saml": null,
+                    "service_token": null
+                  }
+                ],
+                "mfa_config": null,
+                "name": "Approved zDash operators",
+                "precedence": 1,
+                "require": null
+              }
+            ],
+            "read_service_tokens_from_header": null,
+            "saas_app": null,
+            "same_site_cookie_attribute": null,
+            "scim_config": null,
+            "self_hosted_domains": [
+              "zdash.zeaz.dev"
+            ],
+            "service_auth_401_redirect": null,
+            "session_duration": "8h",
+            "skip_app_launcher_login_page": null,
+            "skip_interstitial": null,
+            "tags": null,
+            "target_criteria": null,
+            "type": "self_hosted",
+            "zone_id": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "cloudflare_zero_trust_tunnel_cloudflared_config",
+      "name": "moopiew",
+      "provider": "provider[\"registry.terraform.io/cloudflare/cloudflare\"]",
+      "instances": [
+        {
+          "index_key": 0,
+          "schema_version": 500,
+          "attributes": {
+            "account_id": "9afd03fff02846b4ca89caeff350ce56",
+            "config": {
+              "ingress": [
+                {
+                  "hostname": "moopiew.zeaz.dev",
+                  "origin_request": null,
+                  "path": null,
+                  "service": "http://127.0.0.1:8080"
+                },
+                {
+                  "hostname": "zttshop.zeaz.dev",
+                  "origin_request": null,
+                  "path": null,
+                  "service": "http://127.0.0.1:8080"
+                },
+                {
+                  "hostname": "qwen.zeaz.dev",
+                  "origin_request": null,
+                  "path": null,
+                  "service": "http://127.0.0.1:8091"
+                },
+                {
+                  "hostname": "chat.zeaz.dev",
+                  "origin_request": null,
+                  "path": null,
+                  "service": "http://127.0.0.1:3000"
+                },
+                {
+                  "hostname": "piewdash.zeaz.dev",
+                  "origin_request": null,
+                  "path": null,
+                  "service": "http://127.0.0.1:80"
+                },
+                {
+                  "hostname": "zdash.zeaz.dev",
+                  "origin_request": null,
+                  "path": null,
+                  "service": "http://127.0.0.1:18080"
+                },
+                {
+                  "hostname": "zerp.zeaz.dev",
+                  "origin_request": null,
+                  "path": null,
+                  "service": "http://127.0.0.1:80"
+                },
+                {
+                  "hostname": "cme.zeaz.dev",
+                  "origin_request": null,
+                  "path": null,
+                  "service": "http://127.0.0.1:8001"
+                },
+                {
+                  "hostname": "arin.zeaz.dev",
+                  "origin_request": null,
+                  "path": null,
+                  "service": "http://127.0.0.1:8080"
+                },
+                {
+                  "hostname": "zai.zeaz.dev",
+                  "origin_request": null,
+                  "path": null,
+                  "service": "http://127.0.0.1:8765"
+                },
+                {
+                  "hostname": "autoc.zeaz.dev",
+                  "origin_request": null,
+                  "path": null,
+                  "service": "http://127.0.0.1:8001"
+                },
+                {
+                  "hostname": "auth.zeaz.dev",
+                  "origin_request": null,
+                  "path": null,
+                  "service": "http://127.0.0.1:8080"
+                },
+                {
+                  "hostname": "laps.zeaz.dev",
+                  "origin_request": null,
+                  "path": null,
+                  "service": "http://127.0.0.1:8080"
+                },
+                {
+                  "hostname": null,
+                  "origin_request": null,
+                  "path": null,
+                  "service": "http_status:404"
+                }
+              ],
+              "origin_request": null
+            },
+            "created_at": "2026-08-12T19:11:13Z",
+            "id": "45667e7e-7383-4265-b53e-6a9e770a8554",
+            "source": "cloudflare",
+            "tunnel_id": "45667e7e-7383-4265-b53e-6a9e770a8554",
+            "version": 45
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    }
+  ],
+  "check_results": [
+    {
+      "object_kind": "var",
+      "config_addr": "var.laps_origin",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.laps_origin",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.cloudflare_tunnel_id",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.cloudflare_tunnel_id",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.zeaz_one_api_origin",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.zeaz_one_api_origin",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.zerp_hostname",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.zerp_hostname",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.zeaz_one_api_hostname",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.zeaz_one_api_hostname",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.arin_origin",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.arin_origin",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.zdash_origin",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.zdash_origin",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.cloudflare_zone_id",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.cloudflare_zone_id",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.zeaz_one_hostname",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.zeaz_one_hostname",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.moopiew_origin",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.moopiew_origin",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.zerp_origin",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.zerp_origin",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.qwen_hostname",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.qwen_hostname",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.arin_hostname",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.arin_hostname",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.zttshop_hostname",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.zttshop_hostname",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.piewdash_hostname",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.piewdash_hostname",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.cmeerp_origin",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.cmeerp_origin",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.qwen_origin",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.qwen_origin",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.auth_origin",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.auth_origin",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.zai_hostname",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.zai_hostname",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.zttshop_origin",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.zttshop_origin",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.moopiew_hostname",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.moopiew_hostname",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.chat_origin",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.chat_origin",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.zdash_hostname",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.zdash_hostname",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.zeaz_one_support_origin",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.zeaz_one_support_origin",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.piewdash_origin",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.piewdash_origin",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.cloudflare_account_id",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.cloudflare_account_id",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.laps_hostname",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.laps_hostname",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.zai_origin",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.zai_origin",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.autoc_origin",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.autoc_origin",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.chat_hostname",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.chat_hostname",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.zdash_access_allowed_emails",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.zdash_access_allowed_emails",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.cloudflare_api_token",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.cloudflare_api_token",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.autoc_hostname",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.autoc_hostname",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.piewdash_access_allowed_emails",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.piewdash_access_allowed_emails",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.auth_hostname",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.auth_hostname",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.zeaz_one_origin",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.zeaz_one_origin",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.cmeerp_hostname",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.cmeerp_hostname",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "object_kind": "var",
+      "config_addr": "var.zeaz_one_support_hostname",
+      "status": "pass",
+      "objects": [
+        {
+          "object_addr": "var.zeaz_one_support_hostname",
+          "status": "pass"
+        }
+      ]
+    }
+  ]
+}
+

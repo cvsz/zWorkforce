@@ -1,0 +1,58 @@
+# ==============================================================================
+# Enterprise Open WebUI + zWorkforce Full Stack Specification
+# Includes:
+#   1. Open WebUI (Interactive Chat, Voice WebRTC, Dual Model Arena)
+#   2. Code Artifacts Engine (Interactive HTML/React/SVG preview)
+#   3. RAG Knowledge API (Document ingestion & Semantic Search)
+#   4. Plugin & Functions Pipeline (OpenAPI Tools & MCP Allowlist)
+#   5. Multi-Model Provider Gateway (All 9 Unlocked Models)
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # Open WebUI Enterprise Control Center
+  # ----------------------------------------------------------------------------
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: zworkforce-open-webui
+    ports:
+      - "${OPEN_WEBUI_PORT:-3080}:8080"
+    environment:
+      # General & Branding
+      WEBUI_NAME: "zWorkforce Enterprise AI"
+      WEBUI_URL: "http://localhost:${OPEN_WEBUI_PORT:-3080}"
+      WEBUI_SECRET_KEY: "${WEBUI_SECRET_KEY:-zwf-openwebui-secret-key-32bytes-long-token}"
+      ENV: "production"
+      ENABLE_OLLAMA_API: "false"
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+      RAG_EMBEDDING_ENGINE: ""
+      
+      # OpenAI Compatible Gateway pointing to zWorkforce Multi-Model Router
+      OPENAI_API_BASE_URL: "http://api:9569/v1"
+      OPENAI_API_KEY: "${ZWORKFORCE_API_KEY:-bootstrap-enterprise-key}"
+      
+      # Code Artifacts & Interactive HTML/SVG Preview
+      ENABLE_CODE_EXECUTION: "true"
+      ENABLE_HTML_PREVIEW: "true"
+      ENABLE_ARTIFACTS: "true"
+      
+      # Plugins & Tools
+      ENABLE_FUNCTIONS: "true"
+      ENABLE_OPENAPI: "true"
+      ENABLE_COMMUNITY_SHARING: "false"
+      
+      # Enterprise Auth & Security
+      WEBUI_AUTH: "false" # Instant frictionless access
+      ENABLE_SIGNUP: "true"
+      DEFAULT_USER_ROLE: "admin"
+      
+    volumes:
+      - open-webui-data:/app/backend/data
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+
+volumes:
+  open-webui-data:

@@ -1,0 +1,1002 @@
+
+> @zeaz/zeto@2.0.0-alpha.1 test
+> node --test --test-concurrency=1 test/*.test.js
+
+TAP version 13
+# Subtest: FakeAIProvider
+    # Subtest: returns generation result for image
+    ok 1 - returns generation result for image
+      ---
+      duration_ms: 455.079984
+      type: 'test'
+      ...
+    # Subtest: throws when raiseOn is set
+    ok 2 - throws when raiseOn is set
+      ---
+      duration_ms: 230.133261
+      type: 'test'
+      ...
+    # Subtest: reports healthy status
+    ok 3 - reports healthy status
+      ---
+      duration_ms: 33.352127
+      type: 'test'
+      ...
+    # Subtest: reports unhealthy status without credentials
+    ok 4 - reports unhealthy status without credentials
+      ---
+      duration_ms: 9.139642
+      type: 'test'
+      ...
+    # Subtest: capability locality is local
+    ok 5 - capability locality is local
+      ---
+      duration_ms: 16.352081
+      type: 'test'
+      ...
+    1..5
+ok 1 - FakeAIProvider
+  ---
+  duration_ms: 905.462303
+  type: 'suite'
+  ...
+# Subtest: AIProviderRegistry
+    # Subtest: registers and retrieves by id
+    ok 1 - registers and retrieves by id
+      ---
+      duration_ms: 13.529222
+      type: 'test'
+      ...
+    # Subtest: throws DuplicateProviderError on collision
+    ok 2 - throws DuplicateProviderError on collision
+      ---
+      duration_ms: 14.300183
+      type: 'test'
+      ...
+    # Subtest: throws ProviderNotFoundError for missing id
+    ok 3 - throws ProviderNotFoundError for missing id
+      ---
+      duration_ms: 2.497275
+      type: 'test'
+      ...
+    # Subtest: findByType returns matching providers
+    ok 4 - findByType returns matching providers
+      ---
+      duration_ms: 56.977243
+      type: 'test'
+      ...
+    # Subtest: list returns sorted ids
+    ok 5 - list returns sorted ids
+      ---
+      duration_ms: 50.602963
+      type: 'test'
+      ...
+    # Subtest: healthSummary never exposes credentials
+    ok 6 - healthSummary never exposes credentials
+      ---
+      duration_ms: 264.156256
+      type: 'test'
+      ...
+    1..6
+ok 2 - AIProviderRegistry
+  ---
+  duration_ms: 407.999643
+  type: 'suite'
+  ...
+# Subtest: daily metrics produce reproducible current and prior-period analytics
+ok 3 - daily metrics produce reproducible current and prior-period analytics # SKIP
+  ---
+  duration_ms: 194.598344
+  type: 'test'
+  ...
+# Subtest: mention ingestion persists sentiment and complaint escalation SLA
+ok 4 - mention ingestion persists sentiment and complaint escalation SLA # SKIP
+  ---
+  duration_ms: 3.828608
+  type: 'test'
+  ...
+# Subtest: alerts deduplicate and labelled outcomes produce precision evidence
+ok 5 - alerts deduplicate and labelled outcomes produce precision evidence # SKIP
+  ---
+  duration_ms: 0.39368
+  type: 'test'
+  ...
+# Subtest: approval decisions are immutable database records
+ok 6 - approval decisions are immutable database records # SKIP
+  ---
+  duration_ms: 24.002097
+  type: 'test'
+  ...
+# Subtest: publication transaction rejects unapproved assets and deduplicates approved commands
+ok 7 - publication transaction rejects unapproved assets and deduplicates approved commands # SKIP
+  ---
+  duration_ms: 1.017449
+  type: 'test'
+  ...
+# Subtest: one idea produces a complete versioned M01-M05 draft asset pack
+ok 8 - one idea produces a complete versioned M01-M05 draft asset pack
+  ---
+  duration_ms: 613.779025
+  type: 'test'
+  ...
+# Subtest: asset pack rejects unsafe aspect ratios, audio, timelines, and caption overflow
+ok 9 - asset pack rejects unsafe aspect ratios, audio, timelines, and caption overflow
+  ---
+  duration_ms: 86.380269
+  type: 'test'
+  ...
+# Subtest: AUTO-PILOT permits publishing only when every guardrail passes
+ok 10 - AUTO-PILOT permits publishing only when every guardrail passes
+  ---
+  duration_ms: 56.391673
+  type: 'test'
+  ...
+# Subtest: human mode still requires an approval checkpoint
+ok 11 - human mode still requires an approval checkpoint
+  ---
+  duration_ms: 2.693165
+  type: 'test'
+  ...
+# Subtest: runtime and user-facing files use the Zeto product identity
+ok 12 - runtime and user-facing files use the Zeto product identity
+  ---
+  duration_ms: 244.182657
+  type: 'test'
+  ...
+# Subtest: calendar converts valid local slots to UTC and rejects DST gaps
+ok 13 - calendar converts valid local slots to UTC and rejects DST gaps
+  ---
+  duration_ms: 1710.87142
+  type: 'test'
+  ...
+# Subtest: bounded retry uses exponential delay and deterministic jitter
+ok 14 - bounded retry uses exponential delay and deterministic jitter
+  ---
+  duration_ms: 22.424476
+  type: 'test'
+  ...
+# Subtest: best-time recommendation is derived from metrics and returns null without evidence
+ok 15 - best-time recommendation is derived from metrics and returns null without evidence
+  ---
+  duration_ms: 10.313584
+  type: 'test'
+  ...
+# Subtest: production refuses to initialize encryption without an explicit key
+ok 16 - production refuses to initialize encryption without an explicit key
+  ---
+  duration_ms: 6371.297855
+  type: 'test'
+  ...
+# Subtest: production refuses a weak encryption key
+ok 17 - production refuses a weak encryption key
+  ---
+  duration_ms: 5913.92638
+  type: 'test'
+  ...
+# Subtest: encrypted values round-trip with authenticated encryption
+ok 18 - encrypted values round-trip with authenticated encryption
+  ---
+  duration_ms: 4378.33128
+  type: 'test'
+  ...
+# Subtest: canonical factory definition orders every module and approval checkpoint
+ok 19 - canonical factory definition orders every module and approval checkpoint
+  ---
+  duration_ms: 412.319627
+  type: 'test'
+  ...
+# Subtest: M01-M10 handlers carry a complete asset pack into a durable approval pause
+ok 20 - M01-M10 handlers carry a complete asset pack into a durable approval pause
+  ---
+  duration_ms: 292.074255
+  type: 'test'
+  ...
+# Subtest: publishing checks the emergency kill switch at execution time
+ok 21 - publishing checks the emergency kill switch at execution time
+  ---
+  duration_ms: 78.871446
+  type: 'test'
+  ...
+# Subtest: factory run persists artifacts and traces, pauses for approval, then queues once
+ok 22 - factory run persists artifacts and traces, pauses for approval, then queues once # SKIP
+  ---
+  duration_ms: 24.055294
+  type: 'test'
+  ...
+# Subtest: classifyMention
+    # Subtest: classifies a question correctly
+    ok 1 - classifies a question correctly
+      ---
+      duration_ms: 68.773252
+      type: 'test'
+      ...
+    # Subtest: classifies a complaint correctly
+    ok 2 - classifies a complaint correctly
+      ---
+      duration_ms: 8.432776
+      type: 'test'
+      ...
+    # Subtest: classifies praise correctly
+    ok 3 - classifies praise correctly
+      ---
+      duration_ms: 1.294336
+      type: 'test'
+      ...
+    # Subtest: classifies a lead correctly
+    not ok 4 - classifies a lead correctly
+      ---
+      duration_ms: 21.158038
+      type: 'test'
+      location: '/home/cvsz/zeto/test/mentionClassification.test.js:30:3'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        'question' !== 'lead'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 'lead'
+      actual: 'question'
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/home/cvsz/zeto/test/mentionClassification.test.js:32:12)
+        Test.runInAsyncScope (node:async_hooks:214:14)
+        Test.run (node:internal/test_runner/test:1047:25)
+        Suite.processPendingSubtests (node:internal/test_runner/test:744:18)
+        Test.postRun (node:internal/test_runner/test:1173:19)
+        Test.run (node:internal/test_runner/test:1101:12)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # Subtest: returns spam for empty text
+    ok 5 - returns spam for empty text
+      ---
+      duration_ms: 21.981599
+      type: 'test'
+      ...
+    # Subtest: returns a confidence between 0 and 1
+    ok 6 - returns a confidence between 0 and 1
+      ---
+      duration_ms: 4.599769
+      type: 'test'
+      ...
+    # Subtest: returns valid category string
+    ok 7 - returns valid category string
+      ---
+      duration_ms: 1.552022
+      type: 'test'
+      ...
+    1..7
+not ok 23 - classifyMention
+  ---
+  duration_ms: 194.254862
+  type: 'suite'
+  location: '/home/cvsz/zeto/test/mentionClassification.test.js:11:1'
+  failureType: 'subtestsFailed'
+  error: '1 subtest failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: normalizeSentiment
+    # Subtest: returns 50 for null
+    ok 1 - returns 50 for null
+      ---
+      duration_ms: 10.56477
+      type: 'test'
+      ...
+    # Subtest: returns 50 for undefined
+    ok 2 - returns 50 for undefined
+      ---
+      duration_ms: 2.508275
+      type: 'test'
+      ...
+    # Subtest: returns integer 0-100 as-is
+    not ok 3 - returns integer 0-100 as-is
+      ---
+      duration_ms: 32.044493
+      type: 'test'
+      location: '/home/cvsz/zeto/test/mentionClassification.test.js:62:3'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        50 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 50
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/home/cvsz/zeto/test/mentionClassification.test.js:64:12)
+        Test.runInAsyncScope (node:async_hooks:214:14)
+        Test.run (node:internal/test_runner/test:1047:25)
+        Suite.processPendingSubtests (node:internal/test_runner/test:744:18)
+        Test.postRun (node:internal/test_runner/test:1173:19)
+        Test.run (node:internal/test_runner/test:1101:12)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # Subtest: maps -1 to 0
+    ok 4 - maps -1 to 0
+      ---
+      duration_ms: 2.98795
+      type: 'test'
+      ...
+    # Subtest: maps 1 to 100
+    ok 5 - maps 1 to 100
+      ---
+      duration_ms: 1.209139
+      type: 'test'
+      ...
+    # Subtest: maps 0 to 50
+    ok 6 - maps 0 to 50
+      ---
+      duration_ms: 5.537822
+      type: 'test'
+      ...
+    # Subtest: maps 0.5 to 75
+    ok 7 - maps 0.5 to 75
+      ---
+      duration_ms: 4.249587
+      type: 'test'
+      ...
+    1..7
+not ok 24 - normalizeSentiment
+  ---
+  duration_ms: 68.942944
+  type: 'suite'
+  location: '/home/cvsz/zeto/test/mentionClassification.test.js:53:1'
+  failureType: 'subtestsFailed'
+  error: '1 subtest failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: metrics registry renders bounded Prometheus counters and histograms
+ok 25 - metrics registry renders bounded Prometheus counters and histograms
+  ---
+  duration_ms: 91.567609
+  type: 'test'
+  ...
+# Subtest: model router blocks all providers before invocation when cost cap is exceeded
+ok 26 - model router blocks all providers before invocation when cost cap is exceeded
+  ---
+  duration_ms: 260.86002
+  type: 'test'
+  ...
+# Subtest: model router records failed preference and successful bounded fallback
+ok 27 - model router records failed preference and successful bounded fallback
+  ---
+  duration_ms: 46.036592
+  type: 'test'
+  ...
+# Subtest: model router queues a failed job after the fallback chain is exhausted
+ok 28 - model router queues a failed job after the fallback chain is exhausted
+  ---
+  duration_ms: 5.135442
+  type: 'test'
+  ...
+# Subtest: monitoring classifies mentions and normalizes sentiment to 0-100
+ok 29 - monitoring classifies mentions and normalizes sentiment to 0-100
+  ---
+  duration_ms: 196.622642
+  type: 'test'
+  ...
+# Subtest: alert evaluation covers defaults and emits stable deduplication keys
+ok 30 - alert evaluation covers defaults and emits stable deduplication keys
+  ---
+  duration_ms: 278.520434
+  type: 'test'
+  ...
+# Subtest: Instagram publishes an image container and then publishes it
+ok 31 - Instagram publishes an image container and then publishes it
+  ---
+  duration_ms: 183.71169
+  type: 'test'
+  ...
+# Subtest: YouTube uses a resumable upload session and does not put tokens in URLs
+ok 32 - YouTube uses a resumable upload session and does not put tokens in URLs
+  ---
+  duration_ms: 25.067744
+  type: 'test'
+  ...
+# Subtest: TikTok validates creator choices before direct-post initialization
+ok 33 - TikTok validates creator choices before direct-post initialization
+  ---
+  duration_ms: 70.074086
+  type: 'test'
+  ...
+# Subtest: X publishes text and parses rate-limit metadata
+ok 34 - X publishes text and parses rate-limit metadata
+  ---
+  duration_ms: 72.651257
+  type: 'test'
+  ...
+# Subtest: LinkedIn initializes and uploads an image before creating a post
+ok 35 - LinkedIn initializes and uploads an image before creating a post
+  ---
+  duration_ms: 36.624964
+  type: 'test'
+  ...
+# Subtest: registry rejects unknown providers, duplicates, and unsupported publications
+ok 36 - registry rejects unknown providers, duplicates, and unsupported publications
+  ---
+  duration_ms: 94.983038
+  type: 'test'
+  ...
+# Subtest: local object storage round-trips media and blocks traversal
+ok 37 - local object storage round-trips media and blocks traversal
+  ---
+  duration_ms: 525.295164
+  type: 'test'
+  ...
+# Subtest: operational store persists settings, pages, queue, history, and hashed sessions
+ok 38 - operational store persists settings, pages, queue, history, and hashed sessions # SKIP
+  ---
+  duration_ms: 192.308858
+  type: 'test'
+  ...
+# Subtest: operator API enforces auth and roles
+ok 39 - operator API enforces auth and roles # SKIP
+  ---
+  duration_ms: 28.72946
+  type: 'test'
+  ...
+# Subtest: session lifecycle, pause/resume, cancel, emergency stop via API
+ok 40 - session lifecycle, pause/resume, cancel, emergency stop via API # SKIP
+  ---
+  duration_ms: 4.822159
+  type: 'test'
+  ...
+# Subtest: GET /v1/operator/sessions/:id returns the session snapshot for restore
+ok 41 - GET /v1/operator/sessions/:id returns the session snapshot for restore # SKIP
+  ---
+  duration_ms: 0.99725
+  type: 'test'
+  ...
+# Subtest: plan approve/reject endpoints enforce approval state
+ok 42 - plan approve/reject endpoints enforce approval state # SKIP
+  ---
+  duration_ms: 1.027749
+  type: 'test'
+  ...
+# Subtest: SSE endpoint replays persisted events in order via Last-Event-ID
+ok 43 - SSE endpoint replays persisted events in order via Last-Event-ID # SKIP
+  ---
+  duration_ms: 1.551622
+  type: 'test'
+  ...
+# Subtest: sequence endpoints enforce roles and run/dry-run via the API
+ok 44 - sequence endpoints enforce roles and run/dry-run via the API # SKIP
+  ---
+  duration_ms: 1.330934
+  type: 'test'
+  ...
+# Subtest: event catalog is complete per spec §10
+ok 45 - event catalog is complete per spec §10
+  ---
+  duration_ms: 45.572715
+  type: 'test'
+  ...
+# Subtest: envelope builder assigns unique event_id and leaves sequence_id null
+ok 46 - envelope builder assigns unique event_id and leaves sequence_id null
+  ---
+  duration_ms: 11.147741
+  type: 'test'
+  ...
+# Subtest: unknown event types are rejected
+ok 47 - unknown event types are rejected
+  ---
+  duration_ms: 6.79046
+  type: 'test'
+  ...
+# Subtest: state_changed events carry from/to/trigger/actor for audit
+ok 48 - state_changed events carry from/to/trigger/actor for audit
+  ---
+  duration_ms: 6.330083
+  type: 'test'
+  ...
+# Subtest: emergency.stop is self-contained and immutable
+ok 49 - emergency.stop is self-contained and immutable
+  ---
+  duration_ms: 7.846707
+  type: 'test'
+  ...
+# Subtest: persisted envelope satisfies the contract schema
+ok 50 - persisted envelope satisfies the contract schema
+  ---
+  duration_ms: 59.731805
+  type: 'test'
+  ...
+# Subtest: session creation emits session.started at sequence 1
+ok 51 - session creation emits session.started at sequence 1 # SKIP
+  ---
+  duration_ms: 74.467267
+  type: 'test'
+  ...
+# Subtest: every transition emits one state_changed with monotonic sequence
+ok 52 - every transition emits one state_changed with monotonic sequence # SKIP
+  ---
+  duration_ms: 3.732814
+  type: 'test'
+  ...
+# Subtest: pause from EXECUTING checkpoints and resume returns to EXECUTING
+ok 53 - pause from EXECUTING checkpoints and resume returns to EXECUTING # SKIP
+  ---
+  duration_ms: 2.119193
+  type: 'test'
+  ...
+# Subtest: pause during PLANNING defers to the next pausable state
+ok 54 - pause during PLANNING defers to the next pausable state # SKIP
+  ---
+  duration_ms: 49.189134
+  type: 'test'
+  ...
+# Subtest: pause during LISTENING cancels to IDLE with no checkpoint
+ok 55 - pause during LISTENING cancels to IDLE with no checkpoint # SKIP
+  ---
+  duration_ms: 2.936353
+  type: 'test'
+  ...
+# Subtest: emergency stop is terminal, latches kill switch, revokes grants
+ok 56 - emergency stop is terminal, latches kill switch, revokes grants # SKIP
+  ---
+  duration_ms: 0.685365
+  type: 'test'
+  ...
+# Subtest: ordinary cancellation routes to CANCELLED, not EMERGENCY_STOPPED
+ok 57 - ordinary cancellation routes to CANCELLED, not EMERGENCY_STOPPED # SKIP
+  ---
+  duration_ms: 4.155491
+  type: 'test'
+  ...
+# Subtest: plan approval routes AWAITING_APPROVAL → EXECUTING; reject → CANCELLED
+ok 58 - plan approval routes AWAITING_APPROVAL → EXECUTING; reject → CANCELLED # SKIP
+  ---
+  duration_ms: 0.691966
+  type: 'test'
+  ...
+# Subtest: tool executions are idempotent per (session, generation, key)
+ok 59 - tool executions are idempotent per (session, generation, key) # SKIP
+  ---
+  duration_ms: 6.312483
+  type: 'test'
+  ...
+# Subtest: SSE resume via eventsAfter replays without gaps or duplicates
+ok 60 - SSE resume via eventsAfter replays without gaps or duplicates # SKIP
+  ---
+  duration_ms: 6.060996
+  type: 'test'
+  ...
+# Subtest: sequence CRUD persists and returns steps in order
+ok 61 - sequence CRUD persists and returns steps in order # SKIP
+  ---
+  duration_ms: 23.820707
+  type: 'test'
+  ...
+# Subtest: running a sequence executes steps sequentially with s<N>.result chaining
+ok 62 - running a sequence executes steps sequentially with s<N>.result chaining # SKIP
+  ---
+  duration_ms: 0.947652
+  type: 'test'
+  ...
+# Subtest: unsupported intent stops the run at the failing step and offers resume
+ok 63 - unsupported intent stops the run at the failing step and offers resume # SKIP
+  ---
+  duration_ms: 0.836158
+  type: 'test'
+  ...
+# Subtest: resume skips succeeded steps and re-runs from the failed step
+ok 64 - resume skips succeeded steps and re-runs from the failed step # SKIP
+  ---
+  duration_ms: 0.37698
+  type: 'test'
+  ...
+# Subtest: high-risk replay requires operator confirmation
+ok 65 - high-risk replay requires operator confirmation # SKIP
+  ---
+  duration_ms: 0.39488
+  type: 'test'
+  ...
+# Subtest: dry-run executes the same read-only steps but flags the run
+ok 66 - dry-run executes the same read-only steps but flags the run # SKIP
+  ---
+  duration_ms: 0.641268
+  type: 'test'
+  ...
+# Subtest: run resolves the actor's latest session when none is supplied
+ok 67 - run resolves the actor's latest session when none is supplied # SKIP
+  ---
+  duration_ms: 0.338083
+  type: 'test'
+  ...
+# Subtest: sequenceSchema validates the §4.3 sequence shape
+ok 68 - sequenceSchema validates the §4.3 sequence shape
+  ---
+  duration_ms: 306.977809
+  type: 'test'
+  ...
+# Subtest: sequenceSchema rejects duplicate step ids
+ok 69 - sequenceSchema rejects duplicate step ids
+  ---
+  duration_ms: 31.555318
+  type: 'test'
+  ...
+# Subtest: sequenceSchema rejects empty or oversized sequences
+ok 70 - sequenceSchema rejects empty or oversized sequences
+  ---
+  duration_ms: 29.50642
+  type: 'test'
+  ...
+# Subtest: sequenceRunSchema accepts dry_run, session, resume and confirm fields
+ok 71 - sequenceRunSchema accepts dry_run, session, resume and confirm fields
+  ---
+  duration_ms: 11.587619
+  type: 'test'
+  ...
+# Subtest: built-in intent registry covers the read-only slice intents
+ok 72 - built-in intent registry covers the read-only slice intents
+  ---
+  duration_ms: 5.037147
+  type: 'test'
+  ...
+# Subtest: isHighRiskStep flags declared and derived high risk
+ok 73 - isHighRiskStep flags declared and derived high risk
+  ---
+  duration_ms: 8.476074
+  type: 'test'
+  ...
+# Subtest: resolveStepArgs substitutes s<N>.result at any depth
+ok 74 - resolveStepArgs substitutes s<N>.result at any depth
+  ---
+  duration_ms: 18.785558
+  type: 'test'
+  ...
+# Subtest: resolveStepArgs errors when referencing an uncompleted step
+ok 75 - resolveStepArgs errors when referencing an uncompleted step
+  ---
+  duration_ms: 3.863806
+  type: 'test'
+  ...
+# Subtest: resolveStepArgs leaves non-reference strings untouched
+ok 76 - resolveStepArgs leaves non-reference strings untouched
+  ---
+  duration_ms: 3.069946
+  type: 'test'
+  ...
+# Subtest: state groups match the spec §3.3 definitions
+ok 77 - state groups match the spec §3.3 definitions
+  ---
+  duration_ms: 56.725756
+  type: 'test'
+  ...
+# Subtest: happy-path voice chain: IDLE → ... → SPEAKING → IDLE
+ok 78 - happy-path voice chain: IDLE → ... → SPEAKING → IDLE
+  ---
+  duration_ms: 32.189285
+  type: 'test'
+  ...
+# Subtest: PLANNING can auto-approve low-risk allowlisted plans to EXECUTING
+ok 79 - PLANNING can auto-approve low-risk allowlisted plans to EXECUTING
+  ---
+  duration_ms: 182.387056
+  type: 'test'
+  ...
+# Subtest: PLANNING and AWAITING_APPROVAL timeout/reject route to CANCELLED, never EMERGENCY_STOPPED
+ok 80 - PLANNING and AWAITING_APPROVAL timeout/reject route to CANCELLED, never EMERGENCY_STOPPED
+  ---
+  duration_ms: 75.7883
+  type: 'test'
+  ...
+# Subtest: EXECUTING retries within EXECUTING then exhausts to FAILED
+ok 81 - EXECUTING retries within EXECUTING then exhausts to FAILED
+  ---
+  duration_ms: 23.224237
+  type: 'test'
+  ...
+# Subtest: VERIFYING retries to EXECUTING while budget remains, else FAILED
+ok 82 - VERIFYING retries to EXECUTING while budget remains, else FAILED
+  ---
+  duration_ms: 6.19779
+  type: 'test'
+  ...
+# Subtest: SPEAKING failure and timeout return to IDLE without replaying tools
+ok 83 - SPEAKING failure and timeout return to IDLE without replaying tools
+  ---
+  duration_ms: 2.20179
+  type: 'test'
+  ...
+# Subtest: terminal states have no outbound transitions
+ok 84 - terminal states have no outbound transitions
+  ---
+  duration_ms: 53.524917
+  type: 'test'
+  ...
+# Subtest: kill switch routes ONLY to EMERGENCY_STOPPED from any non-terminal state
+ok 85 - kill switch routes ONLY to EMERGENCY_STOPPED from any non-terminal state
+  ---
+  duration_ms: 144.104576
+  type: 'test'
+  ...
+# Subtest: pause is legal only from PAUSABLE_STATES ∪ RECOVERY_STATES
+ok 86 - pause is legal only from PAUSABLE_STATES ∪ RECOVERY_STATES
+  ---
+  duration_ms: 39.336129
+  type: 'test'
+  ...
+# Subtest: pause from a pausable state checkpoints previous_state and resume_state
+ok 87 - pause from a pausable state checkpoints previous_state and resume_state
+  ---
+  duration_ms: 9.114143
+  type: 'test'
+  ...
+# Subtest: pause from RECOVERY_STATES preserves the original resume_state
+ok 88 - pause from RECOVERY_STATES preserves the original resume_state
+  ---
+  duration_ms: 10.818058
+  type: 'test'
+  ...
+# Subtest: resume drives PAUSED → REAUTHORIZING → RECOVERING → persisted resume_state
+ok 89 - resume drives PAUSED → REAUTHORIZING → RECOVERING → persisted resume_state
+  ---
+  duration_ms: 4.774561
+  type: 'test'
+  ...
+# Subtest: invalid resume_state routes RECOVERING to FAILED (checkpoint corrupt)
+ok 90 - invalid resume_state routes RECOVERING to FAILED (checkpoint corrupt)
+  ---
+  duration_ms: 34.398876
+  type: 'test'
+  ...
+# Subtest: DEGRADED recovers to persisted previous_state, never guessed
+ok 91 - DEGRADED recovers to persisted previous_state, never guessed
+  ---
+  duration_ms: 2.736963
+  type: 'test'
+  ...
+# Subtest: degrade is legal from ACTIVE states only
+ok 92 - degrade is legal from ACTIVE states only
+  ---
+  duration_ms: 2.808659
+  type: 'test'
+  ...
+# Subtest: hard_failure routes ACTIVE ∪ RECOVERY to FAILED only
+ok 93 - hard_failure routes ACTIVE ∪ RECOVERY to FAILED only
+  ---
+  duration_ms: 2.711664
+  type: 'test'
+  ...
+# Subtest: cancel is legal from PAUSED and ACTIVE ∪ RECOVERY, not from IDLE
+ok 94 - cancel is legal from PAUSED and ACTIVE ∪ RECOVERY, not from IDLE
+  ---
+  duration_ms: 9.863005
+  type: 'test'
+  ...
+# Subtest: pauseRequestPolicy is deterministic per non-pausable state
+ok 95 - pauseRequestPolicy is deterministic per non-pausable state
+  ---
+  duration_ms: 53.734806
+  type: 'test'
+  ...
+# Subtest: deterministic pause-cancel transitions to IDLE create no checkpoint
+ok 96 - deterministic pause-cancel transitions to IDLE create no checkpoint
+  ---
+  duration_ms: 10.233286
+  type: 'test'
+  ...
+# Subtest: checkpoint validation helpers enforce the contract
+ok 97 - checkpoint validation helpers enforce the contract
+  ---
+  duration_ms: 5.092444
+  type: 'test'
+  ...
+# Subtest: unknown states and triggers are rejected
+ok 98 - unknown states and triggers are rejected
+  ---
+  duration_ms: 8.316882
+  type: 'test'
+  ...
+# Subtest: parseSseBlocks parses event/data blocks and ignores comments
+ok 99 - parseSseBlocks parses event/data blocks and ignores comments
+  ---
+  duration_ms: 23.9171
+  type: 'test'
+  ...
+# Subtest: streamEntryFromEvent maps catalog events to §4.2 entries
+ok 100 - streamEntryFromEvent maps catalog events to §4.2 entries
+  ---
+  duration_ms: 5.642718
+  type: 'test'
+  ...
+# Subtest: streamEntryFromEvent classifies state_changed results per target
+ok 101 - streamEntryFromEvent classifies state_changed results per target
+  ---
+  duration_ms: 1.963601
+  type: 'test'
+  ...
+# Subtest: streamEntryFromEvent returns null for non-stream events
+ok 102 - streamEntryFromEvent returns null for non-stream events
+  ---
+  duration_ms: 1.407929
+  type: 'test'
+  ...
+# Subtest: orbPresentationForState covers every canonical state with a reduced-motion fallback
+ok 103 - orbPresentationForState covers every canonical state with a reduced-motion fallback
+  ---
+  duration_ms: 7.996099
+  type: 'test'
+  ...
+# Subtest: mergeEvents dedupes by event_id, orders by sequence_id, and caps
+ok 104 - mergeEvents dedupes by event_id, orders by sequence_id, and caps
+  ---
+  duration_ms: 45.433722
+  type: 'test'
+  ...
+# Subtest: applyStateChanged returns the new state only for state_changed events
+ok 105 - applyStateChanged returns the new state only for state_changed events
+  ---
+  duration_ms: 4.980551
+  type: 'test'
+  ...
+# Subtest: migrations create the complete Phase 1 schema
+ok 106 - migrations create the complete Phase 1 schema # SKIP
+  ---
+  duration_ms: 17.9633
+  type: 'test'
+  ...
+# Subtest: idempotent brand mutation writes exactly one audit event
+ok 107 - idempotent brand mutation writes exactly one audit event # SKIP
+  ---
+  duration_ms: 0.578371
+  type: 'test'
+  ...
+# Subtest: durable jobs survive reconnect and are claimed once
+ok 108 - durable jobs survive reconnect and are claimed once # SKIP
+  ---
+  duration_ms: 0.973252
+  type: 'test'
+  ...
+# Subtest: jobs heartbeat, retry, cancel, and dead-letter safely
+ok 109 - jobs heartbeat, retry, cancel, and dead-letter safely # SKIP
+  ---
+  duration_ms: 3.994899
+  type: 'test'
+  ...
+# Subtest: workflow runs resume successful steps and account for cost
+ok 110 - workflow runs resume successful steps and account for cost # SKIP
+  ---
+  duration_ms: 1.306935
+  type: 'test'
+  ...
+# Subtest: ProMaster compiler preserves P-MASTER and appends zato brand policy
+ok 111 - ProMaster compiler preserves P-MASTER and appends zato brand policy
+  ---
+  duration_ms: 218.682535
+  type: 'test'
+  ...
+# Subtest: ProMaster compiler rejects unresolved placeholders and invalid modes
+ok 112 - ProMaster compiler rejects unresolved placeholders and invalid modes
+  ---
+  duration_ms: 25.260134
+  type: 'test'
+  ...
+# Subtest: Facebook provider validates credentials and exposes capabilities
+ok 113 - Facebook provider validates credentials and exposes capabilities
+  ---
+  duration_ms: 78.511664
+  type: 'test'
+  ...
+# Subtest: Facebook provider publishes idempotently shaped requests without leaking tokens
+ok 114 - Facebook provider publishes idempotently shaped requests without leaking tokens
+  ---
+  duration_ms: 12.305383
+  type: 'test'
+  ...
+# Subtest: provider errors are normalized with retry and token-expiry diagnostics
+ok 115 - provider errors are normalized with retry and token-expiry diagnostics
+  ---
+  duration_ms: 9.827408
+  type: 'test'
+  ...
+# Subtest: QA returns a visible 12-point breakdown and requires review without AUTO_PILOT
+ok 116 - QA returns a visible 12-point breakdown and requires review without AUTO_PILOT
+  ---
+  duration_ms: 125.022931
+  type: 'test'
+  ...
+# Subtest: QA auto-passes scores of at least 90 only with AUTO_PILOT
+ok 117 - QA auto-passes scores of at least 90 only with AUTO_PILOT
+  ---
+  duration_ms: 10.868354
+  type: 'test'
+  ...
+# Subtest: QA blocks scores below 70 and rejects incomplete check sets
+ok 118 - QA blocks scores below 70 and rejects incomplete check sets
+  ---
+  duration_ms: 17.419327
+  type: 'test'
+  ...
+# Subtest: remote URL guard permits HTTPS hosts only when every resolved address is public
+ok 119 - remote URL guard permits HTTPS hosts only when every resolved address is public
+  ---
+  duration_ms: 322.240646
+  type: 'test'
+  ...
+# Subtest: remote URL guard blocks credentials, non-HTTPS, localhost, and private DNS
+ok 120 - remote URL guard blocks credentials, non-HTTPS, localhost, and private DNS
+  ---
+  duration_ms: 72.264976
+  type: 'test'
+  ...
+# Subtest: secret resolver supports mounted files without exposing content
+ok 121 - secret resolver supports mounted files without exposing content
+  ---
+  duration_ms: 464.035435
+  type: 'test'
+  ...
+# Subtest: secret resolver rejects empty and oversized mounted secrets
+ok 122 - secret resolver rejects empty and oversized mounted secrets
+  ---
+  duration_ms: 246.187856
+  type: 'test'
+  ...
+# Subtest: production server migrates, serves v1, and shuts down gracefully
+ok 123 - production server migrates, serves v1, and shuts down gracefully # SKIP
+  ---
+  duration_ms: 103.907791
+  type: 'test'
+  ...
+# Subtest: package identity is Zeto
+ok 124 - package identity is Zeto
+  ---
+  duration_ms: 64.03649
+  type: 'test'
+  ...
+# Subtest: test runner is real
+ok 125 - test runner is real
+  ---
+  duration_ms: 13.55772
+  type: 'test'
+  ...
+# Subtest: approval state machine rejects bypass transitions
+ok 126 - approval state machine rejects bypass transitions
+  ---
+  duration_ms: 32.358177
+  type: 'test'
+  ...
+# Subtest: workflow state machine permits retry but not terminal replay
+ok 127 - workflow state machine permits retry but not terminal replay
+  ---
+  duration_ms: 231.823678
+  type: 'test'
+  ...
+# Subtest: upload validation accepts supported image signatures and rejects spoofed files
+ok 128 - upload validation accepts supported image signatures and rejects spoofed files
+  ---
+  duration_ms: 252.808025
+  type: 'test'
+  ...
+# Subtest: v1 enforces auth, validation, request IDs, and idempotency
+ok 129 - v1 enforces auth, validation, request IDs, and idempotency # SKIP
+  ---
+  duration_ms: 84.828847
+  type: 'test'
+  ...
+# Subtest: v1 publishes an OpenAPI contract
+ok 130 - v1 publishes an OpenAPI contract # SKIP
+  ---
+  duration_ms: 1.319434
+  type: 'test'
+  ...
+# Subtest: buildZarvisState derives live operator telemetry
+ok 131 - buildZarvisState derives live operator telemetry
+  ---
+  duration_ms: 215.129714
+  type: 'test'
+  ...
+1..131
+# tests 152
+# suites 4
+# pass 112
+# fail 2
+# cancelled 0
+# skipped 38
+# todo 0
+# duration_ms 261046.729848

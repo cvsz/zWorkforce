@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "zarvis.skill.invocation.v1.schema.json",
+  "title": "Z.A.R.V.I.S. Runtime Skill Invocation v1",
+  "description": "Request and result envelope for a single skill invocation. The orchestrator validates this before dispatching to any skill executor. Approval state must be verified server-side before any mutating step executes.",
+  "type": "object",
+  "required": [
+    "invocation_id",
+    "skill_id",
+    "skill_version",
+    "tenant_id",
+    "session_id",
+    "requested_by",
+    "input",
+    "idempotency_key",
+    "occurred_at"
+  ],
+  "properties": {
+    "invocation_id": {
+      "type": "string",
+      "description": "Globally unique identifier for this invocation attempt."
+    },
+    "skill_id": {
+      "type": "string",
+      "description": "Must match a registered skill manifest ID."
+    },
+    "skill_version": {
+      "type": "string",
+      "description": "Must match the registered manifest version."
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "Platform tenant boundary. Resolved server-side from authenticated identity."
+    },
+    "session_id": {
+      "type": "string",
+      "description": "Originating Z.A.R.V.I.S. session ID."
+    },
+    "plan_id": {
+      "type": "string",
+      "description": "Planner plan ID this invocation belongs to, if any."
+    },
+    "requested_by": {
+      "type": "object",
+      "required": ["type", "id"],
+      "properties": {
+        "type": { "type": "string", "enum": ["user", "agent", "schedule"] },
+        "id": { "type": "string" }
+      }
+    },
+    "input": {
+      "type": "object",
+      "description": "Skill input, validated against skill_manifest.input_schema before dispatch."
+    },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Caller-supplied key. Re-running with the same key must not create duplicate side effects."
+    },
+    "approval_token": {
+      "type": "string",
+      "description": "Required when skill mutability is 'write'. One-time scoped approval token from the approval gate."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp of invocation request."
+    },
+    "timeout_override_seconds": {
+      "type": "number",
+      "description": "Optional caller timeout, must not exceed manifest timeout_seconds.",
+      "minimum": 1
+    }
+  },
+  "additionalProperties": false
+}

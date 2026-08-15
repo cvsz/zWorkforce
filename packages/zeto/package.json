@@ -1,0 +1,46 @@
+{
+  "name": "@zeaz/zeto",
+  "version": "2.0.0-alpha.1",
+  "description": "Zeto — AI content factory and Facebook publishing automation dashboard",
+  "main": "src/server.js",
+  "private": true,
+  "engines": {
+    "node": ">=22.22.0 <25"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "db:migrate": "node src/database/migrate.js",
+    "db:backup": "scripts/backup.sh",
+    "db:verify-backup": "scripts/verify-backup.sh",
+    "load:baseline": "node scripts/load-baseline.js",
+    "build": "node --check src/server.js && node --check src/db.js && node --check src/fbController.js && node --check src/scheduler.js && node --check src/contentGenerator.js && node --check src/aiAutoPoster.js && node --check src/zarvisView.js && node --check public/js/app.js && node --check public/js/operatorStream.js && node --check public/js/zarvis.js && node --check public/js/arin.js",
+    "lint": "eslint src public/js test",
+    "format": "prettier --write \"{src,public/js,test}/**/*.js\" \"*.{json,md,mjs}\"",
+    "format:check": "prettier --check \"{src,public/js,test}/**/*.js\" \"*.{json,md,mjs}\"",
+    "test": "node --test --test-concurrency=1 test/*.test.js",
+    "check": "npm run lint && npm run format:check && npm run test && npm run build"
+  },
+  "dependencies": {
+    "axios": "^1.18.1",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.2",
+    "express-rate-limit": "8.6.2",
+    "form-data": "4.0.6",
+    "helmet": "8.1.0",
+    "luxon": "3.7.2",
+    "multer": "^2.2.0",
+    "node-cron": "^4.6.0",
+    "pg": "8.16.3",
+    "pino": "9.9.5",
+    "pino-http": "10.5.0",
+    "zod": "4.1.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.2",
+    "eslint": "9.39.2",
+    "globals": "16.5.0",
+    "prettier": "3.8.2"
+  },
+  "packageManager": "npm@9.2.0"
+}

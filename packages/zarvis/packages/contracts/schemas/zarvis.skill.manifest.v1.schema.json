@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "zarvis.skill.manifest.v1.schema.json",
+  "title": "Z.A.R.V.I.S. Runtime Skill Manifest v1",
+  "description": "Declares a runtime skill that Z.A.R.V.I.S. may invoke. Every field is authoritative at invocation time. Agents must not invoke skills not listed in the orchestrator catalog, and must not exceed the declared capability/tool allowlist or approval rules.",
+  "type": "object",
+  "required": [
+    "id",
+    "version",
+    "name",
+    "domain",
+    "input_schema",
+    "output_schema",
+    "capability_allowlist",
+    "mutability",
+    "timeout_seconds",
+    "max_concurrency",
+    "retry_policy",
+    "idempotency_strategy",
+    "audit_events",
+    "owner",
+    "rollback_policy"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Stable reverse-domain skill identifier. Must be unique across the catalog.",
+      "pattern": "^[a-z][a-z0-9._-]+$",
+      "examples": ["dev.zworkforce.zarvis.skill.research.web"]
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of this skill manifest.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable skill name."
+    },
+    "domain": {
+      "type": "string",
+      "description": "Skill domain grouping.",
+      "enum": ["conversation", "memory", "research", "code", "operations", "productivity"]
+    },
+    "description": {
+      "type": "string",
+      "description": "What this skill does."
+    },
+    "input_schema": {
+      "type": "object",
+      "description": "JSON Schema for validated skill input. Must be complete and not use $ref to external schemas."
+    },
+    "output_schema": {
+      "type": "object",
+      "description": "JSON Schema for validated skill output. Must be complete and not use $ref to external schemas."
+    },
+    "capability_allowlist": {
+      "type": "array",
+      "description": "Explicit list of tool/service names this skill may call. Deny-by-default for anything not listed.",
+      "items": { "type": "string" },
+      "minItems": 0
+    },
+    "mutability": {
+      "type": "string",
+      "description": "Whether this skill has durable external side effects.",
+      "enum": ["read", "write"]
+    },
+    "approval_rule": {
+      "type": "string",
+      "description": "Required when mutability is 'write'. Approval mechanism before any mutating step.",
+      "enum": ["none", "human_required", "policy_gate"]
+    },
+    "timeout_seconds": {
+      "type": "number",
+      "description": "Maximum wall-clock seconds for a single skill execution.",
+      "minimum": 1,
+      "maximum": 3600
+    },
+    "max_concurrency": {
+      "type": "integer",
+      "description": "Maximum parallel invocations per tenant.",
+      "minimum": 1
+    },
+    "retry_policy": {
+      "type": "object",
+      "required": ["max_attempts", "backoff"],
+      "properties": {
+        "max_attempts": { "type": "integer", "minimum": 1 },
+        "backoff": { "type": "string", "enum": ["none", "fixed", "exponential"] },
+        "base_delay_seconds": { "type": "number", "minimum": 0 }
+      }
+    },
+    "idempotency_strategy": {
+      "type": "string",
+      "description": "How durable/external effects are deduplicated on retry.",
+      "enum": ["none", "idempotency_key", "natural_key", "at_most_once"]
+    },
+    "audit_events": {
+      "type": "array",
+      "description": "Event names this skill emits to the audit trail.",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "owner": {
+      "type": "string",
+      "description": "Team or person responsible for this skill."
+    },
+    "rollback_policy": {
+      "type": "string",
+      "description": "How to reverse or compensate if this skill must be undone.",
+      "enum": ["none", "manual", "automated", "compensating_transaction"]
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "deprecated": {
+      "type": "boolean",
+      "default": false
+    },
+    "replaces": {
+      "type": "string",
+      "description": "ID of the skill this replaces, if any."
+    }
+  },
+  "if": { "properties": { "mutability": { "const": "write" } }, "required": ["mutability"] },
+  "then": { "required": ["approval_rule"] },
+  "additionalProperties": false
+}

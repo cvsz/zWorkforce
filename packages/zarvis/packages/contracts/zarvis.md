@@ -24,6 +24,21 @@ Versioned contracts for the Z.A.R.V.I.S. command, result, audit, durable session
 - `schemas/zarvis.proactive.notification.v1.schema.json`
 - `schemas/zarvis.proactive.feedback.v1.schema.json`
 - `schemas/zarvis.proactive.action-handoff.v1.schema.json`
+- `schemas/zarvis.skill.manifest.v1.schema.json`
+- `schemas/zarvis.skill.invocation.v1.schema.json`
+- `schemas/zarvis.skill.result.v1.schema.json`
+
+## Skill rules
+
+- A skill may only be invoked if its `id` and `version` are present in the orchestrator catalog at invocation time.
+- Skills may only call tools explicitly listed in their `capability_allowlist`; any unlisted tool call fails closed.
+- Skills with `mutability: write` require a valid, unexpired `approval_token` before any mutating step executes.
+- A spoken request, scheduled trigger, or model decision is **not** implicit approval for a write skill.
+- Approval tokens are scoped per invocation; they cannot be reused across invocations.
+- The `idempotency_key` must be client-supplied; re-running with the same key must not create duplicate side effects.
+- Skill results with status `denied` are terminal and must not be retried.
+- `tool_calls` in the result envelope must never include credentials, tokens, raw provider payloads, or PII.
+- Skills must emit all declared `audit_events` on success; partial audit trails are failures.
 
 ## Command and session rules
 

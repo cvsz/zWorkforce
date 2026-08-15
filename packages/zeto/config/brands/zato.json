@@ -1,0 +1,20 @@
+{
+  "brand": "zato",
+  "niche": "Niche Content",
+  "voice": "clear, useful, and approachable",
+  "colors": "ขาว-ม่วงอ่อน",
+  "palette": [
+    { "name": "white", "hex": "#ffffff" },
+    { "name": "light purple", "hex": "#e9d5ff" }
+  ],
+  "fonts": [],
+  "platforms": ["facebook"],
+  "goals": ["educate", "build trust", "grow qualified engagement"],
+  "timezone": "UTC",
+  "budget_per_asset": 1,
+  "stack": "zeto",
+  "image_model": "auto",
+  "video_model": "auto",
+  "audio_model": "auto",
+  "approval_required": true
+}
