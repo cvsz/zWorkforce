@@ -199,7 +199,7 @@ def _providers_from_env(env: str) -> tuple[ProviderConfig, ...]:
                 raise ValueError(f"duplicate provider name: {name}")
             seen.add(name)
             kind = str(item.get("kind", "openai-compatible")).strip().lower()
-            if kind not in {"mock", "openai-compatible"}:
+            if kind not in {"mock", "openai-compatible", "zworkforce-local", "zworkforce-native"}:
                 raise ValueError(f"unsupported provider kind: {kind}")
             if env == "production" and kind == "mock":
                 raise ValueError("mock providers are not allowed in production")
@@ -214,6 +214,8 @@ def _providers_from_env(env: str) -> tuple[ProviderConfig, ...]:
             base_url = str(item.get("base_url") or "").rstrip("/")
             if kind == "openai-compatible" and (not base_url or not any(models.values())):
                 raise ValueError(f"provider {name} requires base_url and at least one model")
+            if kind in {"zworkforce-local", "zworkforce-native"} and not any(models.values()):
+                models = {"luna": "deepseek/deepseek-v4-flash", "terra": "openai/gpt-5.6-luna", "sol": "deepseek/deepseek-v4-pro"}
             if env == "production" and kind == "openai-compatible" and not api_key:
                 raise ValueError(f"provider {name} API key is missing in production")
             providers.append(ProviderConfig(

@@ -22,10 +22,10 @@ else
     echo "🔑 Generating new GPG key..."
     gpg --batch --gen-key <<GNUPG
 %no-protection
-Key-Type: ed25519
+Key-Type: EDDSA
 Key-Curve: ed25519
 Key-Usage: sign
-Subkey-Type: ed25519
+Subkey-Type: EDDSA
 Subkey-Curve: ed25519
 Subkey-Usage: sign
 Name-Real: $NAME

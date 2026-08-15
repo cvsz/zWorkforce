@@ -53,6 +53,10 @@ TOOL_DEFINITIONS: dict[str, dict[str, Any]] = {
         "mutating": True,
         "schema": {"type": "function", "function": {"name": "shell_exec", "description": "Run an allowlisted executable without a shell. Disabled by default and requires approval.", "parameters": {"type": "object", "properties": {"command": {"type": "string"}, "args": {"type": "array", "items": {"type": "string"}}}, "required": ["command"]}}},
     },
+    "zworkforce_code_agent": {
+        "mutating": True,
+        "schema": {"type": "function", "function": {"name": "zworkforce_code_agent", "description": "Delegate a complex coding, refactoring, or codebase diagnosis task to the native zWorkforce autonomous coding agent engine (zwf-coder). Requires an approved mutating task.", "parameters": {"type": "object", "properties": {"prompt": {"type": "string", "description": "Actionable instructions or coding task for the zWorkforce coding agent"}, "cwd": {"type": "string", "description": "Relative workspace directory to execute within"}}, "required": ["prompt"]}}},
+    },
     "agent_delegate": {
         "mutating": False,
         "schema": {"type": "function", "function": {"name": "agent_delegate", "description": "Delegate a bounded subtask to another agent.", "parameters": {"type": "object", "properties": {"agent_id": {"type": "string"}, "prompt": {"type": "string"}, "mutating": {"type": "boolean"}}, "required": ["agent_id", "prompt"]}}},
@@ -125,6 +129,8 @@ class ToolExecutor:
             return self._http_request(method, str(args.get("url", "")), args.get("json"))
         if name == "shell_exec":
             return self._shell(str(args.get("command", "")), [str(x) for x in args.get("args", [])])
+        if name == "zworkforce_code_agent":
+            return self._zworkforce_coder(str(args.get("prompt", "")), str(args.get("cwd", ".")))
         raise ToolError(f"unknown tool: {name}")
 
     def _workspace_list(self, raw: str) -> list[dict[str, Any]]:
@@ -277,6 +283,40 @@ class ToolExecutor:
         )
         limit = self.settings.tool_max_output_bytes
         return {"exit_code": proc.returncode, "stdout": proc.stdout[-limit:], "stderr": proc.stderr[-limit:]}
+
+    def _zworkforce_coder(self, prompt: str, raw_cwd: str) -> dict[str, Any]:
+        prompt = prompt.strip()
+        if not prompt:
+            raise ToolError("prompt is required for zworkforce coding agent")
+        if len(prompt.encode("utf-8")) > self.settings.max_request_bytes:
+            raise ToolError("prompt exceeds request size limit")
+        target_dir = self._safe_path(raw_cwd)
+        if not target_dir.is_dir():
+            raise ToolError("target workspace directory does not exist")
+        executable = shutil.which("zwf-coder") or "/usr/local/bin/zwf-coder"
+        if not os.path.exists(executable):
+            raise ToolError("zWorkforce coding engine executable (zwf-coder) was not found on system")
+        env = {key: os.environ[key] for key in self.settings.shell_env_allowlist if key in os.environ}
+        env.setdefault("PATH", "/usr/local/bin:/usr/bin:/bin")
+        env.setdefault("HOME", os.path.expanduser("~"))
+        # Execute zwf-coder boundedly with shell disabled
+        proc = subprocess.run(
+            [executable, "--cwd", str(target_dir)],
+            input=prompt,
+            cwd=str(target_dir),
+            capture_output=True,
+            text=True,
+            timeout=max(60, self.settings.tool_timeout_seconds * 2),
+            shell=False,
+            env=env,
+        )
+        limit = self.settings.tool_max_output_bytes
+        return {
+            "exit_code": proc.returncode,
+            "stdout": proc.stdout[-limit:],
+            "stderr": proc.stderr[-limit:],
+            "cwd": str(target_dir.relative_to(self.root) if target_dir != self.root else "."),
+        }
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
