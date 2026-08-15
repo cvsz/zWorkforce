@@ -14,7 +14,7 @@ Read the narrow relevant files before editing:
 - `AGENTS.md`
 - `packages/zarvis/AGENTS.md`
 - `ROADMAPS.md`
-- `EXEC-PLANING.md`
+- `exec-planning-zarvis.md`
 - `packages/zarvis/docs/architecture/openjarvis-upgrade-map.md`
 - `packages/zarvis/docs/architecture/voice-agent.md`
 - `packages/zarvis/apps/zvoice/README.md`

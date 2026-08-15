@@ -19,7 +19,7 @@ Before changing code, read the relevant files:
 For voice UI, speech-provider, runtime-skill, agent-mode, scheduled/continuous operator, or OpenJarvis-inspired work, also read:
 
 - `../../ROADMAPS.md`
-- `../../EXEC-PLANING.md`
+- `../../exec-planning-zarvis.md`
 - `docs/architecture/openjarvis-upgrade-map.md`
 - `docs/architecture/skills-agents.md`
 - `docs/architecture/voice-agent.md`

@@ -4,7 +4,7 @@
 **Branch:** `feat/zarvis-openjarvis-upgrade-plan`  
 **Scope:** OpenJarvis-inspired refactor, dashboard Z.A.R.V.I.S. CARD, push-to-talk, skills and agent execution modes.
 
-> `exec-planning.md` remains the canonical v3.0.3 production-readiness plan. This intentionally user-requested `EXEC-PLANING.md` is the feature delivery plan for the next Z.A.R.V.I.S. upgrade line.
+> `exec-planning-zwf.md` remains the canonical v3.0.3 production-readiness plan. This intentionally user-requested `exec-planning-zarvis.md` is the feature delivery plan for the next Z.A.R.V.I.S. upgrade line.
 
 ## 1. Delivery strategy
 
@@ -19,7 +19,7 @@ OpenJarvis is used as an architectural reference for registries, config-driven c
 | File | Action | Result |
 |---|---|---|
 | `ROADMAPS.md` | **ADD** | Forward Z.A.R.V.I.S. feature roadmap. |
-| `EXEC-PLANING.md` | **ADD** | This executable feature plan. |
+| `exec-planning-zarvis.md` | **ADD** | This executable feature plan. |
 | `packages/zarvis/docs/architecture/openjarvis-upgrade-map.md` | **ADD** | Verified source-to-target architecture mapping and licensing notes. |
 | `packages/zarvis/docs/architecture/skills-agents.md` | **ADD** | Canonical Z.A.R.V.I.S. skill/agent model and feature matrix. |
 | `packages/zarvis/AGENTS.md` | **UPDATE** | Require the new architecture docs for voice/runtime changes. |
@@ -158,7 +158,7 @@ Continuous mode requires heartbeat, stale-run detection, max concurrency, rate l
 
 ### PR-1 — Architecture and agent/skill contracts
 
-Files: `ROADMAPS.md`, `EXEC-PLANING.md`, architecture mapping, skill/agent model, coding-agent skills, new agent definitions.  
+Files: `ROADMAPS.md`, `exec-planning-zarvis.md`, architecture mapping, skill/agent model, coding-agent skills, new agent definitions.  
 Risk: low.  
 Exit: documentation and repository policy checks green.
 
@@ -221,7 +221,7 @@ pnpm --dir packages/zarvis audit --audit-level high
 python scripts/verify_release.py --expected 3.0.3
 ```
 
-For production-equivalent evidence, follow `exec-planning.md`; repository CI alone does not prove external infrastructure readiness.
+For production-equivalent evidence, follow `exec-planning-zwf.md`; repository CI alone does not prove external infrastructure readiness.
 
 ## 6. Definition of done
 

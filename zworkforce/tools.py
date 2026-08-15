@@ -306,7 +306,8 @@ class ToolExecutor:
         target_dir = self._safe_path(raw_cwd)
         if not target_dir.is_dir():
             raise ToolError("target workspace directory does not exist")
-        executable = shutil.which("zwf-coder") or "/usr/local/bin/zwf-coder"
+        # Prefer the in-repo zktcoder free-model CLI; fall back to the legacy zwf-coder binary.
+        executable = shutil.which("zktcoder") or shutil.which("zwf-coder") or "/usr/local/bin/zwf-coder"
         if not os.path.exists(executable):
             raise ToolError("zWorkforce coding engine executable (zwf-coder) was not found on system")
         env = {key: os.environ[key] for key in self.settings.shell_env_allowlist if key in os.environ}
@@ -426,7 +427,27 @@ class ToolExecutor:
                     "metadata": options,
                 }
                 data_bytes = json.dumps(manifest, indent=2, ensure_ascii=False).encode("utf-8")
-        elif media_type == "content":
+        elif media_type in ("video", "hyperframes"):
+            content_type = "application/json"
+            composition = {
+                "composition_version": "1.0",
+                "engine": "hyperframes",
+                "width": options.get("width", 1080),
+                "height": options.get("height", 1920),
+                "fps": options.get("fps", 60),
+                "duration_seconds": options.get("duration", 15),
+                "title": name,
+                "script": content,
+                "scenes": options.get("scenes", [
+                    {"id": "intro", "duration": 3, "caption": content[:100], "transition": "fade"},
+                    {"id": "main_feature", "duration": 8, "caption": content[100:300] if len(content) > 100 else content, "transition": "slide"},
+                    {"id": "cta", "duration": 4, "caption": options.get("cta", "สั่งซื้อเลยที่ลิงก์ในไบโอ! 🛒"), "transition": "zoom_in"}
+                ]),
+                "subtitles": options.get("subtitles", []),
+                "audio_track": options.get("audio_track", "energetic_commercial_bgm.mp3")
+            }
+            data_bytes = json.dumps(composition, indent=2, ensure_ascii=False).encode("utf-8")
+        elif media_type in ("content", "marketing"):
             # Multi-channel content (articles, social media posts, marketing copywriting)
             if name.lower().endswith(".json"):
                 content_type = "application/json"
