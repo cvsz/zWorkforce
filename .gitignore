@@ -20,3 +20,6 @@ workspace/
 .pytest_cache/
 .DS_Store
 .env.production
+.env.freebuff
+.env.cloudflare
+backup
