@@ -61,6 +61,62 @@ class MockEndpoint:
         )
 
 
+class ZworkforceLocalEndpoint:
+    def __init__(self, cfg: ProviderConfig):
+        self.cfg = cfg
+
+    def chat(self, tier: str, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> ProviderResult:
+        import os
+        import shutil
+        import subprocess
+
+        model = self.cfg.model_for_tier(tier) or "deepseek/deepseek-v4-flash"
+        executable = shutil.which("zwf-coder") or "/usr/local/bin/zwf-coder"
+        if not os.path.exists(executable):
+            raise ProviderError(f"zWorkforce native coding engine binary not found on system", retryable=False)
+
+        # Build prompt representation from conversation messages
+        prompt_lines = []
+        for m in messages:
+            role = m.get("role", "user")
+            content = m.get("content", "")
+            if isinstance(content, list):
+                content = "\n".join(str(part.get("text", "")) if isinstance(part, dict) else str(part) for part in content)
+            prompt_lines.append(f"[{role.upper()}]: {content}")
+        prompt_text = "\n\n".join(prompt_lines)
+
+        env = {k: os.environ[k] for k in ("PATH", "HOME", "LANG", "LC_ALL", "TZ") if k in os.environ}
+        env.setdefault("PATH", "/usr/local/bin:/usr/bin:/bin")
+        env.setdefault("HOME", os.path.expanduser("~"))
+
+        try:
+            proc = subprocess.run(
+                [executable],
+                input=prompt_text,
+                capture_output=True,
+                text=True,
+                timeout=self.cfg.timeout_seconds,
+                shell=False,
+                env=env,
+            )
+            output = proc.stdout.strip() or proc.stderr.strip()
+            if proc.returncode != 0 and not output:
+                raise ProviderError(f"zwf-coder exited with code {proc.returncode}", retryable=True)
+            words = len(output.split())
+            in_words = len(prompt_text.split())
+            return ProviderResult(
+                content=output or f"[zworkforce:coder] Execution completed successfully with model {model}.",
+                provider_name=self.cfg.name,
+                model=model,
+                usage=Usage(max(1, in_words * 2), 0, max(1, words * 2)),
+                raw_message={"role": "assistant", "content": output},
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise ProviderError(f"zwf-coder request timed out after {self.cfg.timeout_seconds}s", retryable=True) from exc
+        except Exception as exc:
+            raise ProviderError(f"zwf-coder invocation error: {_clean_error(str(exc))}", retryable=True) from exc
+
+
 class OpenAICompatibleEndpoint:
     def __init__(self, cfg: ProviderConfig):
         self.cfg = cfg
@@ -147,7 +203,7 @@ class ProviderPool:
         if not self.configs:
             raise ValueError("at least one enabled provider is required")
         self.endpoints = {
-            p.name: MockEndpoint(p) if p.kind == "mock" else OpenAICompatibleEndpoint(p)
+            p.name: MockEndpoint(p) if p.kind == "mock" else (ZworkforceLocalEndpoint(p) if p.kind in {"zworkforce-local", "zworkforce-native"} else OpenAICompatibleEndpoint(p))
             for p in self.configs
         }
 
