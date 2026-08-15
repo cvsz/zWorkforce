@@ -299,7 +299,7 @@ class ToolExecutor:
         env = {key: os.environ[key] for key in self.settings.shell_env_allowlist if key in os.environ}
         env.setdefault("PATH", "/usr/local/bin:/usr/bin:/bin")
         env.setdefault("HOME", os.path.expanduser("~"))
-        # Execute zwf-coder boundedly without shell=True
+        # Execute zwf-coder boundedly with shell disabled
         proc = subprocess.run(
             [executable, "--cwd", str(target_dir)],
             input=prompt,

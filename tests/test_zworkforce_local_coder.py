@@ -24,7 +24,7 @@ class ZworkforceLocalCoderTests(unittest.TestCase):
         mock_proc.stdout = "Task code generated."
         mock_proc.stderr = ""
 
-        with patch("subprocess.run", return_value=mock_proc):
+        with patch("os.path.exists", return_value=True), patch("subprocess.run", return_value=mock_proc):
             res = endpoint.chat("luna", [{"role": "user", "content": "Write hello world"}], [])
 
         self.assertEqual(res.provider_name, "zwf-native")
@@ -40,7 +40,7 @@ class ZworkforceLocalCoderTests(unittest.TestCase):
         mock_proc.stdout = "Files refactored cleanly."
         mock_proc.stderr = ""
 
-        with patch("subprocess.run", return_value=mock_proc):
+        with patch("os.path.exists", return_value=True), patch("subprocess.run", return_value=mock_proc):
             result = executor.execute(
                 "zworkforce_code_agent",
                 {"prompt": "Refactor math utils", "cwd": "."},
