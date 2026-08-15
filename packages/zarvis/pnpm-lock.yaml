@@ -21,6 +21,8 @@ importers:
 
   packages/contracts: {}
 
+  packages/voice-client: {}
+
   services/zarvis-action-gateway: {}
 
   services/zarvis-memory: {}

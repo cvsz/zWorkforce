@@ -29,8 +29,11 @@ class StaticAssetTests(unittest.TestCase):
         self.assertIn('id="zarvisPtt"', html)
         self.assertIn('aria-live="polite"', html)
         self.assertIn("/api/v1/zarvis/voice/session", app)
-        self.assertIn("pointerdown", app)
-        self.assertIn("event.code==='Space'", app)
+        # Keyboard/pointer semantics now live in the shared voice client and are
+        # behavior-tested by packages/zarvis/packages/voice-client/test/browser.test.mjs.
+        # The dashboard contract is that it delegates PTT to that shared client.
+        self.assertIn("ZarvisVoiceClient", app)
+        self.assertIn("VC.bindPushToTalk", app)
         self.assertIn("response.cancel", app)
         self.assertIn("prefers-reduced-motion", css)
         self.assertIn("zworkforce-voice-capture", worklet)
