@@ -1,7 +1,7 @@
 const $ = (id) => document.getElementById(id);
 const state = { key: sessionStorage.getItem('zwf:key') || '', tenant: sessionStorage.getItem('zwf:tenant') || 'default', agents: [] };
 $('apiKey').value = state.key; $('tenantId').value = state.tenant;
-function esc(value){return String(value ?? '').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt',"'":'&#39;','"':'&quot;'}[c]));}
+function esc(value){return String(value ?? '').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
 function fmt(value,d=2){const n=Number(value||0);return Number.isFinite(n)?n.toLocaleString(undefined,{maximumFractionDigits:d}):'—';}
 function age(iso){if(!iso)return '—';const s=Math.max(0,(Date.now()-Date.parse(iso))/1000);if(s<60)return `${Math.round(s)}s ago`;if(s<3600)return `${Math.round(s/60)}m ago`;if(s<86400)return `${Math.round(s/3600)}h ago`;return new Date(iso).toLocaleDateString();}
 function banner(message=''){const el=$('errorBanner');el.textContent=message;el.classList.toggle('hidden',!message);}
