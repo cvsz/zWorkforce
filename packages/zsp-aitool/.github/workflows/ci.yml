@@ -1,0 +1,77 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: ci / validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      db:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: zsp_aitool
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d zsp_aitool"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      CI: true
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/zsp_aitool?schema=public
+      SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/zsp_aitool_shadow?schema=public
+      AUTH_SECRET: ci-secret
+      OPENAI_API_KEY: ci-placeholder
+      HYPERFRAMES_RENDER_ENABLED: "false"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate CI/CD hardening marker
+        run: grep -n 'CICD_HARDENING_CONFIGURED=true' start.sh
+
+      - name: Validate package.json syntax
+        run: python3 -m json.tool package.json >/tmp/package-json-ok.json
+
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+
+      - name: Validate Prisma schema
+        run: npx prisma validate
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        env:
+          CI: true
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/zsp_aitool?schema=public
+          SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/zsp_aitool_shadow?schema=public
+          AUTH_SECRET: ci-secret
+          OPENAI_API_KEY: ci-placeholder
+          HYPERFRAMES_RENDER_ENABLED: "false"
+        run: npm run build

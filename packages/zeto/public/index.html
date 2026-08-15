@@ -1,0 +1,2206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zeto - AI Content Factory</title>
+    <meta
+      name="description"
+      content="Zeto AI content factory and publishing operations dashboard."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+    <!-- Chart.js for analytics visualizations -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"
+      defer
+    ></script>
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="brand">
+            <div class="brand-icon">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"
+                ></path>
+              </svg>
+            </div>
+            <div>
+              <div class="brand-name">Zeto</div>
+              <div class="brand-sub">v2.0.0-alpha.1</div>
+            </div>
+          </div>
+          <button
+            class="sidebar-toggle"
+            id="sidebar-close"
+            aria-label="Close sidebar"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <!-- Page Context Switcher -->
+        <div
+          class="page-switcher-container"
+          style="
+            padding: 10px 16px 20px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          "
+        >
+          <label
+            for="global-page-select"
+            style="
+              font-size: 0.75rem;
+              color: var(--text-muted);
+              display: block;
+              margin-bottom: 6px;
+            "
+            >Active Page Context</label
+          >
+          <select
+            id="global-page-select"
+            style="
+              width: 100%;
+              background: rgba(0, 0, 0, 0.3);
+              color: #fff;
+              border: 1px solid rgba(255, 255, 255, 0.15);
+              border-radius: 6px;
+              padding: 8px;
+              font-size: 0.85rem;
+              outline: none;
+              cursor: pointer;
+            "
+          >
+            <option value="default">🌐 Primary Page (Default)</option>
+          </select>
+        </div>
+
+        <nav class="nav-links">
+          <a href="#dashboard" class="nav-link active" data-page="dashboard">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="3" width="7" height="9"></rect>
+              <rect x="14" y="3" width="7" height="5"></rect>
+              <rect x="14" y="12" width="7" height="9"></rect>
+              <rect x="3" y="16" width="7" height="5"></rect>
+            </svg>
+            Overview
+          </a>
+          <a href="#analytics" class="nav-link" data-page="analytics">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            Analytics
+            <span
+              style="
+                font-size: 0.65rem;
+                background: linear-gradient(135deg, #10b981, #4f8ef7);
+                color: white;
+                padding: 1px 5px;
+                border-radius: 99px;
+                margin-left: auto;
+              "
+              >NEW</span
+            >
+          </a>
+          <a href="#control-room" class="nav-link" data-page="control-room">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M4 19V9"></path>
+              <path d="M10 19V5"></path>
+              <path d="M16 19v-7"></path>
+              <path d="M22 19V3"></path>
+            </svg>
+            Control Room
+          </a>
+          <a href="#compose" class="nav-link" data-page="compose">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+              ></path>
+              <path
+                d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+              ></path>
+            </svg>
+            Compose
+          </a>
+          <a href="#queue" class="nav-link" data-page="queue">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            Queue
+            <span class="badge" id="queue-badge" style="display: none">0</span>
+          </a>
+          <a href="#scheduler" class="nav-link" data-page="scheduler">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            Scheduler
+          </a>
+          <a
+            href="#ai"
+            class="nav-link"
+            data-page="ai"
+            style="position: relative"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+            AI Generator
+            <span
+              style="
+                font-size: 0.65rem;
+                background: linear-gradient(135deg, #a855f7, #4f8ef7);
+                color: white;
+                padding: 1px 5px;
+                border-radius: 99px;
+                margin-left: auto;
+              "
+              >AI</span
+            >
+          </a>
+          <a href="#feed" class="nav-link" data-page="feed">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+              ></path>
+            </svg>
+            Page Feed
+          </a>
+          <a href="#history" class="nav-link" data-page="history">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="12 8 12 12 14 14"></polyline>
+              <path d="M3.05 11a9 9 0 1 0 .5-4.5"></path>
+              <polyline points="3 3 3 9 9 9"></polyline>
+            </svg>
+            History
+          </a>
+          <a href="#settings" class="nav-link" data-page="settings">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="3"></circle>
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+              ></path>
+            </svg>
+            Settings
+          </a>
+          <a
+            href="/zarvis"
+            class="nav-link"
+            title="Zeto Autonomous Runtime Virtual Intelligence System"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+            Z.A.R.V.I.S.
+            <span
+              style="
+                font-size: 0.65rem;
+                background: linear-gradient(135deg, #45d5ff, #a855f7);
+                color: #fff;
+                padding: 1px 5px;
+                border-radius: 99px;
+                margin-left: auto;
+              "
+              >LIVE</span
+            >
+          </a>
+        </nav>
+
+        <div
+          class="sidebar-footer"
+          style="
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 16px 20px;
+          "
+        >
+          <div class="status-badge" id="system-status">
+            <div class="status-dot"></div>
+            <span id="status-text">Checking...</span>
+          </div>
+          <button
+            class="btn btn-ghost btn-sm"
+            id="btn-logout"
+            style="
+              width: 100%;
+              justify-content: center;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            "
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      <!-- Mobile header -->
+      <div class="mobile-header">
+        <button
+          class="sidebar-toggle"
+          id="sidebar-open"
+          aria-label="Open sidebar"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <span class="brand-name">Zeto</span>
+      </div>
+
+      <!-- Main Content Area -->
+      <main class="main-content">
+        <!-- ── PAGE: Dashboard ── -->
+        <div class="page active" id="page-dashboard">
+          <div class="page-header">
+            <div>
+              <h1>Overview</h1>
+              <p class="text-muted">
+                Monitor and automate your Facebook page posting.
+              </p>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="btn-refresh-all">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path
+                  d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
+                ></path>
+              </svg>
+              Refresh
+            </button>
+          </div>
+
+          <!-- KPI Cards -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-icon kpi-icon--blue">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </div>
+              <div class="kpi-body">
+                <div class="kpi-label">Page Followers</div>
+                <div class="kpi-value" id="kpi-followers">--</div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon kpi-icon--green">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                  ></path>
+                </svg>
+              </div>
+              <div class="kpi-body">
+                <div class="kpi-label">Posts Today</div>
+                <div class="kpi-value" id="kpi-posts-today">--</div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon kpi-icon--purple">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <line x1="8" y1="6" x2="21" y2="6"></line>
+                  <line x1="8" y1="12" x2="21" y2="12"></line>
+                  <line x1="8" y1="18" x2="21" y2="18"></line>
+                  <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                  <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                  <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+              </div>
+              <div class="kpi-body">
+                <div class="kpi-label">Queue Size</div>
+                <div class="kpi-value" id="kpi-queue-size">--</div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon kpi-icon--orange">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+              <div class="kpi-body">
+                <div class="kpi-label">Active Schedules</div>
+                <div class="kpi-value" id="kpi-schedules">--</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Page Info + Quick Actions -->
+          <div class="dashboard-grid">
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Page Connection</span>
+                <span class="badge" id="page-connection-badge"
+                  >Checking...</span
+                >
+              </div>
+              <div class="page-info" id="page-info">
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line short"></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Quick Post</span>
+              </div>
+              <form id="quick-post-form">
+                <div class="form-group">
+                  <textarea
+                    id="quick-message"
+                    placeholder="What's on your mind?"
+                    rows="3"
+                  ></textarea>
+                </div>
+                <div class="btn-row">
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    id="btn-quick-queue"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Add to Queue
+                  </button>
+                  <button
+                    type="submit"
+                    class="btn btn-primary"
+                    id="btn-quick-post"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                    Publish Now
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div class="card" id="dashboard-approvals-card">
+              <div class="card-header">
+                <span class="card-title">⏳ Pending AI Approvals</span>
+                <button class="btn btn-ghost btn-sm" id="btn-refresh-approvals">
+                  ⟳ Refresh
+                </button>
+              </div>
+              <div
+                id="pending-approvals-list"
+                style="max-height: 240px; overflow-y: auto"
+              >
+                <div class="text-muted small" style="padding: 16px 0">
+                  Loading pending reviews...
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Recent History</span>
+                <a href="#history" class="nav-link-inline" data-page="history"
+                  >View all →</a
+                >
+              </div>
+              <div id="mini-history-list">
+                <div class="text-muted small" style="padding: 16px 0">
+                  Loading...
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="page" id="page-control-room">
+          <div class="page-header">
+            <div>
+              <h1>Control Room</h1>
+              <p class="text-muted">
+                Persisted factory health, approvals, providers, and performance.
+              </p>
+            </div>
+            <button
+              class="btn btn-ghost btn-sm"
+              id="btn-refresh-control-room"
+              title="Refresh control room"
+              aria-label="Refresh control room"
+            >
+              ↻
+            </button>
+          </div>
+          <div class="control-toolbar">
+            <label for="control-brand-select">Brand</label>
+            <select id="control-brand-select"></select>
+            <span class="text-muted small" id="control-updated"
+              >Loading...</span
+            >
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-body">
+                <div class="kpi-label">Reach, 30 days</div>
+                <div class="kpi-value" id="control-reach">--</div>
+                <div class="kpi-delta" id="control-reach-delta"></div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-body">
+                <div class="kpi-label">Engagement, 30 days</div>
+                <div class="kpi-value" id="control-engagement">--</div>
+                <div class="kpi-delta" id="control-engagement-delta"></div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-body">
+                <div class="kpi-label">Workflow runs</div>
+                <div class="kpi-value" id="control-run-count">--</div>
+                <div class="kpi-delta" id="control-run-detail"></div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-body">
+                <div class="kpi-label">Recorded cost</div>
+                <div class="kpi-value" id="control-cost">--</div>
+                <div class="kpi-delta">USD equivalent</div>
+              </div>
+            </div>
+          </div>
+          <div class="control-grid">
+            <section class="card">
+              <div class="card-header">
+                <span class="card-title">Factory Runs</span
+                ><span class="badge" id="control-approval-count"
+                  >0 awaiting approval</span
+                >
+              </div>
+              <div id="control-runs" class="control-list">
+                <div class="text-muted small">Loading runs...</div>
+              </div>
+            </section>
+            <section class="card">
+              <div class="card-header">
+                <span class="card-title">Publishing Providers</span>
+              </div>
+              <div id="control-providers" class="control-list">
+                <div class="text-muted small">Loading providers...</div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <!-- ── PAGE: Analytics ── -->
+        <div class="page" id="page-analytics">
+          <div class="page-header">
+            <div>
+              <h1>Analytics</h1>
+              <p class="text-muted">
+                30-day reach & engagement insights for your Facebook page.
+              </p>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="btn-refresh-analytics">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path
+                  d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
+                ></path>
+              </svg>
+              Refresh
+            </button>
+          </div>
+
+          <!-- Analytics KPI row -->
+          <div class="kpi-grid" id="analytics-kpi-row">
+            <div class="kpi-card">
+              <div class="kpi-icon kpi-icon--blue">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </div>
+              <div class="kpi-body">
+                <div class="kpi-label">Total Impressions (30d)</div>
+                <div class="kpi-value" id="analytics-kpi-impressions">--</div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon kpi-icon--green">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </div>
+              <div class="kpi-body">
+                <div class="kpi-label">Engaged Users (30d)</div>
+                <div class="kpi-value" id="analytics-kpi-engaged">--</div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon kpi-icon--purple">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                  ></path>
+                </svg>
+              </div>
+              <div class="kpi-body">
+                <div class="kpi-label">Post Engagements (30d)</div>
+                <div class="kpi-value" id="analytics-kpi-post-eng">--</div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon kpi-icon--orange">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                  <polyline points="17 6 23 6 23 12"></polyline>
+                </svg>
+              </div>
+              <div class="kpi-body">
+                <div class="kpi-label">Avg Daily Reach</div>
+                <div class="kpi-value" id="analytics-kpi-avg-reach">--</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Analytics Chart -->
+          <div
+            id="analytics-chart-container"
+            class="card"
+            style="margin-bottom: 24px"
+          >
+            <div class="card-header">
+              <span class="card-title"
+                >Impressions vs. Engaged Users (30 Days)</span
+              >
+              <div id="analytics-chart-status" class="text-muted small">
+                Loading...
+              </div>
+            </div>
+            <div
+              style="position: relative; height: 280px; padding: 16px 4px 8px"
+            >
+              <canvas id="analytics-insights-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Top Posts Container -->
+          <div id="top-posts-container" class="card">
+            <div class="card-header">
+              <span class="card-title">🏆 Top 5 Performing Posts</span>
+              <div id="top-posts-status" class="text-muted small">
+                Loading...
+              </div>
+            </div>
+            <div id="top-posts-list" style="padding: 0 4px">
+              <div
+                class="text-muted small"
+                style="padding: 20px 0 10px; text-align: center"
+              >
+                Fetching top posts...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── PAGE: Compose ── -->
+        <div class="page" id="page-compose">
+          <div class="page-header">
+            <div>
+              <h1>Compose Post</h1>
+              <p class="text-muted">
+                Create and publish content directly to your Facebook page.
+              </p>
+            </div>
+          </div>
+          <div class="compose-layout">
+            <div class="card compose-card">
+              <div class="card-header">
+                <span class="card-title">New Post</span>
+              </div>
+              <form id="compose-form">
+                <div class="form-group">
+                  <label for="compose-message"
+                    >Message <span class="req">*</span></label
+                  >
+                  <textarea
+                    id="compose-message"
+                    name="message"
+                    placeholder="Write your post content here..."
+                    rows="6"
+                    required
+                  ></textarea>
+                  <div class="char-counter">
+                    <span id="char-count">0</span> / 63,206
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="compose-link">Link URL (optional)</label>
+                  <input
+                    type="url"
+                    id="compose-link"
+                    name="link"
+                    placeholder="https://example.com"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>Photo (optional)</label>
+                  <div class="upload-tabs">
+                    <button
+                      type="button"
+                      class="upload-tab active"
+                      data-tab="url"
+                    >
+                      URL
+                    </button>
+                    <button type="button" class="upload-tab" data-tab="file">
+                      Upload File
+                    </button>
+                  </div>
+                  <div class="upload-panel active" id="upload-url-panel">
+                    <input
+                      type="url"
+                      id="compose-image-url"
+                      name="imageUrl"
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
+                  <div class="upload-panel" id="upload-file-panel">
+                    <div class="file-drop-zone" id="file-drop-zone">
+                      <svg
+                        width="32"
+                        height="32"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="16 16 12 12 8 16"></polyline>
+                        <line x1="12" y1="12" x2="12" y2="21"></line>
+                        <path
+                          d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"
+                        ></path>
+                      </svg>
+                      <p>
+                        Drop image here or
+                        <label for="compose-file" class="link-text"
+                          >browse</label
+                        >
+                      </p>
+                      <input
+                        type="file"
+                        id="compose-file"
+                        name="image"
+                        accept="image/*"
+                        style="display: none"
+                      />
+                      <div
+                        class="file-preview"
+                        id="file-preview"
+                        style="display: none"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="btn-row">
+                  <button
+                    type="button"
+                    class="btn btn-ghost"
+                    id="btn-compose-queue"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <line x1="8" y1="6" x2="21" y2="6"></line>
+                      <line x1="8" y1="12" x2="21" y2="12"></line>
+                      <line x1="8" y1="18" x2="21" y2="18"></line>
+                      <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    </svg>
+                    Add to Queue
+                  </button>
+                  <button
+                    type="submit"
+                    class="btn btn-primary"
+                    id="btn-compose-submit"
+                  >
+                    <span class="spinner"></span>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                    Publish Now
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div class="compose-sidebar">
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">Preview</span>
+                </div>
+                <div class="fb-preview" id="fb-preview">
+                  <div class="fb-preview-header">
+                    <div class="fb-preview-avatar"></div>
+                    <div>
+                      <div class="fb-preview-page" id="preview-page-name">
+                        Your Page
+                      </div>
+                      <div class="fb-preview-time">Just now · 🌐</div>
+                    </div>
+                  </div>
+                  <div class="fb-preview-text" id="preview-text">
+                    <span class="text-muted small"
+                      >Start typing to preview...</span
+                    >
+                  </div>
+                  <div
+                    class="fb-preview-image"
+                    id="preview-image"
+                    style="display: none"
+                  ></div>
+                  <div class="fb-preview-actions">
+                    <span>👍 Like</span>
+                    <span>💬 Comment</span>
+                    <span>↗ Share</span>
+                  </div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">Tips</span>
+                </div>
+                <ul class="tips-list">
+                  <li>Best posting times: 9am–11am and 1pm–3pm</li>
+                  <li>Posts with images get 2x more engagement</li>
+                  <li>Keep messages under 300 characters for best reach</li>
+                  <li>Use emojis to increase engagement 🚀</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── PAGE: Queue ── -->
+        <div class="page" id="page-queue">
+          <div class="page-header">
+            <div>
+              <h1>Post Queue</h1>
+              <p class="text-muted">Manage posts waiting to be published.</p>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-ghost btn-sm" id="btn-queue-refresh">
+                Refresh
+              </button>
+              <button class="btn btn-danger btn-sm" id="btn-queue-clear">
+                Clear All
+              </button>
+            </div>
+          </div>
+
+          <div class="queue-add-form card" style="margin-bottom: 24px">
+            <div class="card-header">
+              <span class="card-title">Add to Queue</span>
+            </div>
+            <form id="queue-add-form" class="inline-form">
+              <div class="form-group flex-1">
+                <textarea
+                  id="queue-message"
+                  placeholder="Post message..."
+                  rows="2"
+                ></textarea>
+              </div>
+              <div class="form-group">
+                <input
+                  type="url"
+                  id="queue-image-url"
+                  placeholder="Image URL (optional)"
+                />
+              </div>
+              <button type="submit" class="btn btn-primary">
+                Add to Queue
+              </button>
+            </form>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Queued Posts</span>
+              <span class="badge" id="queue-count-badge">0</span>
+            </div>
+            <div id="queue-list">
+              <div class="empty-state">
+                <svg
+                  width="48"
+                  height="48"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <line x1="8" y1="6" x2="21" y2="6"></line>
+                  <line x1="8" y1="12" x2="21" y2="12"></line>
+                  <line x1="8" y1="18" x2="21" y2="18"></line>
+                  <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                  <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                  <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+                <p>Queue is empty. Add posts above.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── PAGE: Scheduler ── -->
+        <div class="page" id="page-scheduler">
+          <div class="page-header">
+            <div>
+              <h1>Scheduler</h1>
+              <p class="text-muted">Automate posting with cron schedules.</p>
+            </div>
+          </div>
+
+          <div class="dashboard-grid-2">
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Default Auto-Post Job</span>
+              </div>
+              <div class="scheduler-default" id="scheduler-default-info">
+                <div class="info-row">
+                  <span class="info-label">Status</span>
+                  <span class="badge badge-green" id="scheduler-status-badge"
+                    >Active</span
+                  >
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Cron Schedule</span>
+                  <code id="scheduler-cron-display">0 * * * *</code>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Behavior</span>
+                  <span class="text-muted small"
+                    >Consumes queue items; falls back to template</span
+                  >
+                </div>
+              </div>
+              <form id="scheduler-default-form" style="margin-top: 16px">
+                <div class="form-group">
+                  <label>Cron Expression</label>
+                  <input
+                    type="text"
+                    id="scheduler-cron-input"
+                    placeholder="0 * * * *"
+                    value="0 * * * *"
+                  />
+                  <div class="form-hint">
+                    <a
+                      href="https://crontab.guru"
+                      target="_blank"
+                      rel="noopener"
+                      >crontab.guru ↗</a
+                    >
+                    — e.g. <code>0 9,13 * * *</code> = 9am &amp; 1pm daily
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">
+                  Apply Schedule
+                </button>
+              </form>
+              <div style="margin-top: 12px">
+                <button class="btn btn-ghost btn-sm" id="btn-trigger-now">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  Trigger Now
+                </button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Add Custom Schedule</span>
+              </div>
+              <form id="schedule-add-form">
+                <div class="form-group">
+                  <label>Name <span class="req">*</span></label>
+                  <input
+                    type="text"
+                    id="schedule-name"
+                    placeholder="Morning Post"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label>Cron Expression <span class="req">*</span></label>
+                  <input
+                    type="text"
+                    id="schedule-cron"
+                    placeholder="0 9 * * *"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label>Message <span class="req">*</span></label>
+                  <textarea
+                    id="schedule-message"
+                    placeholder="Post content..."
+                    rows="3"
+                    required
+                  ></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">
+                  Add Schedule
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top: 24px">
+            <div class="card-header">
+              <span class="card-title">Custom Schedules</span>
+              <button class="btn btn-ghost btn-sm" id="btn-schedules-refresh">
+                Refresh
+              </button>
+            </div>
+            <div id="schedules-list">
+              <div class="empty-state">
+                <svg
+                  width="48"
+                  height="48"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <p>No custom schedules configured.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── PAGE: Feed ── -->
+        <div class="page" id="page-feed">
+          <div class="page-header">
+            <div>
+              <h1>Page Feed</h1>
+              <p class="text-muted">
+                View and manage your Facebook page posts.
+              </p>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="btn-feed-refresh">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path
+                  d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
+                ></path>
+              </svg>
+              Refresh
+            </button>
+          </div>
+
+          <div class="card">
+            <div id="feed-list">
+              <div
+                class="text-muted"
+                style="text-align: center; padding: 48px 0"
+              >
+                Loading posts...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── PAGE: History ── -->
+        <div class="page" id="page-history">
+          <div class="page-header">
+            <div>
+              <h1>Post History</h1>
+              <p class="text-muted">Local record of all publish actions.</p>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="btn-history-refresh">
+              Refresh
+            </button>
+          </div>
+          <div class="card">
+            <div id="history-list">
+              <div
+                class="text-muted"
+                style="text-align: center; padding: 48px 0"
+              >
+                Loading history...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── PAGE: Settings ── -->
+        <div class="page" id="page-settings">
+          <div class="page-header">
+            <div>
+              <h1>Settings</h1>
+              <p class="text-muted">
+                Configure auto-posting behavior and defaults.
+              </p>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Auto-Post Template</span>
+              </div>
+              <form id="settings-form">
+                <div class="form-group">
+                  <label>Default Post Template</label>
+                  <textarea
+                    id="setting-template"
+                    rows="3"
+                    placeholder="Automated post at {TIME} 🤖✨"
+                  ></textarea>
+                  <div class="form-hint">
+                    Use <code>{TIME}</code> for timestamp placeholder.
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Default Cron Schedule</label>
+                  <input
+                    type="text"
+                    id="setting-cron"
+                    placeholder="0 * * * *"
+                  />
+                  <div class="form-hint">
+                    Controls when the default auto-post job runs.
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Max Queue Size</label>
+                  <input
+                    type="number"
+                    id="setting-max-queue"
+                    min="1"
+                    max="1000"
+                    placeholder="100"
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="toggle-label">
+                    <input
+                      type="checkbox"
+                      id="setting-scheduler-enabled"
+                      class="toggle-input"
+                    />
+                    <div class="toggle-track">
+                      <div class="toggle-thumb"></div>
+                    </div>
+                    Enable Scheduler
+                  </label>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                  Save Settings
+                </button>
+              </form>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title"
+                  >Connection Info &amp; OAuth Token Manager</span
+                >
+              </div>
+              <div class="info-table" id="settings-info-table">
+                <div class="info-row">
+                  <span class="info-label">Page ID</span>
+                  <code id="info-page-id" class="text-muted">Not set</code>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Access Token</span>
+                  <span class="badge" id="info-token-badge">Checking...</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Scheduler</span>
+                  <span class="badge" id="info-scheduler-badge"
+                    >Checking...</span
+                  >
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Environment</span>
+                  <code id="info-env">--</code>
+                </div>
+              </div>
+
+              <div
+                style="
+                  margin-top: 20px;
+                  border-top: 1px solid rgba(255, 255, 255, 0.1);
+                  padding-top: 16px;
+                "
+              >
+                <h4
+                  style="
+                    margin-bottom: 8px;
+                    font-size: 0.95rem;
+                    color: var(--primary);
+                  "
+                >
+                  Token Auto-Refresh &amp; Manual Credentials
+                </h4>
+                <form id="manual-credentials-form">
+                  <div class="form-group">
+                    <label>Facebook Page ID</label>
+                    <input
+                      type="text"
+                      id="setting-page-id"
+                      placeholder="Page ID from Facebook page profile"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label>Facebook Access Token</label>
+                    <input
+                      type="text"
+                      id="setting-access-token"
+                      placeholder="Long-lived Page Access Token"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    class="btn btn-secondary btn-sm"
+                    style="width: 100%; margin-top: 4px"
+                  >
+                    Save Credentials
+                  </button>
+                </form>
+              </div>
+
+              <div
+                style="
+                  margin-top: 20px;
+                  border-top: 1px solid rgba(255, 255, 255, 0.1);
+                  padding-top: 16px;
+                "
+              >
+                <h4
+                  style="
+                    margin-bottom: 8px;
+                    font-size: 0.95rem;
+                    color: var(--accent);
+                  "
+                >
+                  OAuth 2.0 Token Exchange
+                </h4>
+                <p class="text-muted small" style="margin-bottom: 8px">
+                  Exchange a Short-Lived User Access Token into a Long-Lived
+                  Page Access Token automatically.
+                </p>
+                <form id="token-exchange-form">
+                  <div class="form-group">
+                    <label>Short-Lived User Access Token</label>
+                    <input
+                      type="text"
+                      id="exchange-user-token"
+                      placeholder="Paste short-lived access token..."
+                      required
+                    />
+                  </div>
+                  <div class="btn-row">
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-sm"
+                      id="btn-manual-refresh"
+                    >
+                      ⟳ Force Refresh Page Token
+                    </button>
+                    <button
+                      type="submit"
+                      class="btn btn-primary btn-sm"
+                      id="btn-exchange-submit"
+                    >
+                      Exchange &amp; Save
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Connected Facebook Pages</span>
+              </div>
+              <div
+                id="pages-list"
+                style="margin-bottom: 16px; max-height: 200px; overflow-y: auto"
+              >
+                <!-- Connected pages list rendered dynamically -->
+                <div class="text-muted small" style="padding: 12px 0">
+                  Loading pages...
+                </div>
+              </div>
+              <div
+                style="
+                  border-top: 1px solid rgba(255, 255, 255, 0.1);
+                  padding-top: 16px;
+                "
+              >
+                <h4
+                  style="
+                    margin-bottom: 8px;
+                    font-size: 0.95rem;
+                    color: var(--primary);
+                  "
+                >
+                  Connect a New Page
+                </h4>
+                <form id="connect-page-form">
+                  <div class="form-group">
+                    <label>Page Name / Label</label>
+                    <input
+                      type="text"
+                      id="connect-page-name"
+                      placeholder="My Tech Page"
+                      required
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label>Facebook Page ID</label>
+                    <input
+                      type="text"
+                      id="connect-page-id"
+                      placeholder="Facebook Page ID"
+                      required
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label>Page Access Token</label>
+                    <input
+                      type="text"
+                      id="connect-page-token"
+                      placeholder="Long-lived Page Access Token"
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    class="btn btn-primary btn-sm"
+                    style="width: 100%"
+                  >
+                    Connect Page
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── PAGE: AI Generator ── -->
+        <div class="page" id="page-ai">
+          <div class="page-header">
+            <div>
+              <h1>🤖 AI Content Generator</h1>
+              <p class="text-muted">
+                Auto-generate "learn how to" posts every 3 hours using AI — Thai
+                + English mixed content.
+              </p>
+            </div>
+            <div class="btn-row">
+              <span class="badge" id="ai-status-badge">Loading...</span>
+            </div>
+          </div>
+
+          <!-- AI Auto-Poster Status Card -->
+          <div
+            class="kpi-grid"
+            style="grid-template-columns: repeat(4, 1fr); margin-bottom: 24px"
+          >
+            <div class="kpi-card">
+              <div
+                class="kpi-icon"
+                style="background: var(--purple-dim); color: var(--purple)"
+              >
+                🤖
+              </div>
+              <div class="kpi-body">
+                <div class="kpi-label">AI Status</div>
+                <div
+                  class="kpi-value"
+                  id="ai-kpi-status"
+                  style="font-size: 1rem"
+                >
+                  --
+                </div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div
+                class="kpi-icon"
+                style="background: var(--primary-dim); color: var(--primary)"
+              >
+                📡
+              </div>
+              <div class="kpi-body">
+                <div class="kpi-label">AI Provider</div>
+                <div
+                  class="kpi-value"
+                  id="ai-kpi-provider"
+                  style="font-size: 1rem"
+                >
+                  --
+                </div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div
+                class="kpi-icon"
+                style="background: var(--accent-dim); color: var(--accent)"
+              >
+                ⏰
+              </div>
+              <div class="kpi-body">
+                <div class="kpi-label">Interval</div>
+                <div
+                  class="kpi-value"
+                  id="ai-kpi-interval"
+                  style="font-size: 1rem"
+                >
+                  Every 3h
+                </div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div
+                class="kpi-icon"
+                style="background: var(--warn-dim); color: var(--warn)"
+              >
+                🎲
+              </div>
+              <div class="kpi-body">
+                <div class="kpi-label">Jitter</div>
+                <div
+                  class="kpi-value"
+                  id="ai-kpi-jitter"
+                  style="font-size: 1rem"
+                >
+                  ±30 min
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="compose-layout"
+            style="grid-template-columns: 1.3fr 0.7fr"
+          >
+            <!-- Left: Generate Form + Preview -->
+            <div style="display: flex; flex-direction: column; gap: 20px">
+              <!-- Generate Controls -->
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">✨ Generate Content</span>
+                  <button class="btn btn-ghost btn-sm" id="btn-ai-randomize">
+                    🎲 Random
+                  </button>
+                </div>
+
+                <div class="form-group">
+                  <label>Topic</label>
+                  <div class="topic-grid" id="topic-grid">
+                    <!-- Filled by JS -->
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 8px">
+                  <label>Post Format</label>
+                  <div class="format-tabs" id="format-tabs">
+                    <!-- Filled by JS -->
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 8px">
+                  <label>AI Provider</label>
+                  <select id="ai-provider-select">
+                    <option value="auto">🔄 Auto (Best available)</option>
+                    <option value="cloudflare">☁️ Cloudflare Workers AI</option>
+                    <option value="openai">🟢 OpenAI (GPT-4o-mini)</option>
+                    <option value="gemini">🔵 Google Gemini</option>
+                    <option value="local">📝 Local Templates (No API)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="toggle-label">
+                    <input
+                      type="checkbox"
+                      id="ai-with-image"
+                      class="toggle-input"
+                      checked
+                    />
+                    <div class="toggle-track">
+                      <div class="toggle-thumb"></div>
+                    </div>
+                    Include Image from Unsplash
+                  </label>
+                </div>
+
+                <div class="btn-row" style="margin-top: 8px">
+                  <button class="btn btn-secondary" id="btn-ai-generate">
+                    <span class="spinner"></span>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <polygon
+                        points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"
+                      ></polygon>
+                    </svg>
+                    Generate Preview
+                  </button>
+                  <button class="btn btn-ghost" id="btn-ai-add-queue" disabled>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <line x1="8" y1="6" x2="21" y2="6"></line>
+                      <line x1="8" y1="12" x2="21" y2="12"></line>
+                      <line x1="8" y1="18" x2="21" y2="18"></line>
+                      <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    </svg>
+                    Add to Queue
+                  </button>
+                  <button class="btn btn-primary" id="btn-ai-post-now" disabled>
+                    <span class="spinner"></span>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                    Post Now
+                  </button>
+                </div>
+              </div>
+
+              <!-- Generated Preview -->
+              <div class="card" id="ai-preview-card" style="display: none">
+                <div class="card-header">
+                  <span class="card-title">📄 Generated Content</span>
+                  <div style="display: flex; gap: 8px; align-items: center">
+                    <span class="badge badge-blue" id="ai-preview-topic"
+                      >--</span
+                    >
+                    <span class="badge" id="ai-preview-format">--</span>
+                    <span class="badge" id="ai-preview-provider">local</span>
+                  </div>
+                </div>
+                <div class="ai-preview-content">
+                  <div class="fb-preview" id="ai-fb-preview">
+                    <div class="fb-preview-header">
+                      <div class="fb-preview-avatar"></div>
+                      <div>
+                        <div class="fb-preview-page" id="ai-preview-page-name">
+                          Your Page
+                        </div>
+                        <div class="fb-preview-time">Just now · 🌐</div>
+                      </div>
+                    </div>
+                    <div class="fb-preview-text" id="ai-preview-text">
+                      <span class="text-muted small"
+                        >Click "Generate Preview" to see content here...</span
+                      >
+                    </div>
+                    <div
+                      class="fb-preview-image"
+                      id="ai-preview-image"
+                      style="display: none"
+                    ></div>
+                    <div class="fb-preview-actions">
+                      <span>👍 Like</span><span>💬 Comment</span
+                      ><span>↗ Share</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="margin-top: 12px">
+                  <textarea
+                    id="ai-preview-edit"
+                    rows="6"
+                    style="font-size: 0.85rem; line-height: 1.5"
+                  ></textarea>
+                  <div class="form-hint">
+                    ✏️ Edit the content above before posting
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Auto-Poster Settings -->
+            <div style="display: flex; flex-direction: column; gap: 20px">
+              <!-- Auto-Poster Control -->
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">⏰ Auto-Poster Settings</span>
+                </div>
+
+                <div class="info-row">
+                  <span class="info-label">Status</span>
+                  <span class="badge" id="ai-autoposter-status">--</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Schedule</span>
+                  <code>Every 3 hours + ±30min jitter</code>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Cron</span>
+                  <code>0 0,3,6,9,12,15,18,21 * * *</code>
+                </div>
+
+                <div style="margin-top: 16px">
+                  <form id="ai-settings-form">
+                    <div class="form-group">
+                      <label>Default Topic (empty = random rotation)</label>
+                      <select id="ai-setting-topic">
+                        <option value="">🎲 Random Rotation</option>
+                        <!-- Filled by JS -->
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label>Default Format (empty = random)</label>
+                      <select id="ai-setting-format">
+                        <option value="">🎲 Random</option>
+                        <option value="tips">📋 Tips</option>
+                        <option value="howto">🚀 How-To</option>
+                        <option value="fact">💡 Fun Facts</option>
+                        <option value="quote">✨ Quote</option>
+                        <option value="checklist">☑️ Checklist</option>
+                        <option value="story">📖 Story</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label>AI Provider</label>
+                      <select id="ai-setting-provider">
+                        <option value="auto">🔄 Auto</option>
+                        <option value="cloudflare">☁️ Cloudflare</option>
+                        <option value="openai">🟢 OpenAI</option>
+                        <option value="gemini">🔵 Gemini</option>
+                        <option value="local">📝 Local Templates</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="toggle-label">
+                        <input
+                          type="checkbox"
+                          id="ai-setting-image"
+                          class="toggle-input"
+                          checked
+                        />
+                        <div class="toggle-track">
+                          <div class="toggle-thumb"></div>
+                        </div>
+                        Include Images
+                      </label>
+                    </div>
+                    <div class="form-group">
+                      <label class="toggle-label">
+                        <input
+                          type="checkbox"
+                          id="ai-setting-approval"
+                          class="toggle-input"
+                          checked
+                        />
+                        <div class="toggle-track">
+                          <div class="toggle-thumb"></div>
+                        </div>
+                        Require Human Approval (Guardrails)
+                      </label>
+                    </div>
+                    <div class="form-group">
+                      <label class="toggle-label">
+                        <input
+                          type="checkbox"
+                          id="ai-setting-enabled"
+                          class="toggle-input"
+                          checked
+                        />
+                        <div class="toggle-track">
+                          <div class="toggle-thumb"></div>
+                        </div>
+                        Enable AI Auto-Poster
+                      </label>
+                    </div>
+                    <button
+                      type="submit"
+                      class="btn btn-primary btn-sm"
+                      style="width: 100%; margin-top: 8px"
+                    >
+                      Save Settings
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Topic Library -->
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">📚 Topic Library</span>
+                </div>
+                <div
+                  id="topic-library-list"
+                  style="max-height: 280px; overflow-y: auto"
+                >
+                  <div class="text-muted small" style="padding: 8px">
+                    Loading...
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Login Screen Overlay -->
+    <div
+      id="login-screen"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(18, 18, 24, 0.98);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+      "
+    >
+      <div
+        style="
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 12px;
+          padding: 32px;
+          width: 100%;
+          max-width: 380px;
+          backdrop-filter: blur(20px);
+          text-align: center;
+        "
+      >
+        <h2
+          style="
+            margin-bottom: 8px;
+            color: var(--primary);
+            font-family: &quot;Outfit&quot;, sans-serif;
+          "
+        >
+          Zeto Login
+        </h2>
+        <p class="text-muted small" style="margin-bottom: 24px">
+          Please authenticate to access the Facebook Automation Dashboard.
+        </p>
+        <form id="login-form">
+          <div class="form-group" style="text-align: left; margin-bottom: 16px">
+            <label
+              style="
+                color: #fff;
+                font-size: 0.85rem;
+                margin-bottom: 6px;
+                display: block;
+              "
+              >Username</label
+            >
+            <input
+              type="text"
+              id="login-username"
+              placeholder="admin"
+              required
+              style="
+                width: 100%;
+                background: rgba(0, 0, 0, 0.3);
+                color: #fff;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 6px;
+                padding: 10px;
+                font-size: 0.9rem;
+                outline: none;
+              "
+            />
+          </div>
+          <div class="form-group" style="text-align: left; margin-bottom: 24px">
+            <label
+              style="
+                color: #fff;
+                font-size: 0.85rem;
+                margin-bottom: 6px;
+                display: block;
+              "
+              >Password</label
+            >
+            <input
+              type="password"
+              id="login-password"
+              placeholder="••••••••"
+              required
+              style="
+                width: 100%;
+                background: rgba(0, 0, 0, 0.3);
+                color: #fff;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 6px;
+                padding: 10px;
+                font-size: 0.9rem;
+                outline: none;
+              "
+            />
+          </div>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            style="width: 100%; padding: 10px; justify-content: center"
+          >
+            Login
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── Arin AI Assistant (Jarvis-style push-to-talk companion) ──────────── -->
+    <button
+      class="arin-orb"
+      id="arin-orb"
+      aria-label="Open Arin assistant"
+      title="Talk to Arin"
+    >
+      <span class="arin-orb-core">凛</span>
+      <span class="arin-orb-ring"></span>
+      <span class="arin-orb-ring arin-orb-ring-2"></span>
+    </button>
+
+    <div
+      class="arin-panel"
+      id="arin-panel"
+      role="dialog"
+      aria-label="Arin assistant"
+    >
+      <div class="arin-header">
+        <div class="arin-avatar">
+          <span class="arin-avatar-kanji">凛</span>
+          <span class="arin-avatar-status"></span>
+        </div>
+        <div class="arin-header-text">
+          <div class="arin-name">Arin <span class="arin-suffix">AI</span></div>
+          <div class="arin-status" id="arin-status">Standby</div>
+        </div>
+        <button class="arin-close" id="arin-close" aria-label="Close Arin">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="arin-messages" id="arin-messages"></div>
+
+      <div class="arin-input-row">
+        <input
+          type="text"
+          id="arin-input"
+          class="arin-input"
+          placeholder="Type a command… or hold the mic to talk"
+          autocomplete="off"
+        />
+        <button class="arin-mic" id="arin-mic" aria-label="Push to talk">
+          <svg
+            class="arin-mic-idle"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"
+            ></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+          </svg>
+          <span class="arin-mic-live">●</span>
+          <span class="arin-mic-wave"></span>
+        </button>
+        <button class="arin-send" id="arin-send" aria-label="Send">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <div class="arin-hint">
+        Hold the mic to talk, release to send. Try: “What's in my queue?”
+      </div>
+    </div>
+
+    <script src="/js/arin.js"></script>
+    <script src="/js/app.js"></script>
+  </body>
+</html>

@@ -32,6 +32,7 @@ all = ["boto3>=1.40,<2"]
 
 [project.scripts]
 zworkforce = "zworkforce.cli:main"
+zktcoder = "zworkforce.zktcoder:main"
 
 [tool.setuptools]
 packages = ["zworkforce"]

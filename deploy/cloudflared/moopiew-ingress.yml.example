@@ -1,0 +1,31 @@
+# Merge before the final catch-all ingress rule of the existing tunnel config.
+ingress:
+  - hostname: moopiew.zeaz.dev
+    service: http://127.0.0.1:8080
+  - hostname: zttshop.zeaz.dev
+    service: http://127.0.0.1:8080
+  - hostname: qwen.zeaz.dev
+    service: http://127.0.0.1:8091
+  - hostname: chat.zeaz.dev
+    service: http://127.0.0.1:3000
+  - hostname: piewdash.zeaz.dev
+    service: http://127.0.0.1:80
+  - hostname: zdash.zeaz.dev
+    service: http://127.0.0.1:18080
+  - hostname: zerp.zeaz.dev
+    service: http://127.0.0.1:80
+  - hostname: cme.zeaz.dev
+    service: http://127.0.0.1:8001
+  - hostname: arin.zeaz.dev
+    service: http://127.0.0.1:8080
+  - hostname: auth.zeaz.dev
+    service: http://127.0.0.1:8080
+  - hostname: zai.zeaz.dev
+    service: http://127.0.0.1:8765
+  # ZEAZ One website and support routes. api.zeaz.dev remains the existing
+  # shared API and receives only a path-specific Cloudflare Workers route.
+  - hostname: one.zeaz.dev
+    service: http://127.0.0.1:18081
+  - hostname: support.zeaz.dev
+    service: http://127.0.0.1:18083
+  - service: http_status:404

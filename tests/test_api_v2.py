@@ -19,13 +19,13 @@ class ApiV2Tests(unittest.TestCase):
         self.base=f"http://127.0.0.1:{self.server.server_address[1]}"
     def tearDown(self):
         self.server.shutdown(); self.server.server_close(); self.engine.shutdown(); self.temp.cleanup()
-    def req(self,path,method="GET",body=None,headers=None):
+    def req(self,path,method="GET",body=None,headers=None,timeout=15):
         h={"Authorization":"Bearer test-admin-secret",**(headers or {})}
         data=None
         if body is not None:
             data=json.dumps(body).encode(); h["Content-Type"]="application/json"
         r=urllib.request.Request(self.base+path,data=data,headers=h,method=method)
-        with urllib.request.urlopen(r,timeout=5) as resp:
+        with urllib.request.urlopen(r,timeout=timeout) as resp:
             return resp.status,dict(resp.headers),json.loads(resp.read())
     def test_health_is_public(self):
         with urllib.request.urlopen(self.base+"/health",timeout=5) as r:

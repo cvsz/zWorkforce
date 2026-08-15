@@ -1,0 +1,88 @@
+# dependencies
+update-agy-cli.sh
+zsp-agent-agy-bootstrap-safe.sh
+zsp-agent-claude-bootstrap-safe.sh
+zsp-agent-codex-bootstrap-safe.sh
+zsp-all-agent-bootstrap-safe.sh
+/node_modules
+
+# next.js
+/.next/
+/out/
+
+# local env
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+scripts/git/gpg-loopback.sh
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# misc
+.DS_Store
+*.pem
+
+# prisma
+prisma/dev.db
+prisma/dev.db-journal
+
+# test output
+/coverage
+
+# extension workspace
+/extension/node_modules
+/extension/dist
+/extension/.vite
+*.tsbuildinfo
+
+# Local AI agent workspace files
+.agent/
+.gemini/
+.codex/
+.agents/
+.claude/
+#zeazdev agents
+# Local agent/session state
+.gemini/local*
+.gemini/tmp*
+.gemini/cache*
+.agy/
+.agents/local*
+.agents/tmp*
+ZSP_DEEP_DIVE_REPORT.md
+ECC_REVIEW_REPORT.md
+.next/
+node_modules/
+# Local agent/runtime state
+.agents/reports/*.tmp
+.agents/reports/*.log
+.codex/local*
+.codex/tmp*
+.claude/local*
+.claude/tmp*
+ECC_SELECTED_IMPORT_REPORT.md
+# .zagents runtime reports
+.zagents/reports/*.tmp
+.zagents/reports/*.log
+.zagents/reports/ZSP_DEEP_DIVE_REPORT-*.md
+AGENTS.md.bak.*
+CLAUDE.md.bak.*
+GEMINI.md.bak.*
+*.bak.*
+
+# Runtime logs / generated reports
+logs/*.log
+.zagents/reports/ZSP_DEEP_DIVE_REPORT-*.md
+.zagents/reports/ZSP_DEEP_DIVE_REPORT.latest.md
+.zagents/reports/INDEX.md
+
+# .zagents release readiness runtime reports
+.zagents/reports/RELEASE_READINESS-*.md
+.zagents/reports/RELEASE_READINESS.latest.md
+# Multi-Agent State and Telemetry

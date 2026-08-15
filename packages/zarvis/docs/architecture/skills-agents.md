@@ -229,3 +229,23 @@ These are development guardrails. They do not become runtime product skills and 
 ## 10. Definition of done
 
 Skills + Agents are complete when manifests are validated and versioned; runtime invocation cannot exceed declared capabilities; scheduled and continuous modes use the durable zWorkforce scheduler/lease semantics; voice routing can hand work to existing specialists; supervision detects stalled/runaway work; and every mutation still passes through explicit approval/action controls.
+
+## Implementation status
+
+### Completed
+
+| Component | File | Tests |
+|-----------|------|-------|
+| Skill manifest/invocation/result schemas | `packages/contracts/schemas/zarvis.skill.*.v1.schema.json` | — |
+| Contract rules documentation | `packages/contracts/zarvis.md` | — |
+| Skill catalog (registry + policy enforcement) | `services/zarvis-orchestrator/src/skill-catalog.mjs` | 11 pass |
+| Orchestrator integration & skill execution | `services/zarvis-orchestrator/src/orchestrator.mjs` | 27 pass |
+| Runtime skill manifest instances (6 domains) | `skills/{conversation,memory,research,code,operations,productivity}/skill.json` | 1 pass |
+| Speech provider registry | `services/voice-agent/speech/registry.py` | 19 pass |
+| STT/TTS protocols + fake providers | `services/voice-agent/speech/stt.py`, `tts.py`, `providers/fake.py` | 19 pass |
+
+### Next Milestone
+
+- Orchestrator: durable scheduler trigger binding for scheduled agent modes
+- Operator supervisor integration with cluster health monitor
+- Full P7 observability metrics, load tests, and soak evidence

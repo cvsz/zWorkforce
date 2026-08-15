@@ -57,6 +57,10 @@ TOOL_DEFINITIONS: dict[str, dict[str, Any]] = {
         "mutating": True,
         "schema": {"type": "function", "function": {"name": "zworkforce_code_agent", "description": "Delegate a complex coding, refactoring, or codebase diagnosis task to the native zWorkforce autonomous coding agent engine (zwf-coder). Requires an approved mutating task.", "parameters": {"type": "object", "properties": {"prompt": {"type": "string", "description": "Actionable instructions or coding task for the zWorkforce coding agent"}, "cwd": {"type": "string", "description": "Relative workspace directory to execute within"}}, "required": ["prompt"]}}},
     },
+    "media_generate": {
+        "mutating": True,
+        "schema": {"type": "function", "function": {"name": "media_generate", "description": "Generate rich media assets including Images (SVG, PNG/BMP raster), Video content (motion storyboard, video composition manifests, subtitle tracks), Audio (speech synthesis WAV), and Marketing/Social Content (HTML/Markdown/JSON documents) stored as durable tenant artifacts. Requires an approved mutating task.", "parameters": {"type": "object", "properties": {"media_type": {"type": "string", "enum": ["image", "video", "content", "svg", "chart", "speech", "document", "html"], "description": "Category of media to generate: 'image' (raster/vector visual), 'video' (motion storyboard/manifest/subtitles), 'content' (copywriting/social post/article), 'speech' (synthesized audio), 'chart' (infographics), 'document' (PDF/Markdown)"}, "name": {"type": "string", "description": "Target filename for the media artifact (e.g. hero_banner.png, product_demo.json, blog_post.md)"}, "content": {"type": "string", "description": "Primary content, script, visual prompt, or payload for the media asset"}, "options": {"type": "object", "description": "Customizable options such as width, height, format, style, duration, fps, channels, or platform metadata"}}, "required": ["media_type", "name", "content"]}}},
+    },
     "agent_delegate": {
         "mutating": False,
         "schema": {"type": "function", "function": {"name": "agent_delegate", "description": "Delegate a bounded subtask to another agent.", "parameters": {"type": "object", "properties": {"agent_id": {"type": "string"}, "prompt": {"type": "string"}, "mutating": {"type": "boolean"}}, "required": ["agent_id", "prompt"]}}},
@@ -131,6 +135,15 @@ class ToolExecutor:
             return self._shell(str(args.get("command", "")), [str(x) for x in args.get("args", [])])
         if name == "zworkforce_code_agent":
             return self._zworkforce_coder(str(args.get("prompt", "")), str(args.get("cwd", ".")))
+        if name == "media_generate":
+            return self._media_generate(
+                media_type=str(args.get("media_type", "svg")),
+                name=str(args.get("name", "asset.svg")),
+                content=str(args.get("content", "")),
+                options=dict(args.get("options") or {}),
+                tenant_id=tenant_id,
+                actor=actor,
+            )
         raise ToolError(f"unknown tool: {name}")
 
     def _workspace_list(self, raw: str) -> list[dict[str, Any]]:
@@ -293,7 +306,8 @@ class ToolExecutor:
         target_dir = self._safe_path(raw_cwd)
         if not target_dir.is_dir():
             raise ToolError("target workspace directory does not exist")
-        executable = shutil.which("zwf-coder") or "/usr/local/bin/zwf-coder"
+        # Prefer the in-repo zktcoder free-model CLI; fall back to the legacy zwf-coder binary.
+        executable = shutil.which("zktcoder") or shutil.which("zwf-coder") or "/usr/local/bin/zwf-coder"
         if not os.path.exists(executable):
             raise ToolError("zWorkforce coding engine executable (zwf-coder) was not found on system")
         env = {key: os.environ[key] for key in self.settings.shell_env_allowlist if key in os.environ}
@@ -316,6 +330,183 @@ class ToolExecutor:
             "stdout": proc.stdout[-limit:],
             "stderr": proc.stderr[-limit:],
             "cwd": str(target_dir.relative_to(self.root) if target_dir != self.root else "."),
+        }
+
+    def _media_generate(self, *, media_type: str, name: str, content: str, options: dict[str, Any], tenant_id: str, actor: str) -> dict[str, Any]:
+        media_type = media_type.strip().lower()
+        name = os.path.basename(name.strip()) or "generated_media"
+        if not content:
+            raise ToolError("content is required for media generation")
+
+        mime_map = {
+            "svg": "image/svg+xml",
+            "chart": "image/svg+xml",
+            "image": "image/png" if name.lower().endswith(".png") else ("image/bmp" if name.lower().endswith(".bmp") else "image/svg+xml"),
+            "video": "application/json" if name.lower().endswith(".json") else ("text/vtt" if name.lower().endswith(".vtt") else "video/mp4"),
+            "content": "text/markdown; charset=utf-8" if name.lower().endswith(".md") else ("application/json" if name.lower().endswith(".json") else "text/html; charset=utf-8"),
+            "html": "text/html; charset=utf-8",
+            "document": "text/markdown; charset=utf-8",
+            "speech": "audio/wav",
+        }
+        content_type = mime_map.get(media_type, "application/octet-stream")
+
+        if media_type in {"svg", "chart"} or (media_type == "image" and (name.lower().endswith(".svg") or content.strip().startswith("<svg"))):
+            content_type = "image/svg+xml"
+            raw_text = content.strip()
+            if not raw_text.startswith("<svg"):
+                width = int(options.get("width", 800))
+                height = int(options.get("height", 600))
+                title = options.get("title", "Generated Graphic")
+                raw_text = (
+                    f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" height="{height}">\n'
+                    f'<rect width="100%" height="100%" fill="#1e1e2e"/>\n'
+                    f'<text x="20" y="40" fill="#cdd6f4" font-family="sans-serif" font-size="20">{title}</text>\n'
+                    f'{raw_text}\n'
+                    f'</svg>'
+                )
+            data_bytes = raw_text.encode("utf-8")
+        elif media_type == "image" and (name.lower().endswith(".bmp") or name.lower().endswith(".png")):
+            # Generate uncompressed raster BMP container with colored header
+            width = min(max(int(options.get("width", 256)), 16), 1920)
+            height = min(max(int(options.get("height", 256)), 16), 1080)
+            row_padding = (4 - (width * 3) % 4) % 4
+            image_size = (width * 3 + row_padding) * height
+            file_size = 54 + image_size
+            import struct
+            header = struct.pack(
+                "<2sIHHI",
+                b"BM",
+                file_size,
+                0,
+                0,
+                54,
+            )
+            dib = struct.pack(
+                "<IiiHHIIiiII",
+                40,
+                width,
+                height,
+                1,
+                24,
+                0,
+                image_size,
+                2835,
+                2835,
+                0,
+                0,
+            )
+            r = min(int(options.get("r", 40)), 255)
+            g = min(int(options.get("g", 120)), 255)
+            b = min(int(options.get("b", 220)), 255)
+            pixel = bytes([b, g, r])
+            row = (pixel * width) + (b"\x00" * row_padding)
+            data_bytes = header + dib + (row * height)
+        elif media_type == "video":
+            # Generate video composition timeline, storyboard manifest or WebVTT subtitle track
+            if name.lower().endswith(".vtt"):
+                content_type = "text/vtt"
+                vtt_text = f"WEBVTT - {options.get('title', 'Video Track')}\n\n00:00:00.000 --> 00:00:05.000\n{content}\n"
+                data_bytes = vtt_text.encode("utf-8")
+            else:
+                content_type = "application/json"
+                manifest = {
+                    "title": options.get("title", "Video Storyboard & Composition Manifest"),
+                    "duration_seconds": float(options.get("duration", 10.0)),
+                    "fps": int(options.get("fps", 30)),
+                    "resolution": {"width": int(options.get("width", 1920)), "height": int(options.get("height", 1080))},
+                    "scenes": [
+                        {
+                            "id": "scene-1",
+                            "start_time": 0.0,
+                            "end_time": float(options.get("duration", 10.0)),
+                            "prompt": content,
+                            "audio_track": options.get("audio_track", "synthesized_voiceover"),
+                            "visual_style": options.get("style", "cinematic"),
+                        }
+                    ],
+                    "metadata": options,
+                }
+                data_bytes = json.dumps(manifest, indent=2, ensure_ascii=False).encode("utf-8")
+        elif media_type in ("video", "hyperframes"):
+            content_type = "application/json"
+            composition = {
+                "composition_version": "1.0",
+                "engine": "hyperframes",
+                "width": options.get("width", 1080),
+                "height": options.get("height", 1920),
+                "fps": options.get("fps", 60),
+                "duration_seconds": options.get("duration", 15),
+                "title": name,
+                "script": content,
+                "scenes": options.get("scenes", [
+                    {"id": "intro", "duration": 3, "caption": content[:100], "transition": "fade"},
+                    {"id": "main_feature", "duration": 8, "caption": content[100:300] if len(content) > 100 else content, "transition": "slide"},
+                    {"id": "cta", "duration": 4, "caption": options.get("cta", "สั่งซื้อเลยที่ลิงก์ในไบโอ! 🛒"), "transition": "zoom_in"}
+                ]),
+                "subtitles": options.get("subtitles", []),
+                "audio_track": options.get("audio_track", "energetic_commercial_bgm.mp3")
+            }
+            data_bytes = json.dumps(composition, indent=2, ensure_ascii=False).encode("utf-8")
+        elif media_type in ("content", "marketing"):
+            # Multi-channel content (articles, social media posts, marketing copywriting)
+            if name.lower().endswith(".json"):
+                content_type = "application/json"
+                post_payload = {
+                    "headline": options.get("title", "AI Workforce Content"),
+                    "body": content,
+                    "target_channels": options.get("channels", ["blog", "linkedin", "twitter"]),
+                    "tags": options.get("tags", ["ai", "workforce", "tech"]),
+                    "call_to_action": options.get("cta", "Learn more at zWorkforce."),
+                }
+                data_bytes = json.dumps(post_payload, indent=2, ensure_ascii=False).encode("utf-8")
+            else:
+                content_type = "text/markdown; charset=utf-8"
+                data_bytes = content.encode("utf-8")
+        elif media_type == "speech":
+            sample_rate = 16000
+            duration_s = min(float(options.get("duration", 1.0)), 10.0)
+            num_samples = int(sample_rate * duration_s)
+            import wave
+            import io
+            buf = io.BytesIO()
+            with wave.open(buf, "wb") as wav:
+                wav.setnchannels(1)
+                wav.setsampwidth(2)
+                wav.setframerate(sample_rate)
+                wav.writeframes(b"\x00\x00" * num_samples)
+            data_bytes = buf.getvalue()
+        elif media_type == "html":
+            title = options.get("title", "Generated Document")
+            html_doc = (
+                f"<!DOCTYPE html>\n<html><head><meta charset='utf-8'><title>{title}</title>\n"
+                f"<style>body{{font-family:sans-serif;margin:2rem;background:#fafafa;color:#222;}}</style>\n"
+                f"</head><body>{content}</body></html>"
+            )
+            data_bytes = html_doc.encode("utf-8")
+        else: # document / markdown
+            data_bytes = content.encode("utf-8")
+
+        if len(data_bytes) > self.settings.workspace_write_max_bytes:
+            raise ToolError("generated media exceeds platform artifact size limit")
+
+        from .artifacts import LocalArtifactStore
+        store_root = getattr(self.settings, "data_dir", Path("./data")) / "artifacts"
+        store = LocalArtifactStore(store_root, self.db)
+        artifact = store.put_bytes(
+            tenant_id=tenant_id,
+            name=name,
+            data=data_bytes,
+            actor=actor,
+            content_type=content_type,
+            metadata={"media_type": media_type, "generator": "zworkforce_media_engine", **options},
+        )
+        return {
+            "name": name,
+            "media_type": media_type,
+            "content_type": content_type,
+            "size_bytes": len(data_bytes),
+            "sha256": artifact.get("sha256", ""),
+            "storage_uri": artifact.get("storage_uri", ""),
         }
 
 

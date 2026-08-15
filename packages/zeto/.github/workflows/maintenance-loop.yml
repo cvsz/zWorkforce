@@ -1,0 +1,82 @@
+name: Zeto 30-Minute Maintenance Verification
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zeto-maintenance-verification
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Full repository checks
+        run: npm run check
+
+      - name: High severity dependency audit
+        run: npm audit --audit-level=high
+
+      - name: Capture dependency update candidates
+        id: outdated
+        shell: bash
+        run: |
+          set +e
+          npm outdated --json > npm-outdated.json
+          status=$?
+          if [ ! -s npm-outdated.json ]; then
+            printf '{}\n' > npm-outdated.json
+          fi
+          echo "npm_outdated_exit=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Build production container
+        run: docker build -t zeto:maintenance-${{ github.run_id }} .
+
+      - name: Write maintenance evidence
+        shell: bash
+        run: |
+          {
+            echo '# Zeto Maintenance Verification'
+            echo
+            echo "- Repository: $GITHUB_REPOSITORY"
+            echo "- Commit: $GITHUB_SHA"
+            echo "- Run: $GITHUB_RUN_ID"
+            echo "- UTC: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            echo "- Node: $(node --version)"
+            echo "- npm: $(npm --version)"
+            echo '- Checks: lint + tests + build + dependency audit + container build'
+            echo '- Dependency install mode: temporary npm install until package-lock baseline is committed'
+            echo
+            echo '## Dependency update candidates'
+            echo '```json'
+            cat npm-outdated.json
+            echo '```'
+          } > maintenance-report.md
+          cat maintenance-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload maintenance evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: maintenance-evidence-${{ github.run_id }}
+          path: |
+            maintenance-report.md
+            npm-outdated.json
+          retention-days: 14

@@ -1,0 +1,39 @@
+# Secrets are supplied by .env.cloudflare as TF_VAR_cloudflare_api_token.
+cloudflare_account_id = "00000000000000000000000000000000"
+cloudflare_zone_id    = "00000000000000000000000000000000"
+cloudflare_tunnel_id  = "00000000-0000-0000-0000-000000000000"
+
+moopiew_hostname  = "moopiew.zeaz.dev"
+moopiew_origin    = "http://127.0.0.1:8080"
+arin_hostname     = "arin.zeaz.dev"
+arin_origin       = "http://127.0.0.1:8080"
+zttshop_hostname  = "zttshop.zeaz.dev"
+zttshop_origin    = "http://127.0.0.1:8080"
+chat_hostname     = "chat.zeaz.dev"
+chat_origin       = "http://127.0.0.1:3000"
+piewdash_hostname = "piewdash.zeaz.dev"
+piewdash_origin   = "http://127.0.0.1:80"
+zdash_hostname    = "zdash.zeaz.dev"
+zdash_origin      = "http://127.0.0.1:18080"
+zerp_hostname     = "zerp.zeaz.dev"
+zerp_origin       = "http://127.0.0.1:80"
+
+piewdash_access_allowed_emails = [
+  "operator@example.com",
+]
+
+# Optional. Empty inherits piewdash_access_allowed_emails.
+zdash_access_allowed_emails = []
+
+# ZEAZ One remains disabled unless an operator explicitly enables it.
+# Corporate www.zeaz.dev routes are managed by cvsz/zeaz-platform.
+enable_zeaz_one           = false
+enable_zeaz_one_api_route = false
+zeaz_one_hostname         = "one.zeaz.dev"
+zeaz_one_origin           = "http://127.0.0.1:18081"
+zeaz_one_api_hostname     = "api.zeaz.dev"
+zeaz_one_api_origin       = "http://127.0.0.1:18084"
+zeaz_one_support_hostname = "support.zeaz.dev"
+zeaz_one_support_origin   = "http://127.0.0.1:18083"
+
+manage_tunnel_config = false

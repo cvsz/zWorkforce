@@ -12,7 +12,7 @@ Use this skill when changing runtime skill catalogs, agent definitions, orchestr
 - `AGENTS.md`
 - `packages/zarvis/AGENTS.md`
 - `ROADMAPS.md`
-- `EXEC-PLANING.md`
+- `exec-planning-zarvis.md`
 - `packages/zarvis/docs/architecture/openjarvis-upgrade-map.md`
 - `packages/zarvis/docs/architecture/skills-agents.md`
 - `packages/zarvis/docs/requirements/master-requirements.md`

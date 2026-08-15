@@ -90,3 +90,27 @@ These are engineering targets, not guarantees:
 - Session setup success: at least 99.5% in a healthy single-node deployment.
 
 Record actual values before enabling external production traffic.
+
+## Speech Provider Selection
+
+The voice-agent uses the `SpeechProviderRegistry` to resolve STT and TTS backends.
+
+### Selection rules
+
+1. **Explicit selection**: Workloads that pin a backend name (via `ZARVIS_STT_PROVIDER` / `ZARVIS_TTS_PROVIDER`) get exactly that provider. If the named provider is not registered, startup fails closed — no silent fallback.
+2. **Default selection**: When no pin is set and a `default` provider is registered, that provider is used.
+3. **Locality classification**: `local` providers run on-device/on-server without external network calls. `cloud` providers require credentials and egress — credentials are always server-side only.
+4. **Health reporting**: The health endpoint reports provider name and locality, never credentials. An unhealthy provider does not trigger automatic failover without explicit `ZARVIS_STT_FALLBACK` / `ZARVIS_TTS_FALLBACK` configuration.
+5. **Timeout and capability**: Each provider declares `timeout_seconds` and `max_audio_seconds`. The voice-agent enforces these before dispatching audio.
+
+### Environment variables (non-secret)
+
+| Variable | Purpose | Default |
+|---|---|---|
+| `ZARVIS_STT_PROVIDER` | STT provider name to select | `default` |
+| `ZARVIS_TTS_PROVIDER` | TTS provider name to select | `default` |
+| `ZARVIS_STT_FALLBACK` | Fallback STT provider on health failure | unset (no fallback) |
+| `ZARVIS_TTS_FALLBACK` | Fallback TTS provider on health failure | unset (no fallback) |
+| `VOICE_AGENT_REPORT_PROVIDERS` | Include provider summary in health output | `false` |
+
+Credentials for cloud providers are loaded exclusively from server-side environment variables or secret store references — never from client requests, browser payloads, or query parameters.

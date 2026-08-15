@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { createSkillCatalog } from './skill-catalog.mjs';
 import {
   COMMAND_COMPLETED_SCHEMA,
   createSessionEvent,
@@ -57,12 +58,14 @@ export class ZarvisOrchestrator {
     sessionStore = createMemorySessionStore(),
     now = () => new Date(),
     idFactory = randomUUID,
+    skillCatalog = createSkillCatalog(),
   } = {}) {
     this.githubStatusExecutor = githubStatusExecutor;
     this.auditSink = auditSink;
     this.sessionStore = sessionStore;
     this.now = now;
     this.idFactory = idFactory;
+    this.skillCatalog = skillCatalog;
     this.inflight = new Map();
   }
 
@@ -229,4 +232,59 @@ export class ZarvisOrchestrator {
   async deleteSession(sessionId) {
     return this.sessionStore.deleteSession(sessionId);
   }
+
+  listSkills() {
+    return this.skillCatalog.list();
+  }
+
+  registerSkill(manifest) {
+    return this.skillCatalog.register(manifest);
+  }
+
+  /**
+   * Execute a registered skill according to its manifest policy.
+   * Enforces allowlists, mutability rules, approval token checks, and audit emission.
+   */
+  async executeSkill({ skillId, version, input, actor, approvalToken = null, idempotencyKey = randomUUID(), handler }) {
+    const manifest = this.skillCatalog.get(skillId, version);
+    this.skillCatalog.assertApprovalValid(manifest, approvalToken, this.now());
+    
+    const invocationId = this.idFactory();
+    const startedAt = performance.now();
+    
+    try {
+      const output = await handler(input);
+      const durationMs = Math.round(performance.now() - startedAt);
+      
+      return {
+        invocation_id: invocationId,
+        skill_id: manifest.id,
+        skill_version: manifest.version,
+        tenant_id: actor.tenant_id,
+        status: 'succeeded',
+        output,
+        duration_ms: durationMs,
+        idempotency_key: idempotencyKey,
+        occurred_at: this.now().toISOString(),
+      };
+    } catch (error) {
+      const durationMs = Math.round(performance.now() - startedAt);
+      return {
+        invocation_id: invocationId,
+        skill_id: manifest.id,
+        skill_version: manifest.version,
+        tenant_id: actor.tenant_id,
+        status: 'failed',
+        error: {
+          code: error?.code ?? 'skill_execution_failed',
+          message: error?.message ?? 'Skill execution error',
+          retryable: false,
+        },
+        duration_ms: durationMs,
+        idempotency_key: idempotencyKey,
+        occurred_at: this.now().toISOString(),
+      };
+    }
+  }
 }
+

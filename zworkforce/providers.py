@@ -71,7 +71,8 @@ class ZworkforceLocalEndpoint:
         import subprocess
 
         model = self.cfg.model_for_tier(tier) or "deepseek/deepseek-v4-flash"
-        executable = shutil.which("zwf-coder") or "/usr/local/bin/zwf-coder"
+        # Prefer the in-repo zktcoder free-model CLI; fall back to the legacy zwf-coder binary.
+        executable = shutil.which("zktcoder") or shutil.which("zwf-coder") or "/usr/local/bin/zwf-coder"
         if not os.path.exists(executable):
             raise ProviderError(f"zWorkforce native coding engine binary not found on system", retryable=False)
 

@@ -20,3 +20,15 @@ workspace/
 .pytest_cache/
 .DS_Store
 .env.production
+.env.freebuff
+.env.cloudflare
+backup
+
+# Terraform — secrets, state, binaries, plan files
+*.tfstate
+*.tfstate.backup
+*.tfstate.*.backup
+terraform.tfvars
+tfplan
+tfplan.*
+.terraform/

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Zeto — Z.A.R.V.I.S. Operator View</title>
+    <link rel="stylesheet" href="/css/zarvis.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">ZETO / NEURAL OPERATOR</p>
+          <h1>Z.A.R.V.I.S.</h1>
+          <p class="tagline">
+            Zeto Autonomous Runtime Virtual Intelligence System
+          </p>
+        </div>
+        <div class="topbar-actions">
+          <span id="connection-pill" class="pill offline">OFFLINE</span>
+          <a class="button ghost" href="/">Dashboard</a>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="visual-panel panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">LIVE COGNITIVE TELEMETRY</p>
+              <h2 id="identity-state">CONNECTING</h2>
+            </div>
+            <div class="mode-stack">
+              <span id="mode" class="pill">OPERATOR</span>
+              <span id="focus" class="micro">FOCUS: —</span>
+            </div>
+          </div>
+
+          <div class="canvas-wrap">
+            <canvas
+              id="zarvis-canvas"
+              aria-label="Animated point-cloud Z.A.R.V.I.S. operator visualization"
+            ></canvas>
+            <div class="scanline"></div>
+            <div class="orbital orbital-a"></div>
+            <div class="orbital orbital-b"></div>
+            <div class="visual-overlay">
+              <div>
+                <span>CONFIDENCE</span><strong id="confidence">—</strong>
+              </div>
+              <div><span>NEURAL LOAD</span><strong id="load">—</strong></div>
+              <div><span>ALERT</span><strong id="alert">—</strong></div>
+            </div>
+            <div class="orb-state" id="orb-state" aria-live="polite">
+              JARVIS CORE / WAITING FOR INPUT
+            </div>
+          </div>
+        </section>
+
+        <aside class="stack">
+          <section class="panel stream-panel">
+            <div class="panel-head compact">
+              <div>
+                <p class="eyebrow">REALTIME OPERATOR EVENTS</p>
+                <h3>Command Stream</h3>
+              </div>
+              <span id="stream-status" class="micro">IDLE</span>
+            </div>
+            <ol id="command-stream" class="command-stream" aria-live="polite">
+              <li class="stream-empty">No commands yet</li>
+            </ol>
+          </section>
+          <section class="panel metric-grid">
+            <article><span>Queued</span><strong id="queued">—</strong></article>
+            <article>
+              <span>Pending</span><strong id="pending">—</strong>
+            </article>
+            <article>
+              <span>Approval</span><strong id="approval">—</strong>
+            </article>
+            <article>
+              <span>Schedules</span><strong id="schedules">—</strong>
+            </article>
+            <article>
+              <span>Published</span><strong id="published">—</strong>
+            </article>
+            <article><span>Failed</span><strong id="failed">—</strong></article>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head compact">
+              <div>
+                <p class="eyebrow">FACTORY NODES</p>
+                <h3>Agent Matrix</h3>
+              </div>
+            </div>
+            <div id="module-list" class="module-list"></div>
+          </section>
+
+          <section class="panel runtime">
+            <div class="panel-head compact">
+              <div>
+                <p class="eyebrow">RUNTIME</p>
+                <h3>System Core</h3>
+              </div>
+            </div>
+            <dl>
+              <div>
+                <dt>Node</dt>
+                <dd id="runtime-node">—</dd>
+              </div>
+              <div>
+                <dt>Uptime</dt>
+                <dd id="runtime-uptime">—</dd>
+              </div>
+              <div>
+                <dt>Scheduler</dt>
+                <dd id="runtime-scheduler">—</dd>
+              </div>
+              <div>
+                <dt>Updated</dt>
+                <dd id="updated">—</dd>
+              </div>
+            </dl>
+          </section>
+        </aside>
+      </main>
+
+      <div class="command-bar panel">
+        <input
+          id="command-input"
+          type="text"
+          placeholder="Say or type a command…"
+          autocomplete="off"
+          aria-label="Operator command"
+        />
+        <button id="command-send" class="button ghost" type="button">
+          Send
+        </button>
+      </div>
+
+      <footer>
+        <span>Realtime derived state only — no fabricated KPI data.</span>
+        <span>Zeto ProMeta Master / Operator Surface</span>
+      </footer>
+    </div>
+    <script src="/js/operatorStream.js"></script>
+    <script src="/js/zarvis.js"></script>
+  </body>
+</html>

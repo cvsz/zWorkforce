@@ -1,0 +1,39 @@
+{
+  "id": "dev.zworkforce.zarvis.skill.memory.write",
+  "version": "1.0.0",
+  "name": "Memory Proposal Writer",
+  "domain": "memory",
+  "description": "Authorized storage of semantic or episodic memory proposals with consent bounds.",
+  "input_schema": {
+    "type": "object",
+    "required": ["content", "classification"],
+    "properties": {
+      "content": { "type": "string", "minLength": 1, "maxLength": 4000 },
+      "classification": { "type": "string", "enum": ["working", "episodic", "semantic", "procedural"] },
+      "tags": { "type": "array", "items": { "type": "string" } }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "required": ["proposal_id", "status"],
+    "properties": {
+      "proposal_id": { "type": "string" },
+      "status": { "type": "string", "enum": ["proposed", "persisted"] }
+    }
+  },
+  "capability_allowlist": ["memory.propose", "memory.write"],
+  "mutability": "write",
+  "approval_rule": "human_required",
+  "timeout_seconds": 20,
+  "max_concurrency": 5,
+  "retry_policy": {
+    "max_attempts": 3,
+    "backoff": "exponential",
+    "base_delay_seconds": 1.0
+  },
+  "idempotency_strategy": "idempotency_key",
+  "audit_events": ["zarvis.memory.proposal.created.v1", "zarvis.memory.proposal.approved.v1"],
+  "owner": "zarvis-memory",
+  "rollback_policy": "compensating_transaction",
+  "tags": ["memory", "privacy", "proposals"]
+}

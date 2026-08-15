@@ -52,6 +52,93 @@ class ZworkforceLocalCoderTests(unittest.TestCase):
         self.assertEqual(result["exit_code"], 0)
         self.assertEqual(result["stdout"], "Files refactored cleanly.")
 
+    def test_media_generate_svg_and_document(self):
+        executor = ToolExecutor(self.settings, self.db)
+
+        svg_res = executor.execute(
+            "media_generate",
+            {
+                "media_type": "svg",
+                "name": "architecture_diagram.svg",
+                "content": "<circle cx='50' cy='50' r='40' stroke='green' stroke-width='4' fill='yellow' />",
+                "options": {"title": "Architecture Overview"},
+            },
+            tenant_id="default",
+            agent_id="software-engineer",
+            actor="test-dev",
+        )
+        self.assertEqual(svg_res["media_type"], "svg")
+        self.assertEqual(svg_res["name"], "architecture_diagram.svg")
+        self.assertGreater(svg_res["size_bytes"], 0)
+        self.assertTrue(svg_res["storage_uri"].startswith("file://"))
+
+        speech_res = executor.execute(
+            "media_generate",
+            {
+                "media_type": "speech",
+                "name": "notification.wav",
+                "content": "Hello workforce",
+                "options": {"duration": 0.5},
+            },
+            tenant_id="default",
+            agent_id="software-engineer",
+            actor="test-dev",
+        )
+        self.assertEqual(speech_res["media_type"], "speech")
+        self.assertEqual(speech_res["content_type"], "audio/wav")
+        self.assertGreater(speech_res["size_bytes"], 0)
+
+        # Test raster image generation
+        img_res = executor.execute(
+            "media_generate",
+            {
+                "media_type": "image",
+                "name": "banner.bmp",
+                "content": "Render high-contrast brand icon",
+                "options": {"width": 64, "height": 64, "r": 255, "g": 100, "b": 50},
+            },
+            tenant_id="default",
+            agent_id="software-engineer",
+            actor="test-dev",
+        )
+        self.assertEqual(img_res["media_type"], "image")
+        self.assertEqual(img_res["content_type"], "image/bmp")
+        self.assertGreater(img_res["size_bytes"], 54)
+
+        # Test video composition generation
+        video_res = executor.execute(
+            "media_generate",
+            {
+                "media_type": "video",
+                "name": "promo_reel.json",
+                "content": "Dynamic intro showing dashboard telemetry and voice orb",
+                "options": {"duration": 15.0, "fps": 60, "style": "cyberpunk"},
+            },
+            tenant_id="default",
+            agent_id="software-engineer",
+            actor="test-dev",
+        )
+        self.assertEqual(video_res["media_type"], "video")
+        self.assertEqual(video_res["content_type"], "application/json")
+        self.assertGreater(video_res["size_bytes"], 0)
+
+        # Test copywriting / social content generation
+        content_res = executor.execute(
+            "media_generate",
+            {
+                "media_type": "content",
+                "name": "announcement.json",
+                "content": "Introducing zWorkforce v3.0 Native Autonomous Agents",
+                "options": {"title": "Major Release Update", "channels": ["twitter", "linkedin"]},
+            },
+            tenant_id="default",
+            agent_id="software-engineer",
+            actor="test-dev",
+        )
+        self.assertEqual(content_res["media_type"], "content")
+        self.assertEqual(content_res["content_type"], "application/json")
+        self.assertGreater(content_res["size_bytes"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

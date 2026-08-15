@@ -1,0 +1,68 @@
+name: security
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  static-security:
+    name: security / static scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure .env is not committed
+        run: |
+          if git ls-files --error-unmatch .env >/dev/null 2>&1; then
+            echo "[FAIL] .env must not be committed"
+            exit 1
+          fi
+
+      - name: Block backup and secret dump files
+        run: |
+          blocked=""
+          while IFS= read -r file; do
+            case "$file" in
+              .env.example|tests/security/*.test.ts|tests/security/**/*.test.ts)
+                continue
+                ;;
+            esac
+
+            if printf '%s\n' "$file" | grep -Eq '(^|/)\.env($|\.)|\.pem$|\.key$|\.p12$|\.bak$|\.backup$|(^|/)(secrets?|credentials)(\.|/|$)'; then
+              blocked="${blocked}${file}\n"
+            fi
+          done < <(git ls-files)
+
+          if [ -n "$blocked" ]; then
+            echo "[FAIL] Potential secret/backup files tracked:"
+            printf '%b' "$blocked"
+            exit 1
+          fi
+
+      - name: Static secret value scan
+        run: |
+          matches="$(git grep -nE '(^|[^A-Za-z0-9_])(DATABASE_URL|OPENAI_API_KEY|AUTH_SECRET|MARQETA_(APPLICATION_TOKEN|ADMIN_ACCESS_TOKEN))=(postgresql://|mysql://|mongodb://|sk-|[A-Za-z0-9_./+=:-]{24,})' -- . ':!node_modules' ':!.git' ':!.github/workflows/**' ':!.env.example' ':!docs/**' ':!tests/**' ':!.claude/**' ':!scripts/health-zsp-aitool.sh' || true)"
+          if [ -n "$matches" ]; then
+            echo '[FAIL] Potential secret value detected'
+            echo "$matches"
+            exit 1
+          fi
+
+      - name: npm audit (non-blocking)
+        run: npm audit --audit-level=high || echo "[WARN] npm audit reported findings; review required"

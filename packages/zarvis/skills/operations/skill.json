@@ -1,0 +1,34 @@
+{
+  "id": "dev.zworkforce.zarvis.skill.operations.health_probe",
+  "version": "1.0.0",
+  "name": "Cluster & Queue Health Probe",
+  "domain": "operations",
+  "description": "Diagnostic probe inspecting health, queue lag, and provider circuit state without secrets.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "subsystems": { "type": "array", "items": { "type": "string" } }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "required": ["status", "components"],
+    "properties": {
+      "status": { "type": "string", "enum": ["healthy", "degraded", "failing"] },
+      "components": { "type": "object" }
+    }
+  },
+  "capability_allowlist": ["ops.status", "ops.metrics_read"],
+  "mutability": "read",
+  "timeout_seconds": 10,
+  "max_concurrency": 20,
+  "retry_policy": {
+    "max_attempts": 1,
+    "backoff": "none"
+  },
+  "idempotency_strategy": "none",
+  "audit_events": ["zarvis.ops.probe_completed.v1"],
+  "owner": "zarvis-ops",
+  "rollback_policy": "none",
+  "tags": ["ops", "health", "diagnostics"]
+}

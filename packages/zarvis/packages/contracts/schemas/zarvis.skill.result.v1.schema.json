@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "zarvis.skill.result.v1.schema.json",
+  "title": "Z.A.R.V.I.S. Runtime Skill Result v1",
+  "description": "Result envelope for a completed skill invocation. Always paired with a zarvis.skill.invocation.v1 by invocation_id. Terminal statuses are final and must not be retried.",
+  "type": "object",
+  "required": [
+    "invocation_id",
+    "skill_id",
+    "skill_version",
+    "tenant_id",
+    "status",
+    "occurred_at"
+  ],
+  "properties": {
+    "invocation_id": {
+      "type": "string",
+      "description": "Matches the zarvis.skill.invocation.v1 invocation_id."
+    },
+    "skill_id": { "type": "string" },
+    "skill_version": { "type": "string" },
+    "tenant_id": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["succeeded", "failed", "denied", "timed_out", "cancelled"],
+      "description": "Terminal status. 'denied' means the approval gate rejected execution."
+    },
+    "output": {
+      "type": "object",
+      "description": "Skill output, validated against skill_manifest.output_schema. Present only when status is 'succeeded'."
+    },
+    "error": {
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "message": { "type": "string", "description": "Must not contain credentials, keys, or raw provider error details." },
+        "retryable": { "type": "boolean" }
+      },
+      "required": ["code", "message"]
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "duration_ms": {
+      "type": "number",
+      "minimum": 0
+    },
+    "tool_calls": {
+      "type": "array",
+      "description": "Audit record of tool calls made during execution. Must not include credentials or raw responses.",
+      "items": {
+        "type": "object",
+        "required": ["tool", "mutating", "status"],
+        "properties": {
+          "tool": { "type": "string" },
+          "mutating": { "type": "boolean" },
+          "status": { "type": "string", "enum": ["succeeded", "failed", "denied"] }
+        }
+      }
+    },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Echo of the invocation idempotency key."
+    },
+    "replayed": {
+      "type": "boolean",
+      "description": "True when this result was served from a prior successful execution with the same idempotency_key."
+    }
+  },
+  "additionalProperties": false
+}
