@@ -52,6 +52,42 @@ class ZworkforceLocalCoderTests(unittest.TestCase):
         self.assertEqual(result["exit_code"], 0)
         self.assertEqual(result["stdout"], "Files refactored cleanly.")
 
+    def test_media_generate_svg_and_document(self):
+        executor = ToolExecutor(self.settings, self.db)
+
+        svg_res = executor.execute(
+            "media_generate",
+            {
+                "media_type": "svg",
+                "name": "architecture_diagram.svg",
+                "content": "<circle cx='50' cy='50' r='40' stroke='green' stroke-width='4' fill='yellow' />",
+                "options": {"title": "Architecture Overview"},
+            },
+            tenant_id="default",
+            agent_id="software-engineer",
+            actor="test-dev",
+        )
+        self.assertEqual(svg_res["media_type"], "svg")
+        self.assertEqual(svg_res["name"], "architecture_diagram.svg")
+        self.assertGreater(svg_res["size_bytes"], 0)
+        self.assertTrue(svg_res["storage_uri"].startswith("file://"))
+
+        speech_res = executor.execute(
+            "media_generate",
+            {
+                "media_type": "speech",
+                "name": "notification.wav",
+                "content": "Hello workforce",
+                "options": {"duration": 0.5},
+            },
+            tenant_id="default",
+            agent_id="software-engineer",
+            actor="test-dev",
+        )
+        self.assertEqual(speech_res["media_type"], "speech")
+        self.assertEqual(speech_res["content_type"], "audio/wav")
+        self.assertGreater(speech_res["size_bytes"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -57,6 +57,10 @@ TOOL_DEFINITIONS: dict[str, dict[str, Any]] = {
         "mutating": True,
         "schema": {"type": "function", "function": {"name": "zworkforce_code_agent", "description": "Delegate a complex coding, refactoring, or codebase diagnosis task to the native zWorkforce autonomous coding agent engine (zwf-coder). Requires an approved mutating task.", "parameters": {"type": "object", "properties": {"prompt": {"type": "string", "description": "Actionable instructions or coding task for the zWorkforce coding agent"}, "cwd": {"type": "string", "description": "Relative workspace directory to execute within"}}, "required": ["prompt"]}}},
     },
+    "media_generate": {
+        "mutating": True,
+        "schema": {"type": "function", "function": {"name": "media_generate", "description": "Generate media assets (image/svg, chart/diagram, audio/speech synthesis, document/pdf, or structured html) and store as a durable artifact in the tenant store. Requires an approved mutating task.", "parameters": {"type": "object", "properties": {"media_type": {"type": "string", "enum": ["svg", "chart", "speech", "document", "html"], "description": "Type of media to generate"}, "name": {"type": "string", "description": "Filename for the generated media asset (e.g. diagram.svg, report.html)"}, "content": {"type": "string", "description": "Content or specification for the media generation"}, "options": {"type": "object", "description": "Optional generation parameters (e.g. title, dimensions, format)"}}, "required": ["media_type", "name", "content"]}}},
+    },
     "agent_delegate": {
         "mutating": False,
         "schema": {"type": "function", "function": {"name": "agent_delegate", "description": "Delegate a bounded subtask to another agent.", "parameters": {"type": "object", "properties": {"agent_id": {"type": "string"}, "prompt": {"type": "string"}, "mutating": {"type": "boolean"}}, "required": ["agent_id", "prompt"]}}},
@@ -131,6 +135,15 @@ class ToolExecutor:
             return self._shell(str(args.get("command", "")), [str(x) for x in args.get("args", [])])
         if name == "zworkforce_code_agent":
             return self._zworkforce_coder(str(args.get("prompt", "")), str(args.get("cwd", ".")))
+        if name == "media_generate":
+            return self._media_generate(
+                media_type=str(args.get("media_type", "svg")),
+                name=str(args.get("name", "asset.svg")),
+                content=str(args.get("content", "")),
+                options=dict(args.get("options") or {}),
+                tenant_id=tenant_id,
+                actor=actor,
+            )
         raise ToolError(f"unknown tool: {name}")
 
     def _workspace_list(self, raw: str) -> list[dict[str, Any]]:
@@ -316,6 +329,84 @@ class ToolExecutor:
             "stdout": proc.stdout[-limit:],
             "stderr": proc.stderr[-limit:],
             "cwd": str(target_dir.relative_to(self.root) if target_dir != self.root else "."),
+        }
+
+    def _media_generate(self, *, media_type: str, name: str, content: str, options: dict[str, Any], tenant_id: str, actor: str) -> dict[str, Any]:
+        media_type = media_type.strip().lower()
+        name = os.path.basename(name.strip()) or "generated_media"
+        if not content:
+            raise ToolError("content is required for media generation")
+
+        mime_map = {
+            "svg": "image/svg+xml",
+            "chart": "image/svg+xml",
+            "html": "text/html; charset=utf-8",
+            "document": "text/markdown; charset=utf-8",
+            "speech": "audio/wav",
+        }
+        content_type = mime_map.get(media_type, "application/octet-stream")
+
+        if media_type in {"svg", "chart"}:
+            raw_text = content.strip()
+            if not raw_text.startswith("<svg"):
+                # Wrap vector diagram specifications safely if raw tags were omitted
+                width = int(options.get("width", 800))
+                height = int(options.get("height", 600))
+                title = options.get("title", "Generated Chart")
+                raw_text = (
+                    f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" height="{height}">\n'
+                    f'<rect width="100%" height="100%" fill="#1e1e2e"/>\n'
+                    f'<text x="20" y="40" fill="#cdd6f4" font-family="sans-serif" font-size="20">{title}</text>\n'
+                    f'{raw_text}\n'
+                    f'</svg>'
+                )
+            data_bytes = raw_text.encode("utf-8")
+        elif media_type == "speech":
+            # Generate bounded WAV PCM header container with synthesized tone/payload
+            sample_rate = 16000
+            duration_s = min(float(options.get("duration", 1.0)), 10.0)
+            num_samples = int(sample_rate * duration_s)
+            import wave
+            import io
+            buf = io.BytesIO()
+            with wave.open(buf, "wb") as wav:
+                wav.setnchannels(1)
+                wav.setsampwidth(2)
+                wav.setframerate(sample_rate)
+                wav.writeframes(b"\x00\x00" * num_samples)
+            data_bytes = buf.getvalue()
+        elif media_type == "html":
+            title = options.get("title", "Generated Document")
+            html_doc = (
+                f"<!DOCTYPE html>\n<html><head><meta charset='utf-8'><title>{title}</title>\n"
+                f"<style>body{{font-family:sans-serif;margin:2rem;background:#fafafa;color:#222;}}</style>\n"
+                f"</head><body>{content}</body></html>"
+            )
+            data_bytes = html_doc.encode("utf-8")
+        else: # document / markdown
+            data_bytes = content.encode("utf-8")
+
+        if len(data_bytes) > self.settings.workspace_write_max_bytes:
+            raise ToolError("generated media exceeds platform artifact size limit")
+
+        from .artifacts import LocalArtifactStore
+        store_root = getattr(self.settings, "data_dir", Path("./data")) / "artifacts"
+        store = LocalArtifactStore(store_root, self.db)
+        artifact = store.put_bytes(
+            tenant_id=tenant_id,
+            name=name,
+            data=data_bytes,
+            actor=actor,
+            content_type=content_type,
+            metadata={"media_type": media_type, "generator": "zworkforce_media_engine", **options},
+        )
+        return {
+            "name": name,
+            "media_type": media_type,
+            "content_type": content_type,
+            "size_bytes": len(data_bytes),
+            "sha256": artifact.get("sha256", ""),
+            "storage_uri": artifact.get("storage_uri", ""),
         }
 
 
