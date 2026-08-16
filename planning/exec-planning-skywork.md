@@ -2,14 +2,14 @@
 
 **Updated:** 2026-08-17  
 **Status:** active implementation plan  
-**Scope:** workspace UX, conversations/context, artifacts/review, skill lifecycle, sandbox/worktrees, browser automation, notifications and FinOps  
-**Reference:** `docs/SKYWORK-CHANGELOG-REVERSE-ENGINEERING.md`
+**Scope:** workspace UX, conversations/context, artifacts/review, skill lifecycle, sandbox/worktrees, browser automation, notifications, web-product flows and FinOps  
+**References:** `docs/SKYWORK-CHANGELOG-REVERSE-ENGINEERING.md`, official Skywork Help changelog surfaces, and the official Skywork Desktop changelog
 
 ## 1. Mission
 
 Adopt the strongest publicly documented Skywork workspace-agent product patterns where they improve zWorkforce, without copying proprietary code or weakening zWorkforce security and governance.
 
-The target is not a clone. The target is a stronger zWorkforce operator/workspace experience built on existing durable tasks, workflows, artifacts, memory, approvals, MCP, Z.A.R.V.I.S., Zider and FinOps.
+The target is not a clone. The target is a stronger zWorkforce operator/workspace experience built on existing durable tasks, workflows, artifacts, memory, approvals, MCP, Z.A.R.V.I.S., Zider, Zeto and FinOps.
 
 ## 2. Definition of complete
 
@@ -25,6 +25,9 @@ The upgrade is complete only when all applicable criteria pass:
 - repeated workflows produce reviewable candidates, never silently activated production skills;
 - notifications are tenant scoped and connector delivery is opt-in/policy controlled;
 - FinOps preflight and actual usage are backed by durable ledger data;
+- social publishing continues through durable approval/outbox/provider boundaries;
+- design guidelines are versioned, attributable and enforced by generation/QA policy rather than UI hints only;
+- memory imports are previewable, provenance-preserving, consent-based and tenant scoped;
 - tests cover auth, tenancy, traversal, SSRF, skill authority expansion, idempotency, cancellation, retry and rollback;
 - required CI/security/package/Windows/release gates are green on the exact candidate SHA.
 
@@ -32,7 +35,7 @@ The upgrade is complete only when all applicable criteria pass:
 
 ### Phase SW0 — Capability mapping and lifecycle foundation
 
-**Status:** IN PROGRESS
+**Status:** IMPLEMENTED FOUNDATION / PR VALIDATION IN PROGRESS
 
 Deliverables:
 
@@ -47,62 +50,100 @@ Deliverables:
   - no silent tool-capability expansion;
   - no read→write escalation;
   - no approval weakening.
+- orchestrator execution must resolve only enabled skill versions; lifecycle state is not presentation-only.
 
 Primary implementation:
 
 - `packages/zarvis/services/zarvis-orchestrator/src/skill-catalog.mjs`
+- `packages/zarvis/services/zarvis-orchestrator/src/orchestrator.mjs`
 - `packages/zarvis/services/zarvis-orchestrator/test/skill-catalog.test.mjs`
+- `packages/zarvis/services/zarvis-orchestrator/test/orchestrator-skill-execution.test.mjs`
 
 Exit criteria:
 
 - existing catalog behavior remains compatible;
 - lifecycle tests pass;
+- disabled versions cannot execute;
 - auto-update fails closed on authority expansion;
-- prior versions remain resolvable for rollback.
+- prior versions remain resolvable for rollback;
+- affected Z.A.R.V.I.S., root CI, CodeQL and dependency gates pass.
 
 ### Phase SW1 — Durable projects and conversations
 
-Add repository-backed entities:
+Use the repository's existing database composition instead of introducing a parallel store. The current data layer is `Database = AutomationMixin + TaskMixin + FinOpsMixin + GovernanceMixin + MigrationMixin + DatabaseBase`, with schemas split across `db_schema.py`, `db_schema_v3.py` and version-specific initialization in `db_base.py`.
+
+Planned files:
+
+- `zworkforce/db_schema_workspace.py` — additive workspace schema kept separate from legacy/v3 schema blocks.
+- `zworkforce/db_workspace.py` — `WorkspaceMixin` with tenant-scoped project/conversation/message operations.
+- `zworkforce/db_base.py` — import/initialize workspace schema and advance schema version only with migration/test updates.
+- `zworkforce/db.py` — compose `WorkspaceMixin` into the canonical `Database` class.
+- `zworkforce/api.py` — authenticated workspace endpoints.
+- `tests/test_workspace.py` — SQLite/data-layer contract.
+- `tests/test_workspace_api.py` — API/RBAC/tenant contract.
+- `tests/test_v3_postgres.py` — PostgreSQL workspace schema/round-trip evidence when this slice lands.
+
+Repository-backed entities:
 
 ```text
 workspace_projects
 workspace_conversations
 workspace_messages
-workspace_message_anchors
-workspace_pins
-workspace_context_snapshots
 ```
 
-Required fields include tenant ID, owner/actor, project ID, timestamps, status, title, source task/workflow references and retention policy.
+Future SW2 entities may add:
 
-APIs:
+```text
+workspace_context_snapshots
+workspace_context_members
+```
+
+Use fields on project/conversation rows for pin/archive state instead of creating a redundant pin table unless multi-user pins become a requirement.
+
+Required fields include tenant ID, owner/actor, project ID, timestamps, status, title, source task/workflow references and retention policy. Foreign keys involving project/conversation ownership should include `tenant_id` so cross-tenant attachment is rejected structurally as well as by repository queries.
+
+Initial APIs:
 
 ```text
 POST   /api/v1/workspaces/projects
 GET    /api/v1/workspaces/projects
-PATCH  /api/v1/workspaces/projects/{id}
+GET    /api/v1/workspaces/projects/{id}
+POST   /api/v1/workspaces/projects/{id}/rename
+POST   /api/v1/workspaces/projects/{id}/pin
+POST   /api/v1/workspaces/projects/{id}/archive
 POST   /api/v1/workspaces/conversations
 GET    /api/v1/workspaces/conversations/{id}
-GET    /api/v1/workspaces/conversations?query=
+GET    /api/v1/workspaces/conversations?query=&project_id=&status=
+POST   /api/v1/workspaces/conversations/{id}/rename
 POST   /api/v1/workspaces/conversations/{id}/pin
 POST   /api/v1/workspaces/conversations/{id}/archive
+POST   /api/v1/workspaces/conversations/{id}/messages
+GET    /api/v1/workspaces/conversations/{id}/messages
 DELETE /api/v1/workspaces/conversations/{id}
 ```
+
+The current HTTP server primarily exposes GET/POST actions. Prefer explicit action endpoints for rename/pin/archive rather than adding PATCH solely for cosmetic REST symmetry.
 
 Security:
 
 - every query is tenant scoped;
+- composite tenant ownership is enforced for project→conversation→message relationships;
 - conversation IDs are opaque and cannot switch tenant ownership;
 - creation happens only after authentication/authorization;
-- deletion/forget is audited and retention-aware.
+- reads require `workspace:read`; mutations require `workspace:write`; destructive deletion may use `workspace:delete`/admin policy;
+- deletion/forget is audited and retention-aware;
+- message/artifact references are bounded and validated; raw host paths are not accepted.
 
 Tests:
 
 - cross-tenant read/write negative tests;
+- cross-tenant project attachment rejected;
 - pin/archive/search persistence;
-- restart safety;
+- message ordering and restart safety;
 - title/autoname validation;
-- deletion and retention semantics.
+- deletion/cascade and retention semantics;
+- SQLite and PostgreSQL round trips;
+- API scope enforcement and audit evidence.
 
 ### Phase SW2 — Context budget and compaction
 
@@ -228,6 +269,34 @@ Build on Phase SW0:
 - repeated-workflow detector creates a draft workflow/skill candidate;
 - generated candidates require schema validation, policy review and tests before enablement.
 
+### Phase SW8A — Skywork Web changelog integrations
+
+The current Skywork Help landing page exposes three recent web-product changes that map cleanly onto existing zWorkforce subsystems. Treat them as capability references, not implementation dependencies.
+
+#### Social Publishing Flow → Zeto
+
+- extend Zeto's existing content lifecycle rather than create a second publisher;
+- composition/approval/scheduling/publish remains `draft → review → approved → scheduled → publishing → live|failed`;
+- use existing durable queue/outbox, provider adapters, idempotency keys, audit trail and retry/dead-letter semantics;
+- provide social-format templates and platform previews as presentation features only; provider side effects still go through approval/policy.
+
+#### Design Guidelines in Knowledge Base → Brand/Design policy
+
+- store design guideline documents as versioned tenant artifacts/knowledge records with owner, source, hash and effective version;
+- project/brand contexts reference guideline versions explicitly;
+- generation tools receive derived non-secret design constraints;
+- Zeto QA/brand-safety evaluates outputs against the active guideline version;
+- zsp-aitool/Zider can preview guidelines but cannot silently modify active production policy.
+
+#### SkyClaw memory import → portable zWorkforce memory import
+
+- add import adapters for operator-supplied AI memory/export files rather than scraping private accounts;
+- support preview/dry-run, source/provider label, import batch ID, hash/dedupe, conflict handling and explicit commit;
+- imported memory is tenant scoped and records provenance, actor, timestamp and source artifact hash;
+- do not treat imported model instructions as trusted system policy;
+- redact/reject secrets and unsupported sensitive fields according to tenant policy;
+- allow batch rollback/delete through the recorded import batch where retention rules permit.
+
 ### Phase SW9 — Notification center and proactive delivery
 
 Durable notifications:
@@ -289,21 +358,25 @@ Required suites:
 - browser mutation approval tests;
 - skill authority-expansion tests;
 - context/tenant negative tests;
+- social publish idempotency/provider-fake tests;
+- design guideline version/tenant enforcement tests;
+- memory import provenance/dedupe/rollback tests;
 - CodeQL, dependency review, SBOM/provenance;
 - staging E2E for workspace → plan → execute → review → approve → artifact → PR/publish.
 
 ## 4. PR sequence
 
 1. `feat/skywork-inspired-workspace-upgrade` — research map, plans and governed skill lifecycle foundation.
-2. `feat/workspace-project-conversations` — durable project/conversation schema + API.
+2. `feat/workspace-project-conversations` — additive workspace schema/mixin + durable project/conversation/message API.
 3. `feat/workspace-context-commands` — context budget/compaction + slash command registry.
 4. `feat/workspace-task-sidecar` — summaries, artifacts, subagent/tool trace projection.
 5. `feat/workspace-local-sandbox` — scoped local workspace executor.
 6. `feat/workspace-git-worktrees` — branch/worktree adapter and diff/PR workflow.
 7. `feat/zider-browser-use-contract` — read/mutate browser tool boundary.
 8. `feat/skill-marketplace-reusable-workflows` — signed install/discovery/candidate compiler.
-9. `feat/workspace-notifications-finops` — notification center + cost preflight/ledger UX.
-10. `feat/workspace-ux-hardening` — Web/WinUI parity, accessibility, E2E and release evidence.
+9. `feat/zeto-design-memory-portability` — social publishing UX alignment, design guideline policy, memory import batches.
+10. `feat/workspace-notifications-finops` — notification center + cost preflight/ledger UX.
+11. `feat/workspace-ux-hardening` — Web/WinUI parity, accessibility, E2E and release evidence.
 
 ## 5. Validation baseline
 
@@ -318,4 +391,4 @@ pnpm --dir packages/zarvis audit --audit-level high
 python scripts/verify_release.py --expected 3.0.3
 ```
 
-Changed packages must also execute their package-native type/build/test/security gates. Production claims remain subject to `docs/PRODUCTION-EVIDENCE.md`.
+Changed packages must also execute their package-native type/build/test/security gates. PostgreSQL behavior changes must run the real CI PostgreSQL service tests. Production claims remain subject to `docs/PRODUCTION-EVIDENCE.md`.
