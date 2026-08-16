@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .db_base import DatabaseBase, SCHEMA_VERSION as BASE_SCHEMA_VERSION, TERMINAL_STATUSES, json_dumps, json_loads, utc_after, utcnow
+from .db_base import DatabaseBase, TERMINAL_STATUSES, json_dumps, json_loads, utc_after, utcnow
 from .db_migration import MigrationMixin
 from .db_tasks import TaskMixin
 from .db_finops import FinOpsMixin
@@ -110,4 +110,4 @@ class Database(WorkspaceGrantMixin, WorkspaceContextMixin, WorkspaceMixin, Evide
         return task
 
 
-__all__ = ["Database", "SCHEMA_VERSION", "BASE_SCHEMA_VERSION", "TERMINAL_STATUSES", "json_dumps", "json_loads", "utc_after", "utcnow"]
+__all__ = ["Database", "SCHEMA_VERSION", "TERMINAL_STATUSES", "json_dumps", "json_loads", "utc_after", "utcnow"]
