@@ -6,7 +6,7 @@ import uuid
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from zworkforce.config import ProviderConfig, Settings
-from zworkforce.db import Database, utcnow
+from zworkforce.db import Database, SCHEMA_VERSION, utcnow
 from zworkforce.engine import Engine
 from zworkforce.workflow import WorkflowOrchestrator
 from zworkforce.providers import build_provider
@@ -93,12 +93,13 @@ class PostgresIntegrationTests(unittest.TestCase):
             self.assertEqual(failures, [], [str(exc) for exc in failures])
             with psycopg.connect(self.url, autocommit=True) as connection:
                 relations = connection.execute(
-                    "SELECT to_regclass(%s), to_regclass(%s), to_regclass(%s), to_regclass(%s)",
+                    "SELECT to_regclass(%s), to_regclass(%s), to_regclass(%s), to_regclass(%s), to_regclass(%s)",
                     (
                         f"{schema}.tenants",
                         f"{schema}.tasks2",
                         f"{schema}.event_rules3",
                         f"{schema}.workspace_conversations5",
+                        f"{schema}.workspace_grants6",
                     ),
                 ).fetchone()
                 schema_version = connection.execute(
@@ -112,9 +113,10 @@ class PostgresIntegrationTests(unittest.TestCase):
                     f"{schema}.tasks2",
                     f"{schema}.event_rules3",
                     f"{schema}.workspace_conversations5",
+                    f"{schema}.workspace_grants6",
                 ),
             )
-            self.assertEqual(schema_version, "5")
+            self.assertEqual(schema_version, str(SCHEMA_VERSION))
         finally:
             with psycopg.connect(self.url, autocommit=True) as connection:
                 connection.execute(f'DROP SCHEMA "{schema}" CASCADE')
@@ -172,6 +174,31 @@ class PostgresIntegrationTests(unittest.TestCase):
                 project_id=project["id"],
                 title="cross tenant",
             )
+
+    def test_workspace_grants_v6_round_trip_and_tenant_isolation(self):
+        grant = self.db.upsert_workspace_grant(
+            self.tenant_id,
+            {
+                "name": "Postgres grant",
+                "root_rel": "repo",
+                "read": True,
+                "write": False,
+                "commands": ["git"],
+                "network_policy": "deny",
+                "enabled": True,
+                "expires_at": "2099-01-01T00:00:00+00:00",
+            },
+            self.tenant_id,
+        )
+        self.assertEqual(grant["root_rel"], "repo")
+        self.assertEqual(grant["commands"], ["git"])
+        self.assertTrue(grant["read"])
+        self.assertFalse(grant["write"])
+        self.assertEqual(self.db.get_workspace_grant(self.tenant_id, grant["id"])["id"], grant["id"])
+
+        other_tenant = f"grant-other-{uuid.uuid4().hex}"
+        self.db.ensure_tenant(other_tenant, "Grant Other")
+        self.assertIsNone(self.db.get_workspace_grant(other_tenant, grant["id"]))
 
 
 if __name__ == "__main__": unittest.main()
