@@ -3,8 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
-from server.app.config import settings
-from server.app.routes.api import router as api_router
+try:
+    from app.config import settings
+    from app.routes.api import router as api_router
+except ImportError:
+    from server.app.config import settings
+    from server.app.routes.api import router as api_router
 
 app = FastAPI(
     title=settings.app_name,
