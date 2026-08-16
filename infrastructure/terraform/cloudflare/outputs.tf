@@ -76,6 +76,7 @@ output "cloudflared_ingress" {
       { hostname = var.zwf_hostname, service = var.zwf_origin },
       { hostname = var.studio_hostname, service = var.studio_origin },
       { hostname = var.zarvis_hostname, service = var.zarvis_origin },
+      { hostname = var.zider_hostname, service = var.zider_origin },
     ],
     local.zeaz_one_ingress,
     [{ service = "http_status:404" }],

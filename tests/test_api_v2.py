@@ -60,8 +60,8 @@ class ApiV2Tests(unittest.TestCase):
     def test_prometa_install_endpoint_installs_full_catalog(self):
         status,_,data=self.req("/api/v1/prometa/install","POST",{})
         self.assertEqual(status,201)
-        self.assertEqual(data["agents"],18)
-        self.assertEqual(data["skills"],12)
+        self.assertEqual(data["agents"],28)
+        self.assertEqual(data["skills"],22)
         self.assertEqual(data["agent_templates"],3)
         self.assertEqual(data["workflows"],4)
         _,_,agents=self.req("/api/v1/agents")

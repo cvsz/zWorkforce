@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce MCP Integration"
+  short_description: "Configure and verify the MCP endpoint and client boundary"
+  default_prompt: "Use $zworkforce-mcp-integration to verify zWorkforce MCP tool exposure, tenant scoping, and identity enforcement."

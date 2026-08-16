@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce Webhook Outbox Operations"
+  short_description: "Operate the signed, leader-elected durable webhook outbox"
+  default_prompt: "Use $zworkforce-webhook-outbox to verify zWorkforce outbox delivery, signatures, retries, and leader election."

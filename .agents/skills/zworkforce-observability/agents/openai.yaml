@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce Observability"
+  short_description: "Validate OTLP tracing, Prometheus metrics, and Grafana dashboards"
+  default_prompt: "Use $zworkforce-observability to validate zWorkforce tracing, metrics, and dashboard coverage against real activity."

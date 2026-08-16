@@ -22,6 +22,11 @@ workspace/
 .env.production
 .env.freebuff
 .env.cloudflare
+.env.ai
+.kiro/
+node_modules/
+package-lock.json
+package.json
 backup
 
 # Terraform — secrets, state, binaries, plan files

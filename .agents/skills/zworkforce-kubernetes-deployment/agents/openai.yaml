@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce Kubernetes Deployment"
+  short_description: "Plan and verify hardened zWorkforce Kubernetes manifests"
+  default_prompt: "Use $zworkforce-kubernetes-deployment to verify zWorkforce Kubernetes hardening, scaling, PDBs, and network policy before rollout."

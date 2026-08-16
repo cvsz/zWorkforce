@@ -4,7 +4,10 @@
     "version": "1.1.0",
     "name": "Repository Review",
     "description": "Review zWorkforce repository changes for correctness, security, release risk, and documentation drift.",
-    "allowed_tools": ["workspace_list", "workspace_read"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read"
+    ],
     "system_prompt_append": "Review like an owner. Lead with concrete findings, cite files and tests, and call out security, reliability, backward-compatibility, release, and operational risks before summary."
   },
   {
@@ -12,7 +15,12 @@
     "version": "1.0.0",
     "name": "Secure Editing",
     "description": "Implement scoped zWorkforce changes while preserving tenant isolation, approvals, policy gates, audit boundaries, and validation evidence.",
-    "allowed_tools": ["workspace_list", "workspace_read", "workspace_write", "shell_exec"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "workspace_write",
+      "shell_exec"
+    ],
     "system_prompt_append": "Make the smallest complete change. Preserve fail-closed auth, policy, approval, secret, shell, HTTP, and audit behavior. Add focused tests and report validation."
   },
   {
@@ -20,7 +28,12 @@
     "version": "1.0.0",
     "name": "Release Verification",
     "description": "Verify release candidates, CI checks, version metadata, artifacts, SBOMs, checksums, packages, and rollback evidence.",
-    "allowed_tools": ["workspace_list", "workspace_read", "shell_exec", "http_get"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "shell_exec",
+      "http_get"
+    ],
     "system_prompt_append": "Treat releases as evidence-driven. Verify actual local and GitHub artifacts before declaring GO, NO-GO, or CONDITIONAL."
   },
   {
@@ -28,7 +41,11 @@
     "version": "1.0.0",
     "name": "GitHub Operations",
     "description": "Operate zWorkforce PRs, review threads, checks, branches, releases, and packages with current-state verification.",
-    "allowed_tools": ["workspace_read", "shell_exec", "http_get"],
+    "allowed_tools": [
+      "workspace_read",
+      "shell_exec",
+      "http_get"
+    ],
     "system_prompt_append": "Inspect current GitHub state immediately before any mutation. Resolve, merge, delete, or publish only after exact object verification and passing checks."
   },
   {
@@ -36,7 +53,11 @@
     "version": "1.0.0",
     "name": "Workflow Design",
     "description": "Design durable workflows, schedules, event rules, idempotency, retries, approvals, and evaluation criteria.",
-    "allowed_tools": ["workspace_list", "workspace_read", "workspace_write"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "workspace_write"
+    ],
     "system_prompt_append": "Design workflows with explicit dependencies, occurrence keys, retry boundaries, approvals for mutation, success criteria, and rollback evidence."
   },
   {
@@ -44,7 +65,11 @@
     "version": "1.0.0",
     "name": "PostgreSQL Recovery",
     "description": "Verify PostgreSQL migrations, backup and restore drills, queue recovery, outbox recovery, and rollback evidence.",
-    "allowed_tools": ["workspace_list", "workspace_read", "shell_exec"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "shell_exec"
+    ],
     "system_prompt_append": "Treat database operations as production-impacting. Verify backups, isolated restore drills, schema compatibility, queue state, outbox state, RPO/RTO risk, and rollback evidence."
   },
   {
@@ -52,7 +77,12 @@
     "version": "1.0.0",
     "name": "FinOps Optimization",
     "description": "Analyze token and credit spend, budgets, chargeback, SLO outcomes, tier rightsizing, capacity forecasts, and cost per successful outcome.",
-    "allowed_tools": ["workspace_list", "workspace_read", "memory_search", "calculator"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "memory_search",
+      "calculator"
+    ],
     "system_prompt_append": "Optimize for successful outcomes per credit. Compare spend, pass rate, outcome score, latency, retries, SLO compliance, and quality risk before recommending tier or provider changes."
   },
   {
@@ -60,7 +90,12 @@
     "version": "1.0.0",
     "name": "RAG Curation",
     "description": "Curate tenant-scoped memory, tags, embeddings, vector backends, reindexing, stale knowledge cleanup, and retrieval quality.",
-    "allowed_tools": ["workspace_list", "workspace_read", "workspace_write", "memory_search"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "workspace_write",
+      "memory_search"
+    ],
     "system_prompt_append": "Keep tenant knowledge useful without crossing privacy or retention boundaries. Cite source records, validate retrieval quality, and audit curator changes."
   },
   {
@@ -68,7 +103,11 @@
     "version": "1.0.0",
     "name": "Policy Audit",
     "description": "Audit tenant policy, RBAC, scopes, approvals, tool grants, signed skills, SSRF, shell execution, memory isolation, and audit chain behavior.",
-    "allowed_tools": ["workspace_list", "workspace_read", "memory_search"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "memory_search"
+    ],
     "system_prompt_append": "Trace policy from request to tool execution. Confirm deny precedence, fail-closed behavior, tenant isolation, and audit evidence without secret leakage."
   },
   {
@@ -76,7 +115,11 @@
     "version": "1.0.0",
     "name": "Incident Response",
     "description": "Coordinate zWorkforce incident triage, containment, rollback, recovery validation, communications, and evidence capture.",
-    "allowed_tools": ["workspace_read", "shell_exec", "http_get"],
+    "allowed_tools": [
+      "workspace_read",
+      "shell_exec",
+      "http_get"
+    ],
     "system_prompt_append": "Prioritize containment and evidence. State severity, impact, facts, hypotheses, rollback decision, owner, next action, and monitoring window."
   },
   {
@@ -84,7 +127,13 @@
     "version": "1.0.0",
     "name": "Artifact Provenance",
     "description": "Verify artifact hashes, content-addressed metadata, release evidence bundles, SBOMs, checksums, packages, images, and rollback assets.",
-    "allowed_tools": ["workspace_list", "workspace_read", "workspace_write", "shell_exec", "http_get"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "workspace_write",
+      "shell_exec",
+      "http_get"
+    ],
     "system_prompt_append": "Treat artifacts as evidence. Verify hashes, owners, versions, storage locations, producing tasks or commits, and rollback usability before release or compliance decisions."
   },
   {
@@ -92,7 +141,122 @@
     "version": "1.0.0",
     "name": "Z.A.R.V.I.S. Contracts",
     "description": "Validate packages/zarvis contracts, services, local runbooks, zctl, Compose files, release evidence, and Windows client compatibility.",
-    "allowed_tools": ["workspace_list", "workspace_read", "shell_exec"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "shell_exec"
+    ],
     "system_prompt_append": "Treat packages/zarvis as an independent product boundary. Validate contracts and package-local tests before changing service behavior."
+  },
+  {
+    "id": "scheduler-events",
+    "version": "1.0.0",
+    "name": "Scheduler & Event Automation",
+    "description": "Configure and operate zWorkforce cron/interval schedules, durable event triggers, dedupe keys, filters, and leader-elected scheduler HA.",
+    "allowed_tools": [
+      "workspace_read",
+      "http_get"
+    ],
+    "system_prompt_append": "Design schedules and event triggers with correct cron/interval semantics, dedupe keys, filters, and agent/workflow targets. Verify leader lease state before assuming a scheduler replica is active, and confirm dedupe prevents duplicate dispatch across replicas."
+  },
+  {
+    "id": "mcp-integration",
+    "version": "1.0.0",
+    "name": "MCP Integration",
+    "description": "Configure and verify the zWorkforce MCP 2026-07-28 stateless endpoint and client exposing task, workflow, event, and memory tools to external MCP clients.",
+    "allowed_tools": [
+      "workspace_read",
+      "http_get"
+    ],
+    "system_prompt_append": "Verify MCP tool exposure matches tenant scopes and RBAC, confirm the stateless endpoint contract, and check that no provider or storage secret ever crosses the MCP boundary."
+  },
+  {
+    "id": "secret-management",
+    "version": "1.0.0",
+    "name": "Secret Management",
+    "description": "Configure and audit zWorkforce secret references sourced from environment, mounted files, AWS Secrets Manager, and Vault KV v2, without exposing plaintext secrets.",
+    "allowed_tools": [
+      "workspace_read"
+    ],
+    "system_prompt_append": "Never print or log secret plaintext. Verify secret references resolve to the correct backend, rotation is possible without code changes, and no secret reaches static assets or browser code."
+  },
+  {
+    "id": "observability",
+    "version": "1.0.0",
+    "name": "Observability & Tracing",
+    "description": "Configure and validate OTLP/HTTP JSON tracing, Prometheus metrics, and the Grafana dashboard for zWorkforce.",
+    "allowed_tools": [
+      "workspace_read",
+      "http_get"
+    ],
+    "system_prompt_append": "Verify trace spans, metric names, and dashboard panels reflect real task/agent/provider activity. Flag missing instrumentation before declaring an area observable."
+  },
+  {
+    "id": "evaluation-suites",
+    "version": "1.0.0",
+    "name": "Model Evaluation Suites",
+    "description": "Design and run zWorkforce A/B model evaluation suites comparing Luna/Terra/Sol tier variants on real tasks and recommending the quality/cost winner.",
+    "allowed_tools": [
+      "workspace_read",
+      "memory_search",
+      "calculator"
+    ],
+    "system_prompt_append": "Design evaluation tasks with representative inputs, deterministic scoring, and statistically meaningful sample sizes. Report quality, cost, and latency per variant before recommending a winner."
+  },
+  {
+    "id": "webhook-outbox",
+    "version": "1.0.0",
+    "name": "Webhook Outbox Operations",
+    "description": "Operate the zWorkforce durable webhook outbox including HMAC signatures, retry/backoff, dedupe, and leader election across replicas.",
+    "allowed_tools": [
+      "workspace_read",
+      "shell_exec",
+      "http_get"
+    ],
+    "system_prompt_append": "Verify outbox delivery is idempotent and signed, retries respect backoff, and only one leader replica dispatches per lease. Confirm failed deliveries are retried, not silently dropped."
+  },
+  {
+    "id": "kubernetes-deployment",
+    "version": "1.0.0",
+    "name": "Kubernetes Deployment",
+    "description": "Plan and verify zWorkforce Kubernetes deployment including hardened pods, API/worker scaling, PDBs, persistent artifacts/workspace storage, and default-deny network policy.",
+    "allowed_tools": [
+      "workspace_read",
+      "shell_exec"
+    ],
+    "system_prompt_append": "Verify manifests preserve hardened pod security, default-deny network policy, PodDisruptionBudgets, and persistent volumes before recommending rollout. Do not claim a cluster resource exists without checking it."
+  },
+  {
+    "id": "disaster-recovery",
+    "version": "1.0.0",
+    "name": "Disaster Recovery",
+    "description": "Plan and execute zWorkforce backup/restore drills, RPO/RTO validation, and disaster recovery runbooks across PostgreSQL, artifacts, and secrets.",
+    "allowed_tools": [
+      "workspace_read",
+      "shell_exec"
+    ],
+    "system_prompt_append": "Validate backups are restorable, not just present. Confirm RPO/RTO targets, tenant isolation after restore, and document every drill step with evidence."
+  },
+  {
+    "id": "zeto-content-factory",
+    "version": "1.0.0",
+    "name": "Zeto Content Factory",
+    "description": "Operate the Zeto AI Content Factory including ProMeta prompt compilers, multi-platform publishing adapters, QA scorecards, and the M12 tool registry.",
+    "allowed_tools": [
+      "workspace_read",
+      "memory_search",
+      "media_generate"
+    ],
+    "system_prompt_append": "Compile prompts through ProMeta, run QA scorecards before publishing, and route platform-specific formatting through the correct publishing adapter. Do not publish content that fails QA thresholds."
+  },
+  {
+    "id": "skill-registry-governance",
+    "version": "1.0.0",
+    "name": "Skill Registry Governance",
+    "description": "Govern the zWorkforce signed remote skill registry including manifest validation, HMAC signature verification, host allowlisting, and installation audit trail.",
+    "allowed_tools": [
+      "workspace_read"
+    ],
+    "system_prompt_append": "Verify skill manifests validate and signatures verify before install. Confirm registry hosts are allowlisted, redirects are re-validated, and every install is audited with source and version."
   }
 ]

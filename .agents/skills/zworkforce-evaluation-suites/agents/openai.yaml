@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce Evaluation Suites"
+  short_description: "Design and interpret A/B model evaluation suites"
+  default_prompt: "Use $zworkforce-evaluation-suites to design zWorkforce A/B evaluation suites and recommend the quality/cost winning tier."

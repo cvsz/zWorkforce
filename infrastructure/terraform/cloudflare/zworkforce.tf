@@ -37,7 +37,7 @@ variable "studio_hostname" {
 
 variable "studio_origin" {
   type        = string
-  default     = "http://127.0.0.1:3001"
+  default     = "http://127.0.0.1:3005"
   description = "Loopback origin published by the ZSP-AITool Studio Next.js application."
 
   validation {
@@ -65,6 +65,28 @@ variable "zarvis_origin" {
   validation {
     condition     = can(regex("^http://127\\.0\\.0\\.1:[0-9]+$", var.zarvis_origin))
     error_message = "zarvis_origin must use a loopback address."
+  }
+}
+
+variable "zider_hostname" {
+  type        = string
+  default     = "zider.zeaz.dev"
+  description = "Public hostname for zider AI Sidebar, ChatPDF & Multi-Model Workspace."
+
+  validation {
+    condition     = endswith(lower(var.zider_hostname), ".${lower(var.zone_name)}")
+    error_message = "zider_hostname must be a subdomain of zone_name."
+  }
+}
+
+variable "zider_origin" {
+  type        = string
+  default     = "http://127.0.0.1:8085"
+  description = "Loopback origin published by the zider BFF FastAPI / Node gateway."
+
+  validation {
+    condition     = can(regex("^http://127\\.0\\.0\\.1:[0-9]+$", var.zider_origin))
+    error_message = "zider_origin must use a loopback address."
   }
 }
 
@@ -98,6 +120,16 @@ resource "cloudflare_dns_record" "zarvis" {
   comment = "Z.A.R.V.I.S. Autonomous Voice Assistant via Cloudflare Tunnel"
 }
 
+resource "cloudflare_dns_record" "zider" {
+  zone_id = var.cloudflare_zone_id
+  name    = var.zider_hostname
+  type    = "CNAME"
+  content = local.tunnel_cname
+  ttl     = 1
+  proxied = true
+  comment = "zider AI Browser Sidebar & Multi-Model Workspace via Cloudflare Tunnel"
+}
+
 output "zwf_url" {
   value       = "https://${var.zwf_hostname}"
   description = "Public zWorkforce Control Plane URL."
@@ -111,4 +143,9 @@ output "studio_url" {
 output "zarvis_url" {
   value       = "https://${var.zarvis_hostname}"
   description = "Public Z.A.R.V.I.S. Autonomous Voice Assistant URL."
+}
+
+output "zider_url" {
+  value       = "https://${var.zider_hostname}"
+  description = "Public zider AI Sidebar & Workspace URL."
 }

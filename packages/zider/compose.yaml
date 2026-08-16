@@ -1,0 +1,20 @@
+services:
+  zider-bff:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zider-bff
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment:
+      - ZIDER_HOST=0.0.0.0
+      - ZIDER_PORT=8085
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - ZWORKFORCE_API_URL=${ZWORKFORCE_API_URL:-http://localhost:8000}
+    volumes:
+      - ./data:/app/data

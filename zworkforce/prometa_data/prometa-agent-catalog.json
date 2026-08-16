@@ -10,9 +10,14 @@
     "max_subagents": 0,
     "required_approvals": 0,
     "requires_approval_for_mutations": false,
-    "allowed_tools": ["workspace_list", "workspace_read"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read"
+    ],
     "approval_tools": [],
-    "skill_ids": ["repo-review"],
+    "skill_ids": [
+      "repo-review"
+    ],
     "system_prompt": "Classify the request, identify affected zWorkforce domains, separate read-only from mutating work, and produce an evidence checklist.",
     "enabled": true
   },
@@ -27,9 +32,16 @@
     "max_subagents": 2,
     "required_approvals": 0,
     "requires_approval_for_mutations": false,
-    "allowed_tools": ["workspace_list", "workspace_read", "agent_delegate"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "agent_delegate"
+    ],
     "approval_tools": [],
-    "skill_ids": ["workflow-design", "repo-review"],
+    "skill_ids": [
+      "workflow-design",
+      "repo-review"
+    ],
     "system_prompt": "Plan zWorkforce work with explicit dependencies, acceptance criteria, validation, rollback boundaries, and delegated review points.",
     "enabled": true
   },
@@ -44,9 +56,16 @@
     "max_subagents": 1,
     "required_approvals": 0,
     "requires_approval_for_mutations": false,
-    "allowed_tools": ["workspace_list", "workspace_read", "http_get", "memory_search"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "http_get",
+      "memory_search"
+    ],
     "approval_tools": [],
-    "skill_ids": ["repo-review"],
+    "skill_ids": [
+      "repo-review"
+    ],
     "system_prompt": "Gather evidence from authoritative sources, cite exact references, and label facts, assumptions, and recommendations separately.",
     "enabled": true
   },
@@ -61,9 +80,17 @@
     "max_subagents": 2,
     "required_approvals": 0,
     "requires_approval_for_mutations": false,
-    "allowed_tools": ["workspace_list", "workspace_read", "agent_delegate"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "agent_delegate"
+    ],
     "approval_tools": [],
-    "skill_ids": ["repo-review", "workflow-design", "policy-audit"],
+    "skill_ids": [
+      "repo-review",
+      "workflow-design",
+      "policy-audit"
+    ],
     "system_prompt": "Design zWorkforce changes with clear boundaries, migrations, compatibility, security controls, validation, and rollback paths.",
     "enabled": true
   },
@@ -78,9 +105,20 @@
     "max_subagents": 2,
     "required_approvals": 1,
     "requires_approval_for_mutations": true,
-    "allowed_tools": ["workspace_list", "workspace_read", "workspace_write", "shell_exec", "agent_delegate"],
-    "approval_tools": ["workspace_write", "shell_exec"],
-    "skill_ids": ["secure-editing"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "workspace_write",
+      "shell_exec",
+      "agent_delegate"
+    ],
+    "approval_tools": [
+      "workspace_write",
+      "shell_exec"
+    ],
+    "skill_ids": [
+      "secure-editing"
+    ],
     "system_prompt": "Implement the smallest complete zWorkforce change, preserve security boundaries, add focused tests, and report validation plus residual risk.",
     "enabled": true
   },
@@ -95,9 +133,15 @@
     "max_subagents": 1,
     "required_approvals": 0,
     "requires_approval_for_mutations": false,
-    "allowed_tools": ["workspace_list", "workspace_read"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read"
+    ],
     "approval_tools": [],
-    "skill_ids": ["repo-review", "policy-audit"],
+    "skill_ids": [
+      "repo-review",
+      "policy-audit"
+    ],
     "system_prompt": "Review like an owner. Lead with findings and cite exact code, tests, docs, or missing evidence.",
     "enabled": true
   },
@@ -112,9 +156,16 @@
     "max_subagents": 1,
     "required_approvals": 0,
     "requires_approval_for_mutations": false,
-    "allowed_tools": ["workspace_list", "workspace_read", "memory_search"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "memory_search"
+    ],
     "approval_tools": [],
-    "skill_ids": ["policy-audit", "repo-review"],
+    "skill_ids": [
+      "policy-audit",
+      "repo-review"
+    ],
     "system_prompt": "Trace enforcement paths and classify security findings by exploitability, blast radius, and required mitigation.",
     "enabled": true
   },
@@ -129,9 +180,24 @@
     "max_subagents": 2,
     "required_approvals": 1,
     "requires_approval_for_mutations": true,
-    "allowed_tools": ["workspace_list", "workspace_read", "workspace_write", "shell_exec", "http_get", "agent_delegate"],
-    "approval_tools": ["workspace_write", "shell_exec", "http_get"],
-    "skill_ids": ["release-verification", "github-operations", "artifact-provenance"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "workspace_write",
+      "shell_exec",
+      "http_get",
+      "agent_delegate"
+    ],
+    "approval_tools": [
+      "workspace_write",
+      "shell_exec",
+      "http_get"
+    ],
+    "skill_ids": [
+      "release-verification",
+      "github-operations",
+      "artifact-provenance"
+    ],
     "system_prompt": "Verify local and GitHub release evidence before publishing. Produce GO, NO-GO, or CONDITIONAL decisions with rollback notes.",
     "enabled": true
   },
@@ -146,9 +212,18 @@
     "max_subagents": 1,
     "required_approvals": 1,
     "requires_approval_for_mutations": true,
-    "allowed_tools": ["workspace_read", "shell_exec", "http_get"],
-    "approval_tools": ["shell_exec", "http_get"],
-    "skill_ids": ["github-operations"],
+    "allowed_tools": [
+      "workspace_read",
+      "shell_exec",
+      "http_get"
+    ],
+    "approval_tools": [
+      "shell_exec",
+      "http_get"
+    ],
+    "skill_ids": [
+      "github-operations"
+    ],
     "system_prompt": "Inspect current GitHub state before each mutation and report exact PR, branch, release, package, check, or review-thread IDs acted on.",
     "enabled": true
   },
@@ -163,9 +238,21 @@
     "max_subagents": 2,
     "required_approvals": 1,
     "requires_approval_for_mutations": true,
-    "allowed_tools": ["workspace_read", "shell_exec", "http_get", "agent_delegate"],
-    "approval_tools": ["shell_exec", "http_get"],
-    "skill_ids": ["incident-response", "postgres-recovery", "release-verification"],
+    "allowed_tools": [
+      "workspace_read",
+      "shell_exec",
+      "http_get",
+      "agent_delegate"
+    ],
+    "approval_tools": [
+      "shell_exec",
+      "http_get"
+    ],
+    "skill_ids": [
+      "incident-response",
+      "postgres-recovery",
+      "release-verification"
+    ],
     "system_prompt": "Operate zWorkforce with health, metrics, leases, queues, backups, rollback criteria, and evidence-first incident handling.",
     "enabled": true
   },
@@ -180,9 +267,20 @@
     "max_subagents": 1,
     "required_approvals": 1,
     "requires_approval_for_mutations": true,
-    "allowed_tools": ["workspace_list", "workspace_read", "workspace_write", "shell_exec"],
-    "approval_tools": ["workspace_write", "shell_exec"],
-    "skill_ids": ["postgres-recovery", "policy-audit"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "workspace_write",
+      "shell_exec"
+    ],
+    "approval_tools": [
+      "workspace_write",
+      "shell_exec"
+    ],
+    "skill_ids": [
+      "postgres-recovery",
+      "policy-audit"
+    ],
     "system_prompt": "Protect data first. Verify backups, migrations, transaction rollback, advisory locks, tenant state, and recovery evidence before mutation.",
     "enabled": true
   },
@@ -197,9 +295,15 @@
     "max_subagents": 0,
     "required_approvals": 0,
     "requires_approval_for_mutations": false,
-    "allowed_tools": ["workspace_read", "memory_search", "calculator"],
+    "allowed_tools": [
+      "workspace_read",
+      "memory_search",
+      "calculator"
+    ],
     "approval_tools": [],
-    "skill_ids": ["finops-optimization"],
+    "skill_ids": [
+      "finops-optimization"
+    ],
     "system_prompt": "Analyze spend, quality, SLOs, capacity, budgets, and rightsizing opportunities with assumptions and quality risk called out.",
     "enabled": true
   },
@@ -214,9 +318,20 @@
     "max_subagents": 1,
     "required_approvals": 1,
     "requires_approval_for_mutations": true,
-    "allowed_tools": ["workspace_list", "workspace_read", "workspace_write", "shell_exec"],
-    "approval_tools": ["workspace_write", "shell_exec"],
-    "skill_ids": ["workflow-design", "policy-audit"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "workspace_write",
+      "shell_exec"
+    ],
+    "approval_tools": [
+      "workspace_write",
+      "shell_exec"
+    ],
+    "skill_ids": [
+      "workflow-design",
+      "policy-audit"
+    ],
     "system_prompt": "Create auditable automation with explicit triggers, dependencies, occurrence keys, retries, approvals, and success criteria.",
     "enabled": true
   },
@@ -231,9 +346,20 @@
     "max_subagents": 0,
     "required_approvals": 1,
     "requires_approval_for_mutations": true,
-    "allowed_tools": ["workspace_read", "workspace_write", "memory_search", "shell_exec"],
-    "approval_tools": ["workspace_write", "shell_exec"],
-    "skill_ids": ["rag-curation", "policy-audit"],
+    "allowed_tools": [
+      "workspace_read",
+      "workspace_write",
+      "memory_search",
+      "shell_exec"
+    ],
+    "approval_tools": [
+      "workspace_write",
+      "shell_exec"
+    ],
+    "skill_ids": [
+      "rag-curation",
+      "policy-audit"
+    ],
     "system_prompt": "Curate memory with tenant isolation, source citations, retention boundaries, retrieval quality checks, and audit evidence.",
     "enabled": true
   },
@@ -248,9 +374,19 @@
     "max_subagents": 0,
     "required_approvals": 1,
     "requires_approval_for_mutations": true,
-    "allowed_tools": ["workspace_list", "workspace_read", "workspace_write", "shell_exec"],
-    "approval_tools": ["workspace_write", "shell_exec"],
-    "skill_ids": ["artifact-provenance"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "workspace_write",
+      "shell_exec"
+    ],
+    "approval_tools": [
+      "workspace_write",
+      "shell_exec"
+    ],
+    "skill_ids": [
+      "artifact-provenance"
+    ],
     "system_prompt": "Verify artifact hashes, owners, scope, producing tasks or commits, storage metadata, and rollback usability before compliance or release use.",
     "enabled": true
   },
@@ -265,9 +401,22 @@
     "max_subagents": 2,
     "required_approvals": 1,
     "requires_approval_for_mutations": true,
-    "allowed_tools": ["workspace_list", "workspace_read", "workspace_write", "shell_exec", "agent_delegate"],
-    "approval_tools": ["workspace_write", "shell_exec"],
-    "skill_ids": ["zarvis-contracts", "repo-review", "release-verification"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "workspace_write",
+      "shell_exec",
+      "agent_delegate"
+    ],
+    "approval_tools": [
+      "workspace_write",
+      "shell_exec"
+    ],
+    "skill_ids": [
+      "zarvis-contracts",
+      "repo-review",
+      "release-verification"
+    ],
     "system_prompt": "Preserve the Z.A.R.V.I.S. package boundary, validate contracts and package-local tests, and report Windows/client compatibility impact.",
     "enabled": true
   },
@@ -282,9 +431,17 @@
     "max_subagents": 1,
     "required_approvals": 0,
     "requires_approval_for_mutations": false,
-    "allowed_tools": ["workspace_list", "workspace_read", "memory_search"],
+    "allowed_tools": [
+      "workspace_list",
+      "workspace_read",
+      "memory_search"
+    ],
     "approval_tools": [],
-    "skill_ids": ["policy-audit", "release-verification", "artifact-provenance"],
+    "skill_ids": [
+      "policy-audit",
+      "release-verification",
+      "artifact-provenance"
+    ],
     "system_prompt": "Verify audit, approval, release, artifact, and governance evidence. Mark unverified external dependencies as gaps.",
     "enabled": true
   },
@@ -299,10 +456,254 @@
     "max_subagents": 3,
     "required_approvals": 1,
     "requires_approval_for_mutations": true,
-    "allowed_tools": ["workspace_read", "shell_exec", "http_get", "agent_delegate"],
-    "approval_tools": ["shell_exec", "http_get"],
-    "skill_ids": ["incident-response", "policy-audit", "release-verification"],
+    "allowed_tools": [
+      "workspace_read",
+      "shell_exec",
+      "http_get",
+      "agent_delegate"
+    ],
+    "approval_tools": [
+      "shell_exec",
+      "http_get"
+    ],
+    "skill_ids": [
+      "incident-response",
+      "policy-audit",
+      "release-verification"
+    ],
     "system_prompt": "Drive the incident loop with severity, impact, facts, hypotheses, containment, rollback decision, owners, and evidence.",
+    "enabled": true
+  },
+  {
+    "id": "scheduler-operator",
+    "name": "Scheduler Operator",
+    "description": "Configures cron/interval schedules and durable event triggers with dedupe, filters, and leader-lease awareness.",
+    "department": "platform",
+    "default_tier": "terra",
+    "max_cost_credits": 40,
+    "max_iterations": 8,
+    "max_subagents": 0,
+    "required_approvals": 0,
+    "requires_approval_for_mutations": false,
+    "allowed_tools": [
+      "workspace_read",
+      "http_get"
+    ],
+    "approval_tools": [],
+    "skill_ids": [
+      "scheduler-events"
+    ],
+    "system_prompt": "Design schedules and event triggers with correct dedupe keys, filters, and leader-lease awareness across scheduler replicas.",
+    "enabled": true
+  },
+  {
+    "id": "mcp-integrator",
+    "name": "MCP Integrator",
+    "description": "Verifies MCP tool exposure, tenant scoping, and identity enforcement across the MCP endpoint and client.",
+    "department": "engineering",
+    "default_tier": "terra",
+    "max_cost_credits": 35,
+    "max_iterations": 8,
+    "max_subagents": 0,
+    "required_approvals": 0,
+    "requires_approval_for_mutations": false,
+    "allowed_tools": [
+      "workspace_read",
+      "http_get"
+    ],
+    "approval_tools": [],
+    "skill_ids": [
+      "mcp-integration"
+    ],
+    "system_prompt": "Verify MCP tool exposure, tenant scoping, and RBAC before recommending client integration changes.",
+    "enabled": true
+  },
+  {
+    "id": "secrets-custodian",
+    "name": "Secrets Custodian",
+    "description": "Audits secret reference configuration across environment, file, AWS Secrets Manager, and Vault backends.",
+    "department": "security",
+    "default_tier": "sol",
+    "max_cost_credits": 25,
+    "max_iterations": 6,
+    "max_subagents": 0,
+    "required_approvals": 0,
+    "requires_approval_for_mutations": false,
+    "allowed_tools": [
+      "workspace_read"
+    ],
+    "approval_tools": [],
+    "skill_ids": [
+      "secret-management"
+    ],
+    "system_prompt": "Audit secret reference configuration across environment, file, AWS Secrets Manager, and Vault backends without ever surfacing plaintext secret values.",
+    "enabled": true
+  },
+  {
+    "id": "observability-engineer",
+    "name": "Observability Engineer",
+    "description": "Validates OTLP tracing, Prometheus metrics, and Grafana dashboards reflect real platform activity.",
+    "department": "platform",
+    "default_tier": "terra",
+    "max_cost_credits": 35,
+    "max_iterations": 8,
+    "max_subagents": 0,
+    "required_approvals": 0,
+    "requires_approval_for_mutations": false,
+    "allowed_tools": [
+      "workspace_read",
+      "http_get"
+    ],
+    "approval_tools": [],
+    "skill_ids": [
+      "observability"
+    ],
+    "system_prompt": "Validate OTLP tracing, Prometheus metrics, and Grafana dashboards reflect real task, agent, and provider activity, flagging instrumentation gaps.",
+    "enabled": true
+  },
+  {
+    "id": "evaluation-analyst",
+    "name": "Evaluation Analyst",
+    "description": "Designs and interprets A/B model evaluation suites across Luna/Terra/Sol tiers.",
+    "department": "research",
+    "default_tier": "terra",
+    "max_cost_credits": 40,
+    "max_iterations": 8,
+    "max_subagents": 1,
+    "required_approvals": 0,
+    "requires_approval_for_mutations": false,
+    "allowed_tools": [
+      "workspace_read",
+      "memory_search",
+      "calculator"
+    ],
+    "approval_tools": [],
+    "skill_ids": [
+      "evaluation-suites"
+    ],
+    "system_prompt": "Design and interpret A/B model evaluation suites across Luna/Terra/Sol tiers, reporting quality, cost, and latency evidence before recommending a winner.",
+    "enabled": true
+  },
+  {
+    "id": "outbox-operator",
+    "name": "Outbox Operator",
+    "description": "Operates the durable webhook outbox with signed, idempotent delivery and leader-elected dispatch.",
+    "department": "platform",
+    "default_tier": "terra",
+    "max_cost_credits": 45,
+    "max_iterations": 10,
+    "max_subagents": 0,
+    "required_approvals": 1,
+    "requires_approval_for_mutations": true,
+    "allowed_tools": [
+      "workspace_read",
+      "shell_exec",
+      "http_get"
+    ],
+    "approval_tools": [
+      "shell_exec",
+      "http_get"
+    ],
+    "skill_ids": [
+      "webhook-outbox"
+    ],
+    "system_prompt": "Operate the durable webhook outbox with idempotent, signed delivery, correct backoff, and single-leader dispatch discipline.",
+    "enabled": true
+  },
+  {
+    "id": "kubernetes-operator",
+    "name": "Kubernetes Operator",
+    "description": "Verifies hardened pod security, network policy, PDBs, and persistent volumes before Kubernetes rollout.",
+    "department": "platform",
+    "default_tier": "terra",
+    "max_cost_credits": 55,
+    "max_iterations": 10,
+    "max_subagents": 1,
+    "required_approvals": 1,
+    "requires_approval_for_mutations": true,
+    "allowed_tools": [
+      "workspace_read",
+      "shell_exec"
+    ],
+    "approval_tools": [
+      "shell_exec"
+    ],
+    "skill_ids": [
+      "kubernetes-deployment"
+    ],
+    "system_prompt": "Verify hardened pod security, default-deny network policy, PDBs, and persistent volumes before any Kubernetes rollout change.",
+    "enabled": true
+  },
+  {
+    "id": "disaster-recovery-lead",
+    "name": "Disaster Recovery Lead",
+    "description": "Runs backup/restore drills and validates RPO/RTO targets across PostgreSQL, artifacts, and secrets.",
+    "department": "operations",
+    "default_tier": "sol",
+    "max_cost_credits": 65,
+    "max_iterations": 12,
+    "max_subagents": 2,
+    "required_approvals": 1,
+    "requires_approval_for_mutations": true,
+    "allowed_tools": [
+      "workspace_read",
+      "shell_exec",
+      "agent_delegate"
+    ],
+    "approval_tools": [
+      "shell_exec"
+    ],
+    "skill_ids": [
+      "disaster-recovery",
+      "postgres-recovery"
+    ],
+    "system_prompt": "Run backup/restore drills with restorability evidence, validate RPO/RTO targets, and confirm tenant isolation after any recovery action.",
+    "enabled": true
+  },
+  {
+    "id": "zeto-producer",
+    "name": "Zeto Producer",
+    "description": "Compiles ProMeta prompts, runs QA scorecards, and publishes content through the correct Zeto platform adapter.",
+    "department": "product",
+    "default_tier": "terra",
+    "max_cost_credits": 45,
+    "max_iterations": 10,
+    "max_subagents": 0,
+    "required_approvals": 1,
+    "requires_approval_for_mutations": true,
+    "allowed_tools": [
+      "workspace_read",
+      "memory_search",
+      "media_generate"
+    ],
+    "approval_tools": [
+      "media_generate"
+    ],
+    "skill_ids": [
+      "zeto-content-factory"
+    ],
+    "system_prompt": "Compile prompts through ProMeta, run QA scorecards, and route publishing through platform-specific adapters. Do not publish content that fails QA thresholds.",
+    "enabled": true
+  },
+  {
+    "id": "skill-registry-curator",
+    "name": "Skill Registry Curator",
+    "description": "Verifies skill manifest validation, signature verification, host allowlisting, and audit trail before registry install.",
+    "department": "governance",
+    "default_tier": "sol",
+    "max_cost_credits": 30,
+    "max_iterations": 6,
+    "max_subagents": 0,
+    "required_approvals": 0,
+    "requires_approval_for_mutations": false,
+    "allowed_tools": [
+      "workspace_read"
+    ],
+    "approval_tools": [],
+    "skill_ids": [
+      "skill-registry-governance"
+    ],
+    "system_prompt": "Verify skill manifest validation, signature verification, host allowlisting, and installation audit trail before recommending a registry install.",
     "enabled": true
   }
 ]

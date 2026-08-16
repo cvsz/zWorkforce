@@ -46,6 +46,14 @@ local skill records are required.
 | Observability | Health, readiness, metrics and OTLP traces | Debug operations and enforce SLOs. |
 | Release/GitHub | CI, CodeQL, release, GHCR, Dependency Review | Keep repository changes reviewable and releasable. |
 | Z.A.R.V.I.S. | Local assistant services, contracts and Windows client | Operate the consolidated package boundary safely. |
+| Secrets | Env/file/AWS Secrets Manager/Vault KV v2 references | Resolve and rotate secrets without ever exposing plaintext. |
+| MCP | Stateless MCP 2026-07-28 endpoint and client | Expose task/workflow/event/memory tools with parity to REST auth. |
+| Scheduling/events | Cron/interval schedules, durable event triggers, leader leases | Dispatch recurring/reactive work exactly once per occurrence. |
+| Webhook delivery | Durable outbox, HMAC signatures, retry/backoff | Deliver external side effects safely across replicas. |
+| Deployment | Kubernetes manifests, hardened pods, network policy | Ship the control plane without weakening its security posture. |
+| Disaster recovery | Backup/restore scripts, RPO/RTO targets | Prove recoverability with drill evidence, not just backups. |
+| Zeto content factory | ProMeta compilers, publishing adapters, QA scorecards | Produce and publish content that passes quality gates. |
+| Skill registry | Signed remote skill packages, host allowlisting | Install only verifiable, audited skills into a tenant runtime. |
 
 ## Agent contract
 
@@ -91,6 +99,16 @@ Every production agent should have:
 | `zarvis-operator` | product | terra | yes | Maintain Z.A.R.V.I.S. contracts, services, local runbooks and Windows client. |
 | `compliance-auditor` | governance | sol | no | Verify audit chain, approvals, evidence and release governance. |
 | `incident-commander` | operations | sol | yes | Coordinate production incidents, rollback, comms and evidence capture. |
+| `scheduler-operator` | platform | terra | no | Configure cron/interval schedules, event triggers, dedupe and leader lease. |
+| `mcp-integrator` | engineering | terra | no | Verify MCP tool exposure, tenant scoping and identity enforcement. |
+| `secrets-custodian` | security | sol | no | Audit secret reference configuration without exposing plaintext values. |
+| `observability-engineer` | platform | terra | no | Validate OTLP traces, Prometheus metrics and Grafana dashboard coverage. |
+| `evaluation-analyst` | research | terra | no | Design and interpret A/B model evaluation suites across tiers. |
+| `outbox-operator` | platform | terra | yes | Operate the signed, leader-elected durable webhook outbox. |
+| `kubernetes-operator` | platform | terra | yes | Verify hardened pods, network policy, PDBs and volumes before rollout. |
+| `disaster-recovery-lead` | operations | sol | yes | Run backup/restore drills and validate RPO/RTO across data and secrets. |
+| `zeto-producer` | product | terra | yes | Compile, QA and publish content through the Zeto pipeline. |
+| `skill-registry-curator` | governance | sol | no | Verify skill manifest validation, signatures and registry host safety. |
 
 ## Skill catalog
 
@@ -111,6 +129,16 @@ remote installation and remain small enough for audit.
 | `artifact-provenance` | artifact-librarian, compliance-auditor | `workspace_read`, `workspace_write` | Verify hashes, artifact metadata and release evidence bundles. |
 | `zarvis-contracts` | zarvis-operator | `workspace_read`, `shell_exec` | Validate Z.A.R.V.I.S. contracts, package tests and Windows restore checks. |
 | `incident-response` | incident-commander, sre-operator | `workspace_read`, `shell_exec`, `http_get` | Drive incident triage, rollback criteria, timelines and evidence. |
+| `scheduler-events` | scheduler-operator | `workspace_read`, `http_get` | Design schedules, event triggers, dedupe keys and leader-lease checks. |
+| `mcp-integration` | mcp-integrator | `workspace_read`, `http_get` | Verify MCP tool exposure, scoping and the stateless endpoint contract. |
+| `secret-management` | secrets-custodian | `workspace_read` | Audit env/file/AWS/Vault secret references without exposing plaintext. |
+| `observability` | observability-engineer | `workspace_read`, `http_get` | Validate OTLP traces, Prometheus metrics and dashboard coverage. |
+| `evaluation-suites` | evaluation-analyst | `workspace_read`, `memory_search`, `calculator` | Run A/B model evaluation suites and recommend a quality/cost winner. |
+| `webhook-outbox` | outbox-operator | `workspace_read`, `shell_exec`, `http_get` | Verify signed, idempotent outbox delivery and leader election. |
+| `kubernetes-deployment` | kubernetes-operator | `workspace_read`, `shell_exec` | Verify hardened, network-policy-safe Kubernetes manifests. |
+| `disaster-recovery` | disaster-recovery-lead | `workspace_read`, `shell_exec` | Run restore drills and validate RPO/RTO with captured evidence. |
+| `zeto-content-factory` | zeto-producer | `workspace_read`, `memory_search`, `media_generate` | Compile, QA and publish content through Zeto platform adapters. |
+| `skill-registry-governance` | skill-registry-curator | `workspace_read` | Verify manifest validation, signatures and registry host safety. |
 
 The repo-local Codex skill names are prefixed with `zworkforce-` so they can be
 discovered as project-specific instructions, while runtime manifests keep short
@@ -201,6 +229,16 @@ OUTPUT CONTRACT:
 | FinOps | finops-analyst | finops-optimization | chargeback, budget and capacity reports |
 | Z.A.R.V.I.S. package | zarvis-operator | zarvis-contracts | package tests, API audit, Windows restore |
 | Production readiness | compliance-auditor | incident-response, release-verification | sign-offs and drill evidence |
+| Scheduler/event automation | scheduler-operator | scheduler-events | dedupe keys, filters, leader lease evidence |
+| MCP integration | mcp-integrator | mcp-integration | tool exposure and scope parity evidence |
+| Secret management | secrets-custodian | secret-management | rotation and non-exposure evidence |
+| Observability | observability-engineer | observability | trace/metric/dashboard coverage evidence |
+| Model evaluation | evaluation-analyst | evaluation-suites | quality/cost/latency comparison evidence |
+| Webhook outbox | outbox-operator | webhook-outbox | signed delivery and leader-election evidence |
+| Kubernetes deployment | kubernetes-operator | kubernetes-deployment | hardening, network policy, PDB evidence |
+| Disaster recovery | disaster-recovery-lead | disaster-recovery, postgres-recovery | restore drill and RPO/RTO evidence |
+| Zeto content factory | zeto-producer | zeto-content-factory | QA scorecard and publish confirmation evidence |
+| Skill registry governance | skill-registry-curator | skill-registry-governance | manifest, signature and audit evidence |
 
 ## Acceptance criteria
 

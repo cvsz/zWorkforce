@@ -15,8 +15,8 @@ echo "================================================================="
 
 # Export default secrets if not set
 export ZWORKFORCE_POSTGRES_PASSWORD="${ZWORKFORCE_POSTGRES_PASSWORD:-zwf-postgres-secure-pass}"
-export ZWORKFORCE_API_KEYS="${ZWORKFORCE_API_KEYS:-bootstrap-key:superadmin:default:bootstrap:*}"
-export ZWORKFORCE_API_KEY="bootstrap-key"
+export ZWORKFORCE_API_KEYS="${ZWORKFORCE_API_KEYS:-3AYBMzp9IC8x33ATtSyQa0kmQR2L0pKuZIcxiTnmkbs:superadmin:default:bootstrap:*}"
+export ZWORKFORCE_API_KEY="${ZWORKFORCE_API_KEY:-3AYBMzp9IC8x33ATtSyQa0kmQR2L0pKuZIcxiTnmkbs}"
 export OPEN_WEBUI_PORT="${OPEN_WEBUI_PORT:-3080}"
 
 echo "1. Checking environment & networks..."

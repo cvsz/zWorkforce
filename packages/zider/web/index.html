@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>zider — AI Workspace & Sidebar Hub</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar / Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">⚡ zider</div>
+        <div class="tag">Workforce</div>
+      </div>
+      <div class="model-picker">
+        <label>Active Engine</label>
+        <select id="model-select">
+          <option value="openrouter/spawn-hermes-free">✨ Hermes 3 Free</option>
+          <option value="openai/gpt-4o">OpenAI GPT-4o</option>
+          <option value="anthropic/claude-3-5-sonnet">Claude 3.5 Sonnet</option>
+          <option value="deepseek/deepseek-r1">DeepSeek R1</option>
+          <option value="google/gemini-2.0-flash">Gemini 2.0 Flash</option>
+        </select>
+      </div>
+      <nav class="nav-links">
+        <button class="nav-btn active" data-view="chat">💬 Multi-Model Chat</button>
+        <button class="nav-btn" data-view="pdf">📄 ChatPDF & Docs</button>
+        <button class="nav-btn" data-view="summarizer">▶️ Media Summarizer</button>
+        <button class="nav-btn" data-view="writer">✍️ AI Writing Studio</button>
+        <button class="nav-btn" data-view="translator">🌐 Deep Translator</button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="status-indicator"><span class="dot"></span> Gateway Active (:8085)</div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace Content -->
+    <main class="main-content">
+      <!-- Chat View -->
+      <section id="view-chat" class="view-panel active">
+        <div class="panel-header">
+          <h2>AI Multi-Model Workspace</h2>
+          <div class="header-actions">
+            <label><input type="checkbox" id="web-group-chat"> Split-View Compare</label>
+          </div>
+        </div>
+        <div class="chat-flow" id="chat-flow">
+          <div class="chat-msg assistant">
+            <div class="avatar">⚡</div>
+            <div class="content">Welcome to <strong>zider</strong> full-stack workspace. You can test your multi-model streaming, document Q&A, and agent pipelines here.</div>
+          </div>
+        </div>
+        <div class="chat-composer">
+          <textarea id="composer-input" placeholder="Type a message or prompt..."></textarea>
+          <button id="composer-send" class="primary-btn">Send ⚡</button>
+        </div>
+      </section>
+
+      <!-- PDF View -->
+      <section id="view-pdf" class="view-panel">
+        <div class="panel-header">
+          <h2>ChatPDF & Knowledge Assistant</h2>
+        </div>
+        <div class="pdf-workspace">
+          <div class="upload-card" id="web-pdf-zone">
+            <p>📁 Drag and drop PDF files here or click to browse</p>
+          </div>
+          <div class="pdf-chat-area" id="web-pdf-chat"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
