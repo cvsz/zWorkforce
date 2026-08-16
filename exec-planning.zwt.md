@@ -98,7 +98,7 @@ A capability or module is only marked complete when all criteria are satisfied:
   - **Hermes Agent Core**: `~/.hermes/hermes-agent` (Python 3.11 + uv virtualenv).
   - **Spawn CLI**: `~/.local/bin/spawn` via Bun 1.3.14 runtime.
   - **Master Automation**: [`install_hermes_full_stack_master.sh`](install_hermes_full_stack_master.sh).
-  - **Provider Credentials**: Loaded dynamically from [`.env.ai`](.env.ai).
+  - **Provider Credentials**: Loaded dynamically from `.env.ai`.
 
 ---
 
