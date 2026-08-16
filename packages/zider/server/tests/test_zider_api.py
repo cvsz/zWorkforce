@@ -61,6 +61,31 @@ class TestZiderAPI(unittest.TestCase):
         data = resp.json()
         self.assertIn("summary", data)
 
+    def test_summarize_endpoint_rejects_ssrf_and_private_addresses(self):
+        # 1. Localhost rejection
+        resp = self.client.post("/api/summarize/webpage", json={
+            "url": "http://localhost:8080/internal-secrets"
+        })
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn("Could not fetch", data["summary"])
+
+        # 2. 127.0.0.1 IP loopback rejection
+        resp2 = self.client.post("/api/summarize/webpage", json={
+            "url": "http://127.0.0.1:9569/api/v1/overview"
+        })
+        self.assertEqual(resp2.status_code, 200)
+        data2 = resp2.json()
+        self.assertIn("Could not fetch", data2["summary"])
+
+        # 3. Unsupported scheme
+        resp3 = self.client.post("/api/summarize/webpage", json={
+            "url": "file:///etc/passwd"
+        })
+        self.assertEqual(resp3.status_code, 200)
+        data3 = resp3.json()
+        self.assertIn("Could not fetch", data3["summary"])
+
     def test_search_endpoint(self):
         resp = self.client.post("/api/search", json={
             "query": "artificial intelligence latest trends",
