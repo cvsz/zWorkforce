@@ -50,6 +50,7 @@ class RepositoryPolicyTests(unittest.TestCase):
             "build-test-package",
             "Analyze (python)",
             "Analyze (actions)",
+            "CodeQL",
         }
         self.assertEqual(expected, required)
 

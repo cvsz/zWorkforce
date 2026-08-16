@@ -38,7 +38,8 @@
           {"context": "dependency-review"},
           {"context": "build-test-package"},
           {"context": "Analyze (python)"},
-          {"context": "Analyze (actions)"}
+          {"context": "Analyze (actions)"},
+          {"context": "CodeQL"}
         ]
       }
     }
