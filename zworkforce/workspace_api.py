@@ -104,6 +104,28 @@ def handle_workspace_post(handler, app, path: str):
     if not path.startswith("/api/v1/workspaces"):
         return NOT_HANDLED
 
+    delete_match = re.fullmatch(rf"/api/v1/workspaces/conversations/({_UUID_PATH})/delete", path)
+    if delete_match:
+        ctx = _workspace_principal(handler, "admin", "workspace:delete")
+        if ctx is None:
+            return None
+        principal, tenant_id = ctx
+        conversation_id = delete_match.group(1)
+        conversation = app.db.get_workspace_conversation(tenant_id, conversation_id)
+        if not conversation:
+            return handler._error(404, "workspace_conversation_not_found", "workspace conversation not found")
+        if not app.db.delete_workspace_conversation(tenant_id, conversation_id):
+            return handler._error(404, "workspace_conversation_not_found", "workspace conversation not found")
+        app.db.audit(
+            tenant_id,
+            principal.name,
+            "workspace.conversation.delete",
+            "workspace_conversation",
+            conversation_id,
+            {"project_id": conversation.get("project_id"), "retention_policy": conversation["retention_policy"]},
+        )
+        return handler._json(200, {"ok": True, "id": conversation_id})
+
     ctx = _workspace_principal(handler, "operator", "workspace:write")
     if ctx is None:
         return None
@@ -268,35 +290,6 @@ def handle_workspace_post(handler, app, path: str):
     return handler._error(404, "not_found", "not found")
 
 
-def handle_workspace_delete(handler, app, path: str):
-    if not path.startswith("/api/v1/workspaces"):
-        return NOT_HANDLED
-
-    ctx = _workspace_principal(handler, "admin", "workspace:delete")
-    if ctx is None:
-        return None
-    principal, tenant_id = ctx
-
-    match = re.fullmatch(rf"/api/v1/workspaces/conversations/({_UUID_PATH})", path)
-    if not match:
-        return handler._error(404, "not_found", "not found")
-    conversation_id = match.group(1)
-    conversation = app.db.get_workspace_conversation(tenant_id, conversation_id)
-    if not conversation:
-        return handler._error(404, "workspace_conversation_not_found", "workspace conversation not found")
-    if not app.db.delete_workspace_conversation(tenant_id, conversation_id):
-        return handler._error(404, "workspace_conversation_not_found", "workspace conversation not found")
-    app.db.audit(
-        tenant_id,
-        principal.name,
-        "workspace.conversation.delete",
-        "workspace_conversation",
-        conversation_id,
-        {"project_id": conversation.get("project_id"), "retention_policy": conversation["retention_policy"]},
-    )
-    return handler._json(200, {"ok": True, "id": conversation_id})
-
-
 class WorkspaceApp(CoreApp):
     """Core zWorkforce API plus isolated workspace/project conversation routes."""
 
@@ -318,19 +311,6 @@ class WorkspaceApp(CoreApp):
                 self._prepare()
                 try:
                     result = handle_workspace_post(self, app, path)
-                    if result is not NOT_HANDLED:
-                        return result
-                    return self._error(404, "not_found", "not found")
-                except (ValueError, TypeError) as exc:
-                    return self._error(400, "invalid_request", str(exc))
-                except Exception as exc:
-                    return self._error(500, "internal_error", "internal server error", str(exc))
-
-            def do_DELETE(self):
-                self._prepare()
-                path = urllib.parse.urlsplit(self.path).path
-                try:
-                    result = handle_workspace_delete(self, app, path)
                     if result is not NOT_HANDLED:
                         return result
                     return self._error(404, "not_found", "not found")
