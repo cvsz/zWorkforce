@@ -69,6 +69,8 @@ class Settings:
     tool_timeout_seconds: int = 30
     tool_max_output_bytes: int = 262_144
     workspace_write_max_bytes: int = 1_048_576
+    workspace_read_enabled: bool = True
+    workspace_write_enabled: bool = True
 
     max_request_bytes: int = 1_048_576
     api_rate_limit_per_minute: int = 240
@@ -160,6 +162,8 @@ class Settings:
             tool_timeout_seconds=i("ZWORKFORCE_TOOL_TIMEOUT_SECONDS", 30, 1),
             tool_max_output_bytes=i("ZWORKFORCE_TOOL_MAX_OUTPUT_BYTES", 262144, 4096),
             workspace_write_max_bytes=i("ZWORKFORCE_WORKSPACE_WRITE_MAX_BYTES", 1048576, 1024),
+            workspace_read_enabled=b("ZWORKFORCE_WORKSPACE_READ_ENABLED", True),
+            workspace_write_enabled=b("ZWORKFORCE_WORKSPACE_WRITE_ENABLED", True),
             max_request_bytes=i("ZWORKFORCE_MAX_REQUEST_BYTES", 1048576, 1024),
             api_rate_limit_per_minute=i("ZWORKFORCE_API_RATE_LIMIT_PER_MINUTE", 240, 1),
             cors_origins=csv("ZWORKFORCE_CORS_ORIGINS"),
