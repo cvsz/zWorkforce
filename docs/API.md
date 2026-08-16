@@ -147,10 +147,12 @@ POST /api/v1/workspaces/conversations/{id}/context-snapshots
 ```
 
 Request fields are `model_id`, `context_ceiling_tokens`,
-`compaction_threshold_tokens`, optional `message_ids`, optional `reason`,
-optional `summary`, and optional snapshot `id`. Message IDs must belong to the
-same tenant-scoped conversation. Context ceilings and thresholds are bounded,
-and the threshold cannot exceed the ceiling.
+`compaction_threshold_tokens`, optional `message_ids`, optional `reason`, and
+optional snapshot `id`. A normal checkpoint **does not accept `summary`**;
+summary-bearing snapshots are reserved for the separately authorized `/compact`
+operation. Message IDs must belong to the same tenant-scoped conversation.
+Context ceilings and thresholds are bounded, and the threshold cannot exceed the
+ceiling.
 
 Explicit compaction is a separately authorized durable/cost-relevant operation
 and requires `workspace:compact` plus at least the `operator` role:
