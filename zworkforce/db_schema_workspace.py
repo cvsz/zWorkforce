@@ -45,6 +45,7 @@ WORKSPACE_SCHEMA_SQL = '''
                     tenant_id TEXT NOT NULL,
                     id TEXT NOT NULL,
                     conversation_id TEXT NOT NULL,
+                    ordinal INTEGER NOT NULL,
                     role TEXT NOT NULL CHECK(role IN ('user','assistant','system','tool')),
                     content TEXT NOT NULL,
                     artifact_ids_json TEXT NOT NULL DEFAULT '[]',
@@ -52,9 +53,10 @@ WORKSPACE_SCHEMA_SQL = '''
                     created_by TEXT NOT NULL,
                     created_at TEXT NOT NULL,
                     PRIMARY KEY(tenant_id,id),
+                    UNIQUE(tenant_id,conversation_id,ordinal),
                     FOREIGN KEY(tenant_id,conversation_id)
                         REFERENCES workspace_conversations5(tenant_id,id) ON DELETE CASCADE
                 );
                 CREATE INDEX IF NOT EXISTS idx_workspace_messages5_conversation
-                    ON workspace_messages5(tenant_id,conversation_id,created_at,id);
+                    ON workspace_messages5(tenant_id,conversation_id,ordinal);
 '''
