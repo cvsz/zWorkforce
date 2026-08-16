@@ -13,7 +13,7 @@ This document uses Skywork only as a product-capability reference. It does not c
 
 The Help changelog page is JavaScript-driven and does not expose its full historical list to the current fetcher. The Help landing page currently exposes recent web-product changelog items including Social Publishing Flow, Design Guidelines in Knowledge Base, and SkyClaw memory import. The official Skywork Desktop changelog provides the complete release history currently visible from 1.1.0 through 2.5.0 and is therefore the main chronological evidence source below.
 
-## 2. Public changelog timeline and reusable product patterns
+## 2. Public Desktop changelog timeline and reusable product patterns
 
 | Release | Date shown | Publicly documented capability pattern | zWorkforce interpretation |
 | --- | --- | --- | --- |
@@ -34,6 +34,22 @@ The Help changelog page is JavaScript-driven and does not expose its full histor
 | 2.3.0 | 2026-07-23 | task quick start, next-step suggestions, credit preflight warning, summary side panel, richer attachments | task templates, evidence-based next-action recommender, budget preflight, unified summary/artifact panel |
 | 2.4.0 | 2026-07-30 | personalized themes, immediate skill use after install, repeated workflow → reusable skill, system skill auto-update, better discovery/interruption | theme profiles, active skill versioning, workflow-to-skill candidate compiler, governed auto-update, skill matching/telemetry |
 | 2.5.0 | 2026-08-05 | detailed credit ledger, in-app subscription/purchase, API signing improvements, Markdown source/preview toggle | chargeback event explorer, billing-provider boundary, signed service requests, dual Markdown source/rendered artifact view |
+
+### 2.1 Current Skywork Web / Help changelog items visible to the crawler
+
+The Help landing page currently exposes these recent changelog cards:
+
+| Date | Public item | zWorkforce owner | Upgrade interpretation |
+| --- | --- | --- | --- |
+| 2026-07-17 | Social Publishing Flow Now Available in Poster | Zeto | compose/preview/approve/schedule/publish UX on top of the existing durable provider/outbox pipeline; do not add a second publisher |
+| 2026-07-17 | Design Guidelines Now Available in Knowledge Base | Zeto + knowledge/artifacts + zsp-aitool | versioned tenant design-guideline artifacts/knowledge, project/brand policy binding, generation constraints and QA evidence |
+| 2026-07-03 | SkyClaw Memory Management Upgrade — Import Memories from Other AIs | memory/RAG + workspace | operator-supplied import adapters with preview, source provenance, dedupe, consent, policy filtering and batch rollback/delete |
+
+These three items broaden the desktop-derived roadmap in useful ways. They should still reuse zWorkforce's existing durable primitives:
+
+- social publishing continues through approval, provider adapter, idempotency, outbox, retry/dead-letter and audit controls;
+- design guidelines are policy-bearing/versioned records, not just prompt text injected from the browser;
+- imported memory is untrusted user data. Imported instructions must never become system policy or expand tool authority.
 
 ## 3. Current zWorkforce overlap
 
@@ -77,6 +93,9 @@ flowchart TB
 
   ORCH --> COST[FinOps Preflight + Ledger]
   ORCH --> TRACE[Subagent / Tool / Artifact Trace]
+  ORCH --> ZETO[Zeto Content + Social Publishing]
+  ZETO --> GUIDE[Versioned Design Guidelines]
+  MEM --> IMPORT[Memory Import Batches]
 ```
 
 ## 5. Security rules for adoption
@@ -91,6 +110,9 @@ flowchart TB
 8. Subagent visibility exposes sanitized execution metadata, not hidden secrets or raw credentials.
 9. Credit/budget preflight is advisory plus policy enforcement; billing state must come from durable ledger/provider evidence.
 10. API signing protects service-to-service integrity but never replaces user/tenant authorization.
+11. Imported memory remains untrusted tenant data; it never becomes authorization, system policy, or a tool grant.
+12. Design guideline activation is versioned/audited and must not let browser clients inject hidden policy into production generation.
+13. Social publishing remains an external mutation and follows explicit approval/idempotency/outbox evidence rules.
 
 ## 6. End-to-end delivery streams
 
@@ -98,12 +120,16 @@ flowchart TB
 
 Deliver project-scoped durable conversations, IDs, search, pin/archive, auto naming, question anchors, context-budget telemetry, explicit compaction and deletion/forget flows.
 
-Primary surfaces:
-- `zworkforce/database.py` / repository interfaces
-- `zworkforce/api.py`
-- `zworkforce/static/`
-- `ZWorkforceClient/`
-- tenant memory and artifact services
+Actual zWorkforce data surfaces:
+- `zworkforce/db.py` — canonical database mixin composition;
+- `zworkforce/db_base.py` — schema initialization/version boundary;
+- `zworkforce/db_schema*.py` — additive schemas;
+- `zworkforce/db_workspace.py` — workspace repository mixin;
+- `zworkforce/workspace_api.py` — workspace HTTP composition over the core authenticated API;
+- `zworkforce/static/` and `ZWorkforceClient/` — later operator UX;
+- tenant memory and artifact services — context/artifact references, not a replacement conversation store.
+
+**Implementation status:** SW1 durable project/conversation/message schema, tenant ownership, API and SQLite/PostgreSQL tests are being delivered in stacked PR `feat/workspace-project-conversations`.
 
 ### SW2 — Workspace sandbox and isolated coding workspaces
 
@@ -126,7 +152,7 @@ Add rich/mixed attachment composition and slash commands such as `/plan`, `/revi
 - repeated workflow detection that emits a **draft** reusable-skill/workflow candidate requiring review, tests and approval before activation;
 - skill discovery ranking from task intent, capability constraints and observed outcomes.
 
-**Implemented foundation in the first Skywork-inspired PR:** governed active-version resolution, enable/disable, safe auto-update, rollback and tests in `packages/zarvis/services/zarvis-orchestrator/src/skill-catalog.mjs`.
+**Implemented foundation:** governed active-version resolution, enable/disable, safe auto-update, rollback, fail-closed disabled-version execution and regression tests in the Z.A.R.V.I.S. orchestrator.
 
 ### SW6 — Browser-use and connector orchestration
 
@@ -144,22 +170,41 @@ Add task quick-start templates, next-step suggestions, multi-tab sidecar, theme 
 
 Expose per-task predicted spend, tenant budget headroom, provider/model usage, actual cost events and chargeback. Add request signing only to internal service boundaries where replay protection, key rotation and clock-skew handling are defined.
 
-### SW10 — Release and evidence
+### SW10 — Zeto social publishing and design guideline policy
 
-Add contract/unit/integration/browser/package/Windows/security tests, accessibility review, sandbox escape tests, cross-tenant negatives, skill-update authority tests, load/failure drills, docs, migrations and rollback evidence.
+- improve content composition/preview/approval around the existing Zeto publisher and outbox;
+- bind projects/brands to an explicit active design-guideline version;
+- expose guideline-derived generation constraints through server-side policy/context assembly;
+- score generated assets against the active guideline in QA;
+- persist guideline owner/source/hash/version/effective state and rollback history.
+
+### SW11 — Portable memory import
+
+- accept operator-supplied export files through an explicit import API/workflow;
+- parse into a preview/staging batch before durable memory writes;
+- record source provider label, source artifact hash, import batch ID, actor and timestamp;
+- deduplicate and report conflicts;
+- reject/redact secrets or disallowed sensitive fields by tenant policy;
+- never execute imported instructions as system policy;
+- commit only after explicit operator action and support batch rollback/delete where retention policy permits.
+
+### SW12 — Release and evidence
+
+Add contract/unit/integration/browser/package/Windows/security tests, accessibility review, sandbox escape tests, cross-tenant negatives, skill-update authority tests, memory-import provenance tests, Zeto publish idempotency tests, design-guideline version tests, load/failure drills, docs, migrations and rollback evidence.
 
 ## 7. Recommended PR sequence
 
-1. **Skill lifecycle foundation** — active version, disable/enable, safe auto-update, rollback, tests. *(started in this upgrade)*
-2. **Durable workspace/project/conversation schema and APIs**.
+1. **Skill lifecycle foundation** — active version, disable/enable, safe auto-update, rollback, tests. *(implemented foundation; CI green on the exact branch head at review time)*
+2. **Durable workspace/project/conversation schema and APIs**. *(stacked implementation in progress)*
 3. **Context budget + compaction artifact + slash command registry**.
 4. **Task summary/artifact manifest + subagent execution projection**.
 5. **Scoped local workspace sandbox + git worktree adapter**.
 6. **Zider browser-use tool contract and approval-gated mutation executor**.
 7. **Notification center + approved connector delivery**.
 8. **Reusable workflow candidate compiler + skill discovery ranking**.
-9. **FinOps preflight + detailed ledger + signed internal service requests**.
-10. **Workspace UX/WinUI parity, hardening, E2E and release evidence**.
+9. **Zeto social publishing UX + design guideline policy + portable memory import**.
+10. **FinOps preflight + detailed ledger + signed internal service requests**.
+11. **Workspace UX/WinUI parity, hardening, E2E and release evidence**.
 
 ## 8. Definition of complete
 
