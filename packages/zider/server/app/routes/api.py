@@ -2,29 +2,54 @@ import base64
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import StreamingResponse
 from typing import List, Optional
-from server.app.models import (
-    ChatRequest,
-    WriteRequest,
-    TranslateRequest,
-    BatchTranslateRequest,
-    SummarizeRequest,
-    PdfQueryRequest,
-    AgentRunRequest,
-    SearchRequest,
-    VisionAnalyzeRequest,
-    ImageGenRequest,
-    ZWorkforceTaskRequest
-)
-from server.app.services.llm_gateway import LLMGateway
-from server.app.services.pdf_service import PDFService
-from server.app.services.summarizer_service import SummarizerService
-from server.app.services.translator_service import TranslatorService
-from server.app.services.agent_runner import AgentRunner
-from server.app.services.search_service import SearchService
-from server.app.services.vision_service import VisionService
-from server.app.services.prompt_library import PromptLibraryService
-from server.app.services.image_gen_service import ImageGenService
-from server.app.services.zworkforce_bridge import ZWorkforceBridge
+try:
+    from app.models import (
+        ChatRequest,
+        WriteRequest,
+        TranslateRequest,
+        BatchTranslateRequest,
+        SummarizeRequest,
+        PdfQueryRequest,
+        AgentRunRequest,
+        SearchRequest,
+        VisionAnalyzeRequest,
+        ImageGenRequest,
+        ZWorkforceTaskRequest
+    )
+    from app.services.llm_gateway import LLMGateway
+    from app.services.pdf_service import PDFService
+    from app.services.summarizer_service import SummarizerService
+    from app.services.translator_service import TranslatorService
+    from app.services.agent_runner import AgentRunner
+    from app.services.search_service import SearchService
+    from app.services.vision_service import VisionService
+    from app.services.prompt_library import PromptLibraryService
+    from app.services.image_gen_service import ImageGenService
+    from app.services.zworkforce_bridge import ZWorkforceBridge
+except ImportError:
+    from server.app.models import (
+        ChatRequest,
+        WriteRequest,
+        TranslateRequest,
+        BatchTranslateRequest,
+        SummarizeRequest,
+        PdfQueryRequest,
+        AgentRunRequest,
+        SearchRequest,
+        VisionAnalyzeRequest,
+        ImageGenRequest,
+        ZWorkforceTaskRequest
+    )
+    from server.app.services.llm_gateway import LLMGateway
+    from server.app.services.pdf_service import PDFService
+    from server.app.services.summarizer_service import SummarizerService
+    from server.app.services.translator_service import TranslatorService
+    from server.app.services.agent_runner import AgentRunner
+    from server.app.services.search_service import SearchService
+    from server.app.services.vision_service import VisionService
+    from server.app.services.prompt_library import PromptLibraryService
+    from server.app.services.image_gen_service import ImageGenService
+    from server.app.services.zworkforce_bridge import ZWorkforceBridge
 
 router = APIRouter(prefix="/api")
 

@@ -2,7 +2,10 @@ import json
 import asyncio
 from typing import AsyncGenerator, List, Dict, Any
 import httpx
-from server.app.config import settings
+try:
+    from app.config import settings
+except ImportError:
+    from server.app.config import settings
 
 class LLMGateway:
     """
