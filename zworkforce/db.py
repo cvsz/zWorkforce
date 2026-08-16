@@ -82,6 +82,9 @@ class Database(AutomationMixin, TaskMixin, FinOpsMixin, GovernanceMixin, Migrati
                     (next_attempt, worker_id, lease_until, now, now, now, task_id),
                 )
                 claimed = c.execute("SELECT * FROM tasks2 WHERE id=?", (task_id,)).fetchone()
+                if not claimed:
+                    c.execute("ROLLBACK")
+                    return None
                 c.execute("COMMIT")
             except Exception:
                 c.execute("ROLLBACK")

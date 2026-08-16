@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>zider Sidebar</title>
+  <link rel="stylesheet" href="sidebar.css">
+</head>
+<body class="zider-body">
+  <!-- Header Bar -->
+  <header class="zider-header">
+    <div class="zider-brand">
+      <span class="zider-logo">⚡</span>
+      <span class="zider-title">zider</span>
+      <span class="zider-badge">v1.3</span>
+    </div>
+    <div class="header-right">
+      <button id="prompt-lib-btn" class="mini-btn-accent" title="Prompt Library">📚 Prompts</button>
+      <select id="model-select" class="zider-select">
+        <optgroup label="✨ Free Unlocked Tier">
+          <option value="deepseek/deepseek-r1:free" selected>✨ DeepSeek R1 Free</option>
+          <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B Free</option>
+          <option value="qwen/qwen-2.5-coder-32b-instruct:free">Qwen 2.5 Coder Free</option>
+          <option value="openrouter/spawn-hermes-free">Hermes 3 405B Free</option>
+        </optgroup>
+        <optgroup label="🚀 Flagship Tier 1">
+          <option value="anthropic/claude-3-7-sonnet">Claude 3.7 Sonnet</option>
+          <option value="anthropic/claude-3-5-sonnet">Claude 3.5 Sonnet</option>
+          <option value="deepseek/deepseek-r1">DeepSeek R1 (Pro)</option>
+          <option value="openai/o3-mini">OpenAI o3-mini</option>
+          <option value="openai/gpt-4o">OpenAI GPT-4o</option>
+          <option value="google/gemini-2.0-flash">Gemini 2.0 Flash</option>
+          <option value="x-ai/grok-2">xAI Grok 2</option>
+        </optgroup>
+      </select>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="zider-nav">
+    <button class="nav-tab active" data-target="tab-chat">💬 Chat</button>
+    <button class="nav-tab" data-target="tab-vision">🔍 Vision</button>
+    <button class="nav-tab" data-target="tab-draw">🎨 Draw</button>
+    <button class="nav-tab" data-target="tab-write">✍️ Write</button>
+    <button class="nav-tab" data-target="tab-read">📖 Read</button>
+    <button class="nav-tab" data-target="tab-pdf">📄 PDF</button>
+    <button class="nav-tab" data-target="tab-translate">🌐 Translate</button>
+    <button class="nav-tab" data-target="tab-sandbox">💻 Sandbox</button>
+    <button class="nav-tab" data-target="tab-agent">🤖 Claw</button>
+  </nav>
+
+  <!-- Main Content Areas -->
+  <main class="zider-main">
+    <!-- Chat View -->
+    <section id="tab-chat" class="tab-pane active">
+      <div class="chat-controls">
+        <div class="chat-toggles">
+          <label class="toggle-label">
+            <input type="checkbox" id="web-search-toggle"> 🌐 Web Search
+          </label>
+          <label class="toggle-label">
+            <input type="checkbox" id="group-chat-toggle"> Compare Models
+          </label>
+        </div>
+        <div class="chat-actions">
+          <button id="tts-latest-btn" class="icon-btn" title="Read Aloud Latest Message">🔊</button>
+          <button id="export-chat-btn" class="icon-btn" title="Export Chat Markdown">📥</button>
+          <button id="clear-chat-btn" class="icon-btn" title="Clear Conversation">🗑️</button>
+        </div>
+      </div>
+      <div id="chat-messages" class="messages-container">
+        <div class="message assistant">
+          <div class="msg-avatar">⚡</div>
+          <div class="msg-bubble">Hello! I'm <strong>zider</strong>, your enterprise AI sidebar. Highlight any text, speak with voice, paste screenshots, or ask me anything!</div>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <button id="voice-input-btn" class="icon-btn-voice" title="Voice Input">🎙️</button>
+        <textarea id="chat-input" placeholder="Ask anything... (Shift+Enter for new line)" rows="2"></textarea>
+        <button id="chat-send-btn" class="send-btn">➤</button>
+      </div>
+    </section>
+
+    <!-- Vision / OCR View -->
+    <section id="tab-vision" class="tab-pane">
+      <div class="vision-header">
+        <button id="snip-screen-btn" class="action-btn">📸 Snip Visible Webpage</button>
+        <button id="upload-img-btn" class="action-btn-secondary">📁 Upload Image</button>
+        <input type="file" id="vision-file-input" accept="image/*" style="display:none;">
+      </div>
+      <div id="vision-preview-container" class="vision-preview" style="display:none;">
+        <img id="vision-preview-img" src="" alt="Snip Preview">
+        <button id="clear-vision-btn" class="mini-btn">✕ Clear</button>
+      </div>
+      <div class="panel-section mt-2">
+        <input type="text" id="vision-prompt-input" class="zider-input" placeholder="Ask questions about this image or extract text..." value="Extract all text and summarize key UI elements.">
+      </div>
+      <button id="vision-run-btn" class="action-btn" disabled>Analyze Image 🔍</button>
+      <div id="vision-result" class="result-box mt-2"></div>
+    </section>
+
+    <!-- Draw / Image Gen View -->
+    <section id="tab-draw" class="tab-pane">
+      <div class="panel-section">
+        <label class="form-label">Image Prompt</label>
+        <textarea id="draw-prompt-input" class="zider-textarea" placeholder="Describe the image you want to generate... e.g. Cyberpunk workspace with neon holographic display"></textarea>
+      </div>
+      <div class="panel-section">
+        <label class="form-label">Art Style</label>
+        <div class="chips-row">
+          <button class="chip active" data-style="photorealistic">Photorealistic</button>
+          <button class="chip" data-style="cyberpunk">Cyberpunk</button>
+          <button class="chip" data-style="vector">Vector / SVG</button>
+          <button class="chip" data-style="3d-render">3D Render</button>
+        </div>
+      </div>
+      <button id="draw-generate-btn" class="action-btn">Generate Art 🎨</button>
+      <div id="draw-output" class="result-box mt-2" style="text-align:center;"></div>
+    </section>
+
+    <!-- Write View -->
+    <section id="tab-write" class="tab-pane">
+      <div class="panel-section">
+        <label class="form-label">Task Type</label>
+        <select id="write-task-select" class="zider-select">
+          <option value="compose">Compose Article / Email</option>
+          <option value="improve">Improve & Polish Writing</option>
+          <option value="grammar">Fix Grammar & Spelling</option>
+          <option value="reply">Generate Contextual Reply</option>
+          <option value="expand">Expand & Elaborate</option>
+        </select>
+      </div>
+      <div class="panel-section">
+        <label class="form-label">Tone</label>
+        <div class="chips-row">
+          <button class="chip active" data-tone="professional">Professional</button>
+          <button class="chip" data-tone="casual">Casual</button>
+          <button class="chip" data-tone="direct">Direct</button>
+          <button class="chip" data-tone="academic">Academic</button>
+        </div>
+      </div>
+      <div class="panel-section">
+        <textarea id="write-input" class="zider-textarea" placeholder="Paste your text or draft ideas here..."></textarea>
+      </div>
+      <div class="write-action-row">
+        <button id="write-generate-btn" class="action-btn">Generate Draft ⚡</button>
+        <button id="write-insert-btn" class="action-btn-secondary" style="display:none;">Insert into Page ✍️</button>
+      </div>
+      <div id="write-result" class="result-box"></div>
+    </section>
+
+    <!-- Read & Summarizer View -->
+    <section id="tab-read" class="tab-pane">
+      <div class="read-actions">
+        <button id="read-summarize-page-btn" class="action-btn-secondary">📄 Summarize Webpage</button>
+        <button id="read-summarize-yt-btn" class="action-btn-secondary">▶️ Summarize YouTube</button>
+        <button id="read-distraction-free-btn" class="action-btn-secondary">👓 Reader Mode</button>
+      </div>
+      <div id="read-summary-output" class="result-box mt-2">
+        <em>Click an action above or select text to summarize.</em>
+      </div>
+    </section>
+
+    <!-- ChatPDF View -->
+    <section id="tab-pdf" class="tab-pane">
+      <div class="upload-zone" id="pdf-upload-dropzone">
+        <input type="file" id="pdf-file-input" accept=".pdf,.txt,.md,.csv" style="display:none;">
+        <span class="upload-icon">📄</span>
+        <p>Drop PDF/Docs here or <span class="link-span">browse</span></p>
+        <small class="text-muted">Chat, extract tables, and cite sources</small>
+      </div>
+      <div id="pdf-active-doc" class="doc-badge" style="display:none;">
+        <span id="pdf-doc-name">document.pdf</span>
+        <button id="pdf-remove-btn" class="mini-btn">✕</button>
+      </div>
+      <div id="pdf-messages" class="messages-container small"></div>
+      <div class="chat-input-area">
+        <input type="text" id="pdf-query-input" placeholder="Ask questions about this PDF..." disabled />
+        <button id="pdf-send-btn" class="send-btn" disabled>➤</button>
+      </div>
+    </section>
+
+    <!-- Translate View -->
+    <section id="tab-translate" class="tab-pane">
+      <div class="lang-row">
+        <select id="trans-source" class="zider-select-sm">
+          <option value="auto">Auto Detect</option>
+          <option value="en">English</option>
+          <option value="zh">Chinese</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="ja">Japanese</option>
+        </select>
+        <span class="swap-icon">⇄</span>
+        <select id="trans-target" class="zider-select-sm">
+          <option value="en">English</option>
+          <option value="zh">Chinese</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="ja" selected>Japanese</option>
+        </select>
+      </div>
+      <textarea id="trans-input" class="zider-textarea" placeholder="Enter text to translate..."></textarea>
+      <div class="write-action-row">
+        <button id="trans-btn" class="action-btn">Translate 🌐</button>
+        <button id="trans-page-btn" class="action-btn-secondary">Translate Full Page In-Place 📑</button>
+      </div>
+      <div id="trans-output" class="result-box"></div>
+    </section>
+
+    <!-- Code & Artifacts Sandbox View -->
+    <section id="tab-sandbox" class="tab-pane">
+      <div class="sandbox-header">
+        <button id="sandbox-run-html-btn" class="action-btn">▶️ Live HTML Preview</button>
+        <button id="sandbox-copy-code-btn" class="action-btn-secondary">📋 Copy Code</button>
+      </div>
+      <textarea id="sandbox-code-input" class="zider-textarea" style="height:120px;font-family:monospace;" placeholder="<!-- Paste or generate HTML/SVG/JS code here to render live -->
+<div style='color:#38bdf8;padding:20px;background:#18181b;border-radius:8px;'>
+  <h3>⚡ zider Live Sandbox</h3>
+  <p>Render interactive HTML, SVGs, charts, and widgets directly in your sidebar.</p>
+</div>"></textarea>
+      <div class="sandbox-preview-container mt-2">
+        <iframe id="sandbox-frame" style="width:100%;height:180px;background:#fff;border:none;border-radius:6px;"></iframe>
+      </div>
+    </section>
+
+    <!-- Agent Claw & zWorkforce Task Dispatch View -->
+    <section id="tab-agent" class="tab-pane">
+      <div class="agent-banner">
+        <h4>⚡ Claw Agent & zWorkforce Dispatch</h4>
+        <p class="text-muted">Execute autonomous browser steps or queue durable tasks in zWorkforce control plane.</p>
+      </div>
+      <textarea id="agent-goal-input" class="zider-textarea" placeholder="e.g. Extract all product prices or dispatch data analysis worker..."></textarea>
+      <div class="write-action-row">
+        <button id="agent-run-btn" class="action-btn">Browser Claw 🤖</button>
+        <button id="agent-dispatch-zwf-btn" class="action-btn-secondary">Dispatch to zWorkforce 🚀</button>
+      </div>
+      <div id="agent-logs" class="agent-timeline"></div>
+    </section>
+  </main>
+
+  <!-- Prompt Library Modal -->
+  <div id="prompt-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📚 Prompt Templates Library</h3>
+        <button id="close-prompt-modal" class="mini-btn">✕</button>
+      </div>
+      <div class="prompt-chips">
+        <button class="p-chip active" data-pcat="all">All</button>
+        <button class="p-chip" data-pcat="Coding">💻 Coding</button>
+        <button class="p-chip" data-pcat="Writing">✍️ Writing</button>
+        <button class="p-chip" data-pcat="Reading">📖 Reading</button>
+        <button class="p-chip" data-pcat="Automation">📊 Automation</button>
+      </div>
+      <div id="prompt-list" class="prompt-grid"></div>
+    </div>
+  </div>
+
+  <script src="sidebar.js"></script>
+</body>
+</html>

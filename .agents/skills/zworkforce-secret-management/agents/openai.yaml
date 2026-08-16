@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce Secret Management"
+  short_description: "Configure and audit secret references without exposing plaintext"
+  default_prompt: "Use $zworkforce-secret-management to audit zWorkforce secret reference configuration across env, file, AWS Secrets Manager, and Vault."

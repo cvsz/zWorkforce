@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce Disaster Recovery"
+  short_description: "Run backup/restore drills and validate RPO/RTO"
+  default_prompt: "Use $zworkforce-disaster-recovery to plan or verify zWorkforce backup/restore drills against RPO/RTO targets."

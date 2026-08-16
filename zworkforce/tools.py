@@ -92,7 +92,10 @@ class ToolExecutor:
         raw = raw.strip()
         if not raw or "\x00" in raw:
             raise ToolError("invalid workspace path")
-        p = (self.root / raw).resolve(strict=False)
+        try:
+            p = (self.root / raw).resolve(strict=False)
+        except OSError as exc:
+            raise ToolError(f"invalid workspace path: {exc}") from exc
         if p != self.root and self.root not in p.parents:
             raise ToolError("path escapes workspace root")
         return p
@@ -427,7 +430,7 @@ class ToolExecutor:
                     "metadata": options,
                 }
                 data_bytes = json.dumps(manifest, indent=2, ensure_ascii=False).encode("utf-8")
-        elif media_type in ("video", "hyperframes"):
+        elif media_type == "hyperframes":
             content_type = "application/json"
             composition = {
                 "composition_version": "1.0",

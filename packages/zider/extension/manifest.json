@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "zider — AI Sidebar & Companion",
+  "version": "1.3.0",
+  "description": "Enterprise AI Sidebar, ChatPDF, Summarizer, Translator, Vision OCR, and Multi-Model Companion for zWorkforce.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "contextMenus",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:8085/*",
+    "http://localhost:8085/*",
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "zider AI Assistant"
+  },
+  "options_page": "options.html",
+  "commands": {
+    "toggle-sidebar": {
+      "suggested_key": {
+        "default": "Ctrl+M",
+        "mac": "Command+M"
+      },
+      "description": "Toggle zider Sidebar"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "sidebar.html",
+        "sidebar.css",
+        "sidebar.js",
+        "icons/icon.svg"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

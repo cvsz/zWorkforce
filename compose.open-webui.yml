@@ -15,12 +15,13 @@ services:
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
     container_name: zworkforce-open-webui
+    command: ["bash", "/app/backend/start.sh"]
     ports:
       - "${OPEN_WEBUI_PORT:-3080}:8080"
     environment:
       # General & Branding
       WEBUI_NAME: "zWorkforce Enterprise AI"
-      WEBUI_URL: "http://localhost:${OPEN_WEBUI_PORT:-3080}"
+      WEBUI_URL: "https://chat.zeaz.dev"
       WEBUI_SECRET_KEY: "${WEBUI_SECRET_KEY:-zwf-openwebui-secret-key-32bytes-long-token}"
       ENV: "production"
       ENABLE_OLLAMA_API: "false"
@@ -30,7 +31,7 @@ services:
       
       # OpenAI Compatible Gateway pointing to zWorkforce Multi-Model Router
       OPENAI_API_BASE_URL: "http://api:9569/v1"
-      OPENAI_API_KEY: "${ZWORKFORCE_API_KEY:-bootstrap-enterprise-key}"
+      OPENAI_API_KEY: "3AYBMzp9IC8x33ATtSyQa0kmQR2L0pKuZIcxiTnmkbs"
       
       # Code Artifacts & Interactive HTML/SVG Preview
       ENABLE_CODE_EXECUTION: "true"

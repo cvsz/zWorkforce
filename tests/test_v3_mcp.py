@@ -30,8 +30,8 @@ class MCPTests(unittest.TestCase):
         self.assertEqual(result["structuredContent"]["status"],"succeeded")
     def test_install_prometa_tool(self):
         result=self.client.call_tool("workforce.install_prometa",{})
-        self.assertEqual(result["structuredContent"]["agents"],18)
-        self.assertEqual(result["structuredContent"]["skills"],12)
+        self.assertEqual(result["structuredContent"]["agents"],28)
+        self.assertEqual(result["structuredContent"]["skills"],22)
         self.assertTrue(self.db.get_agent("default","incident-commander"))
         self.assertTrue(self.db.get_workflow("default","prometa-incident-response"))
 

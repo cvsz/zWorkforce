@@ -15,16 +15,16 @@ class ProMetaRuntimeTests(unittest.TestCase):
 
     def test_catalog_loads_and_installs_idempotently(self):
         catalog = load_prometa_catalog()
-        self.assertEqual(18, len(catalog["agents"]))
-        self.assertEqual(12, len(catalog["skills"]))
+        self.assertEqual(28, len(catalog["agents"]))
+        self.assertEqual(22, len(catalog["skills"]))
         self.assertEqual(3, len(catalog["templates"]))
         self.assertEqual(4, len(catalog["workflows"]))
 
         first = install_prometa_catalog(self.db, "default", "test")
         second = install_prometa_catalog(self.db, "default", "test")
         self.assertEqual(first, second)
-        self.assertEqual(18, len([a for a in self.db.list_agents("default") if a["id"] in {x["id"] for x in catalog["agents"]}]))
-        self.assertEqual(12, len(self.db.list_skills("default")))
+        self.assertEqual(28, len([a for a in self.db.list_agents("default") if a["id"] in {x["id"] for x in catalog["agents"]}]))
+        self.assertEqual(22, len(self.db.list_skills("default")))
         self.assertEqual(3, len(self.db.list_agent_templates("default")))
         self.assertEqual(4, len(self.db.list_workflows("default")))
 

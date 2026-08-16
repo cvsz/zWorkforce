@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="zider-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="#09090b" />
+  <rect x="4" y="4" width="120" height="120" rx="24" fill="none" stroke="#27272a" stroke-width="3" />
+  <path d="M72 16 L28 72 L60 72 L48 112 L100 52 L68 52 Z" fill="url(#zider-grad)" filter="url(#glow)" />
+</svg>

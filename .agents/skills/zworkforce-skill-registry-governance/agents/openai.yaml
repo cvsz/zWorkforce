@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce Skill Registry Governance"
+  short_description: "Govern signed remote skill install, hosts, and audit trail"
+  default_prompt: "Use $zworkforce-skill-registry-governance to verify zWorkforce skill manifest validation, signatures, and registry host safety."

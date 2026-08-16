@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce Scheduler & Event Automation"
+  short_description: "Configure cron/interval schedules and durable event triggers"
+  default_prompt: "Use $zworkforce-scheduler-events to design zWorkforce schedules, event triggers, dedupe keys, and leader-lease behavior."

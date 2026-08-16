@@ -38,5 +38,8 @@ lint-security:
 	! grep -R --line-number --include="*.py" "shell=True" zworkforce
 	! grep -R --line-number -E "API_KEY|provider_api_key|Authorization: Bearer" zworkforce/static
 
+sec-scan: lint-security
+	@echo "Static security checks passed: zero shell=True and zero static credentials."
+
 docker-build:
 	docker build --build-arg VERSION=$(VERSION) -t zworkforce:$(VERSION) .

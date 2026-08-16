@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>zider Settings & Preferences</title>
+  <style>
+    body {
+      background: #09090b;
+      color: #fafafa;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 30px;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+    h1 { color: #38bdf8; font-size: 22px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    .card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; color: #d4d4d8; }
+    input[type=text], select {
+      width: 100%;
+      background: #27272a;
+      border: 1px solid #3f3f46;
+      color: #fff;
+      padding: 10px;
+      border-radius: 6px;
+      box-sizing: border-box;
+      margin-bottom: 14px;
+      font-size: 13px;
+    }
+    .hint { font-size: 11px; color: #71717a; margin-top: -10px; margin-bottom: 14px; }
+    button {
+      background: #38bdf8;
+      color: #09090b;
+      font-weight: 600;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover { background: #0ea5e9; }
+    .status { margin-left: 12px; font-size: 12px; color: #22c55e; }
+  </style>
+</head>
+<body>
+  <h1>⚡ zider Settings & Options</h1>
+
+  <div class="card">
+    <label>zider Backend Gateway URL</label>
+    <input type="text" id="gateway-url" value="http://127.0.0.1:8085">
+    <div class="hint">Endpoint for multi-model streaming, ChatPDF, and media extraction.</div>
+
+    <label>Default LLM Model</label>
+    <select id="default-model">
+      <option value="openrouter/spawn-hermes-free">✨ Hermes 3 Free (OpenRouter)</option>
+      <option value="deepseek/deepseek-r1:free">DeepSeek R1 Free</option>
+      <option value="openai/gpt-4o">OpenAI GPT-4o</option>
+      <option value="anthropic/claude-3-5-sonnet">Claude 3.5 Sonnet</option>
+      <option value="google/gemini-2.0-flash">Gemini 2.0 Flash</option>
+    </select>
+
+    <label>Keyboard Shortcut to Toggle Sidebar</label>
+    <input type="text" value="Ctrl+M (Windows/Linux) / Cmd+M (Mac)" disabled>
+    <div class="hint">Change global shortcuts via chrome://extensions/shortcuts</div>
+
+    <button id="save-btn">Save Preferences</button>
+    <span id="save-status" class="status"></span>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

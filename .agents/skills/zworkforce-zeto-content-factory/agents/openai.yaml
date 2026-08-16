@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZWorkforce Zeto Content Factory"
+  short_description: "Compile, QA, and publish content through the Zeto pipeline"
+  default_prompt: "Use $zworkforce-zeto-content-factory to compile prompts, run QA scorecards, and publish through the correct Zeto adapter."
