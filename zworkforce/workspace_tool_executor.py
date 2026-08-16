@@ -71,7 +71,7 @@ class WorkspaceGrantedToolExecutor(ToolExecutor):
         )
 
     @staticmethod
-    def _safe_path(root: Path, raw: str) -> Path:
+    def _safe_path_for_root(root: Path, raw: str) -> Path:
         value = str(raw or "").strip()
         if not value or "\x00" in value or len(value) > 4096:
             raise ToolError("invalid workspace path")
@@ -88,7 +88,7 @@ class WorkspaceGrantedToolExecutor(ToolExecutor):
         return target
 
     def _granted_list(self, root: Path, raw: str) -> list[dict[str, Any]]:
-        target = self._safe_path(root, raw)
+        target = self._safe_path_for_root(root, raw)
         if not target.is_dir():
             raise ToolError("directory not found")
         out = []
@@ -109,7 +109,7 @@ class WorkspaceGrantedToolExecutor(ToolExecutor):
         return out
 
     def _granted_read(self, root: Path, raw: str, max_bytes: int) -> str:
-        target = self._safe_path(root, raw)
+        target = self._safe_path_for_root(root, raw)
         limit = max(1, min(int(max_bytes), self.settings.tool_max_output_bytes))
         if not target.is_file():
             raise ToolError("file not found")
@@ -136,7 +136,7 @@ class WorkspaceGrantedToolExecutor(ToolExecutor):
         return data.decode("utf-8", errors="replace")
 
     def _granted_write(self, root: Path, raw: str, content: str, create_parents: bool) -> dict[str, Any]:
-        target = self._safe_path(root, raw)
+        target = self._safe_path_for_root(root, raw)
         data = content.encode("utf-8")
         if len(data) > self.settings.workspace_write_max_bytes:
             raise ToolError("workspace write exceeds size limit")
