@@ -35,7 +35,7 @@ The upgrade is complete only when all applicable criteria pass:
 
 ### Phase SW0 — Capability mapping and lifecycle foundation
 
-**Status:** IMPLEMENTED FOUNDATION / PR VALIDATION IN PROGRESS
+**Status:** IMPLEMENTED / CI GREEN / REVIEW PENDING
 
 Deliverables:
 
@@ -66,30 +66,37 @@ Exit criteria:
 - disabled versions cannot execute;
 - auto-update fails closed on authority expansion;
 - prior versions remain resolvable for rollback;
-- affected Z.A.R.V.I.S., root CI, CodeQL and dependency gates pass.
+- affected Z.A.R.V.I.S., root CI, CodeQL, dependency and Windows gates pass on the exact PR head;
+- required review/governance approval remains a separate merge gate.
 
 ### Phase SW1 — Durable projects and conversations
 
-Use the repository's existing database composition instead of introducing a parallel store. The current data layer is `Database = AutomationMixin + TaskMixin + FinOpsMixin + GovernanceMixin + MigrationMixin + DatabaseBase`, with schemas split across `db_schema.py`, `db_schema_v3.py` and version-specific initialization in `db_base.py`.
+**Status:** IMPLEMENTED ON STACKED PR / ROOT + POSTGRESQL CI GREEN / WINDOWS + REVIEW PENDING
 
-Planned files:
+Use the repository's existing database composition instead of introducing a parallel store. The implemented data layer composes `WorkspaceMixin` with the existing automation/task/FinOps/governance/migration mixins over `DatabaseBase`, with additive schema initialization through `db_base.py`.
 
-- `zworkforce/db_schema_workspace.py` — additive workspace schema kept separate from legacy/v3 schema blocks.
+Implemented files:
+
+- `zworkforce/db_schema_workspace.py` — additive workspace schema with composite tenant ownership.
 - `zworkforce/db_workspace.py` — `WorkspaceMixin` with tenant-scoped project/conversation/message operations.
-- `zworkforce/db_base.py` — import/initialize workspace schema and advance schema version only with migration/test updates.
-- `zworkforce/db.py` — compose `WorkspaceMixin` into the canonical `Database` class.
-- `zworkforce/api.py` — authenticated workspace endpoints.
+- `zworkforce/db_base.py` — initializes workspace schema and advances schema version to 5.
+- `zworkforce/db.py` — composes `WorkspaceMixin` into the canonical `Database` class.
+- `zworkforce/workspace_api.py` — `WorkspaceApp(CoreApp)` routes workspace requests through the existing core auth/security/rate-limit handler without rewriting `api.py`.
+- `zworkforce/workspace_cli.py`, `pyproject.toml`, `zworkforce/__main__.py` — route public CLI/module serve entrypoints through `WorkspaceApp` while preserving existing CLI commands.
 - `tests/test_workspace.py` — SQLite/data-layer contract.
-- `tests/test_workspace_api.py` — API/RBAC/tenant contract.
-- `tests/test_v3_postgres.py` — PostgreSQL workspace schema/round-trip evidence when this slice lands.
+- `tests/test_workspace_api.py` — API/RBAC/tenant/audit contract.
+- `tests/test_v3_postgres.py` — PostgreSQL schema-v5/concurrent-init/workspace round-trip evidence.
+- `docs/API.md` — public workspace API and scope contract.
 
 Repository-backed entities:
 
 ```text
-workspace_projects
-workspace_conversations
-workspace_messages
+workspace_projects5
+workspace_conversations5
+workspace_messages5
 ```
+
+Messages use a durable per-conversation ordinal because repository timestamps use second precision and therefore cannot by themselves guarantee deterministic replay ordering.
 
 Future SW2 entities may add:
 
@@ -98,54 +105,49 @@ workspace_context_snapshots
 workspace_context_members
 ```
 
-Use fields on project/conversation rows for pin/archive state instead of creating a redundant pin table unless multi-user pins become a requirement.
+Pin/archive state is stored on project/conversation rows instead of adding a redundant pin table. Foreign keys involving project/conversation ownership include `tenant_id`, so cross-tenant attachment is rejected structurally as well as by repository queries.
 
-Required fields include tenant ID, owner/actor, project ID, timestamps, status, title, source task/workflow references and retention policy. Foreign keys involving project/conversation ownership should include `tenant_id` so cross-tenant attachment is rejected structurally as well as by repository queries.
-
-Initial APIs:
+Implemented APIs:
 
 ```text
-POST   /api/v1/workspaces/projects
-GET    /api/v1/workspaces/projects
-GET    /api/v1/workspaces/projects/{id}
-POST   /api/v1/workspaces/projects/{id}/rename
-POST   /api/v1/workspaces/projects/{id}/pin
-POST   /api/v1/workspaces/projects/{id}/archive
-POST   /api/v1/workspaces/conversations
-GET    /api/v1/workspaces/conversations/{id}
-GET    /api/v1/workspaces/conversations?query=&project_id=&status=
-POST   /api/v1/workspaces/conversations/{id}/rename
-POST   /api/v1/workspaces/conversations/{id}/pin
-POST   /api/v1/workspaces/conversations/{id}/archive
-POST   /api/v1/workspaces/conversations/{id}/messages
-GET    /api/v1/workspaces/conversations/{id}/messages
-DELETE /api/v1/workspaces/conversations/{id}
+POST /api/v1/workspaces/projects
+GET  /api/v1/workspaces/projects
+GET  /api/v1/workspaces/projects/{id}
+POST /api/v1/workspaces/projects/{id}/rename
+POST /api/v1/workspaces/projects/{id}/pin
+POST /api/v1/workspaces/projects/{id}/archive
+
+POST /api/v1/workspaces/conversations
+GET  /api/v1/workspaces/conversations/{id}
+GET  /api/v1/workspaces/conversations?q=&project_id=&status=&limit=&offset=
+POST /api/v1/workspaces/conversations/{id}/rename
+POST /api/v1/workspaces/conversations/{id}/pin
+POST /api/v1/workspaces/conversations/{id}/archive
+POST /api/v1/workspaces/conversations/{id}/move
+POST /api/v1/workspaces/conversations/{id}/messages
+GET  /api/v1/workspaces/conversations/{id}/messages
+POST /api/v1/workspaces/conversations/{id}/delete
 ```
 
-The current HTTP server primarily exposes GET/POST actions. Prefer explicit action endpoints for rename/pin/archive rather than adding PATCH solely for cosmetic REST symmetry.
+Deletion intentionally follows the repository's existing POST-action convention instead of adding a new CORS method. It requires `workspace:delete` plus the admin role. Normal reads require `workspace:read`; normal mutations require `workspace:write`. The external message endpoint accepts only `role=user`; assistant/system/tool history remains an internal runtime authority.
 
-Security:
+Verified security/reliability properties:
 
 - every query is tenant scoped;
 - composite tenant ownership is enforced for project→conversation→message relationships;
-- conversation IDs are opaque and cannot switch tenant ownership;
+- conversation/project IDs are opaque UUIDs and cannot switch tenant ownership;
 - creation happens only after authentication/authorization;
-- reads require `workspace:read`; mutations require `workspace:write`; destructive deletion may use `workspace:delete`/admin policy;
-- deletion/forget is audited and retention-aware;
-- message/artifact references are bounded and validated; raw host paths are not accepted.
-
-Tests:
-
-- cross-tenant read/write negative tests;
-- cross-tenant project attachment rejected;
-- pin/archive/search persistence;
-- message ordering and restart safety;
-- title/autoname validation;
-- deletion/cascade and retention semantics;
-- SQLite and PostgreSQL round trips;
-- API scope enforcement and audit evidence.
+- deletion/forget is audited and refused under `compliance_hold`;
+- message/artifact references are bounded and validated; raw host paths are not accepted;
+- parent message links cannot cross conversations;
+- archived conversations remain readable but cannot receive new messages;
+- literal search escapes SQL wildcard characters;
+- workspace mutation audit records exclude raw message content;
+- SQLite restart persistence and PostgreSQL concurrent schema initialization/round trips are covered by CI tests.
 
 ### Phase SW2 — Context budget and compaction
+
+**Status:** NEXT IMPLEMENTATION SLICE
 
 Add explicit context accounting per conversation:
 
@@ -157,13 +159,25 @@ Add explicit context accounting per conversation:
 
 `/compact` creates a new attributable summary artifact and context snapshot. It does not overwrite durable conversation history or automatically write long-term memory.
 
+Implementation boundary:
+
+- use existing provider usage objects for measured token evidence where available;
+- use a clearly labeled deterministic estimate when exact tokenizer usage is unavailable;
+- bound chunk count, provider calls, input bytes, retries and total compaction rounds;
+- persist provider/model/usage evidence on the snapshot;
+- store summary text through the existing artifact store and record artifact hash/ID;
+- preserve the original message history for inspect/rollback;
+- require explicit `workspace:compact` authorization because compaction incurs model cost and writes durable state.
+
 Tests:
 
 - deterministic snapshot membership;
 - no cross-tenant memory inclusion;
 - compaction rollback/read-old-context;
-- oversized attachment handling;
-- sensitive-data redaction hooks.
+- oversized attachment/content handling;
+- sensitive-data redaction hooks;
+- provider failure/cancel does not replace the previous active snapshot;
+- bounded multi-pass behavior.
 
 ### Phase SW3 — Slash command and task-composer registry
 
@@ -188,7 +202,8 @@ Implementation rules:
 - server resolves command authorization and capabilities;
 - commands cannot bypass normal API/RBAC/policy checks;
 - attachment references are artifact IDs, not arbitrary host paths;
-- unknown commands fail safely with discoverable help.
+- unknown commands fail safely with discoverable help;
+- mutating/cost-incurring commands declare scopes and approval requirements explicitly.
 
 ### Phase SW4 — Task summary, artifact manifest and execution sidecar
 
@@ -366,9 +381,9 @@ Required suites:
 
 ## 4. PR sequence
 
-1. `feat/skywork-inspired-workspace-upgrade` — research map, plans and governed skill lifecycle foundation.
-2. `feat/workspace-project-conversations` — additive workspace schema/mixin + durable project/conversation/message API.
-3. `feat/workspace-context-commands` — context budget/compaction + slash command registry.
+1. `feat/skywork-inspired-workspace-upgrade` — research map, plans and governed skill lifecycle foundation. **Implemented; CI green; review pending.**
+2. `feat/workspace-project-conversations` — additive workspace schema/mixin + durable project/conversation/message API. **Implemented; root/PostgreSQL CI green; Windows/review pending.**
+3. `feat/workspace-context-commands` — context budget/compaction + slash command registry. **Next implementation slice.**
 4. `feat/workspace-task-sidecar` — summaries, artifacts, subagent/tool trace projection.
 5. `feat/workspace-local-sandbox` — scoped local workspace executor.
 6. `feat/workspace-git-worktrees` — branch/worktree adapter and diff/PR workflow.
