@@ -19,6 +19,9 @@ on:
   schedule:
     - cron: '28 22 * * 0'
 
+permissions:
+  contents: read
+
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
@@ -103,8 +106,11 @@ jobs:
   codeql:
     name: CodeQL
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: analyze
     steps:
       - name: CodeQL check summary
         run: echo "CodeQL matrix analysis complete"
+
 
