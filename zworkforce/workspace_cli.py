@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from . import cli
-from .workspace_context_api import WorkspaceContextApp
+from .workspace_command_api import WorkspaceCommandApp
 
 
 def main(argv=None):
-    """Run the existing CLI while composing workspace/context routes into API serve mode."""
+    """Run the existing CLI while composing workspace/context/command routes into API serve mode."""
     previous = cli.App
-    cli.App = WorkspaceContextApp
+    cli.App = WorkspaceCommandApp
     try:
         return cli.main(argv)
     finally:
