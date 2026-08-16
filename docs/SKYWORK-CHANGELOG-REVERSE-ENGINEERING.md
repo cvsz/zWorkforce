@@ -2,164 +2,175 @@
 
 **Research date:** 2026-08-17  
 **Target:** `cvsz/zworkforce`  
-**Primary official sources:**
+**Official sources verified:**
 - `https://skywork.ai/help/changelog`
 - `https://skywork.ai/help`
 - `https://skywork.ai/desktop/en/changelog.html`
 
-## 1. Scope and interpretation
+## 1. Evidence boundary
 
-This document uses Skywork only as a product-capability reference. It does not copy proprietary implementation details, hidden prompts, UI assets, or code. The goal is to identify publicly documented product patterns that can improve zWorkforce while preserving zWorkforce's stronger existing boundaries: tenant isolation, server-side secrets, durable state, explicit mutation approval, bounded execution, audit/provenance, and release evidence.
+This document uses Skywork only as a public product-capability reference. It does not copy proprietary source code, hidden prompts, private APIs, or visual assets.
 
-The Help changelog page is JavaScript-driven and does not expose its full historical list to the current fetcher. The Help landing page currently exposes recent web-product changelog items including Social Publishing Flow, Design Guidelines in Knowledge Base, and SkyClaw memory import. The official English Skywork Desktop changelog currently exposes the release history from 1.1.0 through **2.4.0 (2026-07-30)** and labels 2.4.0 as **Latest**. A separate official Skywork source confirming a Desktop 2.5.0 release was not found during the 2026-08-17 verification pass, so this document intentionally stops at the latest version that can be verified from the official changelog.
+The direct Help changelog is JavaScript-driven and the current crawler does not expose its historical entries. The Help landing page does expose recent web-product changelog cards. The official English Skywork Desktop changelog exposes the historical Desktop sequence from **1.1.0 through 2.4.0** and currently labels **2.4.0 (2026-07-30) as Latest**. A separate official Skywork source confirming a Desktop 2.5.0 release was not found during the 2026-08-17 verification pass; therefore no 2.5.0 capability is treated as source evidence here.
 
-## 2. Public changelog timeline and reusable product patterns
+## 2. Verified Skywork Desktop timeline → zWorkforce mapping
 
-| Release | Date shown | Publicly documented capability pattern | zWorkforce interpretation |
+| Release | Date | Public capability pattern | zWorkforce-native upgrade |
 | --- | --- | --- | --- |
-| 1.1.0 | date not shown | installer hardening, signed packages, specific startup diagnostics, version visibility, direct health checks | signed operator clients, deterministic diagnostics, health probes that do not depend on unrelated proxies |
-| 1.1.1 | date not shown | feedback with runtime/frontend logs, region-aware feature gating, model update, installer tolerance | redacted support bundles, policy/region feature gates, robust bootstrap diagnostics |
-| 1.2.1 | date not shown | resilient input/workspace history, login validation, file-history deletion, model fallback/hot update, standardized cost logs | durable conversation/file history, auth-before-create, provider fallback evidence, normalized FinOps events |
-| 1.3.0 | date not shown | persistent/searchable conversations, custom skill install/enable/disable/delete, theme switching | project/conversation persistence and search, governed skill lifecycle, operator theme tokens |
-| 1.4.0 | 2026-04-23 | IM integrations, conversation history, workspace preview, usage visibility, add API key when skill blocked | connector-backed agent channels, scoped history, workspace/artifact preview, credential-reference remediation without exposing secrets |
-| 1.5.0 | 2026-05-09 | office/document/design/search skills, local app file preview, desktop notifications, credit views | artifact-native worker skills, native file open/reveal, notifications, FinOps balance/usage surfaces |
-| 1.5.1 | 2026-05-18 | curated built-in skills, HTML preview, slash skill picker, mixed file/instruction task creation | verified system skill packs, safe HTML/artifact preview, command palette, multimodal task composer |
-| 1.6.0 | 2026-06-02 | local folder read/write, memory, browser automation, mid-generation interruption, hot updates | sandboxed workspace grants, tenant memory, Zider browser-use executor, interrupt/cancel semantics, signed update channels |
-| 2.0.0 | 2026-06-30 | local sandbox model, project coding, worktree/branch isolation, scheduled automation, project organization, expanded MCP | workspace sandbox service, isolated git workspaces, automation UI, project-scoped context, MCP connector control plane |
-| 2.0.2 | 2026-07-01 | output artifact list in summaries, clearer execution-state display | durable task result manifest and operator-readable execution timeline |
-| 2.0.3 | 2026-07-03 | sub-agent visibility, artifact preview cards, rebuilt summary panel | subagent trace projection, artifact cards, structured task summary sidecar |
-| 2.1.0 | 2026-07-09 | multi-tab review/file/side-chat panel, continue from agent message, subagent chat visibility, system notifications | review sidecar, message forks, delegated-agent trace visibility, event notifications |
-| 2.1.1 | 2026-07-10 | model panel additions and stability fixes | capability-driven model catalog rather than hard-coded UI assumptions |
-| 2.2.0 | 2026-07-16 | conversation IDs, auto naming, historical-question navigation, rich composer, context status/compaction, slash commands, image skill | durable conversation identity, context-budget telemetry, compaction artifacts, command registry, multimodal skill invocation |
-| 2.3.0 | 2026-07-23 | task quick start, next-step suggestions, credit preflight warning, summary side panel, richer attachments | task templates, evidence-based next-action recommender, budget preflight, unified summary/artifact panel |
-| 2.4.0 | 2026-07-30 | personalized themes, immediate skill use after install, repeated workflow → reusable skill, system skill auto-update, better discovery/interruption | theme profiles, active skill versioning, workflow-to-skill candidate compiler, governed auto-update, skill matching/telemetry |
+| 1.1.0 | not shown | signed installer, startup diagnostics, version visibility, direct health | signed clients, deterministic diagnostics, independent health checks |
+| 1.1.1 | not shown | feedback logs, region handling, installer tolerance | redacted support bundles, policy/region gating |
+| 1.2.1 | not shown | resilient input/workspace history, auth-before-create, file-history deletion, model fallback, standardized cost logs | durable conversation/file history, authenticated creation, provider fallback evidence, normalized FinOps events |
+| 1.3.0 | not shown | persistent/searchable conversations, custom skill install/enable/disable/delete, themes | durable projects/conversations, governed skill lifecycle, theme profiles |
+| 1.4.0 | 2026-04-23 | IM integrations, conversation history, workspace preview, usage visibility | connector-backed agent channels, scoped history, artifact preview, usage surfaces |
+| 1.5.0 | 2026-05-09 | office/design/search skills, desktop file preview, notifications, credit views | artifact-native skills, native preview/reveal, notification center, FinOps views |
+| 1.5.1 | 2026-05-18 | curated skills, HTML preview, slash skill picker, file+instruction composer | verified system skills, sandboxed HTML preview, command palette, mixed task composer |
+| 1.6.0 | 2026-06-02 | local folders, memory, browser automation, interruption, hot updates | scoped workspace grants, tenant memory, Zider browser-use, cancel/barge-in, signed updates |
+| 2.0.0 | 2026-06-30 | local sandbox, coding projects, worktree/branch isolation, scheduled automation, project organization, expanded MCP | bounded local sandbox, isolated git worktrees, existing scheduler/automation UI, project context, MCP connectors |
+| 2.0.2 | 2026-07-01 | artifact list in summaries, clearer execution status | durable result manifest and task timeline |
+| 2.0.3 | 2026-07-03 | subagent visibility, artifact preview cards, summary panel | delegated-agent trace projection, artifact cards, summary sidecar |
+| 2.1.0 | 2026-07-09 | multi-tab review/file/side-chat, follow-up from agent message, subagent chats, notifications | review sidecar, message forks, subagent trace, event notifications |
+| 2.1.1 | 2026-07-10 | model-panel additions | capability-driven model catalog |
+| 2.2.0 | 2026-07-16 | conversation IDs/auto naming/navigation, rich composer, context status/compaction, slash commands | durable conversation identity, context telemetry/snapshots, command registry |
+| 2.3.0 | 2026-07-23 | quick task start, next-step suggestions, credit preflight, summary sidebar, richer attachments | task templates, next-action recommender, budget preflight, unified summary/artifacts |
+| **2.4.0 Latest** | **2026-07-30** | themes, skills usable immediately after install, repeated workflow→reusable skill, system-skill auto-update, improved discovery/interruption | governed active skill version, safe auto-update/rollback, draft workflow-to-skill compiler, skill ranking |
 
-## 3. Current zWorkforce overlap
+## 3. Verified Skywork Web / Help items
 
-zWorkforce already has substantial equivalents and should reuse them instead of building parallel stacks:
+The Help landing page currently exposes:
+
+| Date | Public item | zWorkforce owner | Mapping |
+| --- | --- | --- | --- |
+| 2026-07-17 | Social Publishing Flow Now Available in Poster | Zeto | improve compose/preview/approve/schedule/publish on the existing durable publisher/outbox; do not create another publishing control plane |
+| 2026-07-17 | Design Guidelines Now Available in Knowledge Base | Zeto + artifacts/knowledge + zsp-aitool | versioned tenant design-guideline artifacts, brand/project binding, generation constraints and QA evidence |
+| 2026-07-03 | SkyClaw Memory Management Upgrade — Import Memories from Other AIs | memory/RAG + workspace | operator-supplied memory import with preview, provenance, dedupe, consent, policy filtering and batch rollback/delete |
+
+Imported memory remains untrusted tenant data: imported instructions are never authorization, system policy, approvals, or tool grants.
+
+## 4. Existing zWorkforce primitives to reuse
+
+Do not build parallel stacks. Reuse:
 
 - durable tasks, workflows, scheduler, event triggers, leases and outbox;
-- tenant-scoped memory and artifact storage;
-- policy-as-code, tool grants and four-eyes approvals;
-- Luna/Terra/Sol model tiers and provider failover;
-- ProMeta agent/skill catalogs and a Z.A.R.V.I.S. runtime skill catalog;
-- MCP management surface;
-- Z.A.R.V.I.S. dashboard PTT and shared realtime voice client;
+- policy-as-code, tool grants, four-eyes approvals and audit chain;
+- tenant-scoped memory and content-addressed artifacts;
+- Luna/Terra/Sol model routing and provider failover;
+- ProMeta agents/skills and Z.A.R.V.I.S. runtime catalog;
+- MCP management;
+- Z.A.R.V.I.S. PTT/shared browser-safe voice client;
 - Zider browser extension/BFF boundary;
-- native Windows operator client;
-- FinOps cost/chargeback primitives;
-- release, SBOM, provenance, CodeQL and dependency-review gates.
+- Windows operator client;
+- FinOps/chargeback;
+- CI, CodeQL, dependency review, SBOM/provenance and release evidence.
 
-The upgrade therefore focuses on missing user-facing orchestration and lifecycle layers rather than replacing core execution primitives.
-
-## 4. Target capability architecture
+## 5. Target architecture
 
 ```mermaid
 flowchart TB
-  UI[Workspace UI / WinUI / Z.A.R.V.I.S.] --> WAPI[Workspace API]
+  UI[Web / WinUI / Z.A.R.V.I.S.] --> WAPI[Workspace API]
   WAPI --> PROJ[Projects + Conversations]
   WAPI --> CTX[Context Budget + Compaction]
-  WAPI --> ART[Artifact + Summary Manifest]
-  WAPI --> CMD[Slash Command Registry]
-  WAPI --> NOTIFY[Notification Center]
-
+  WAPI --> SIDE[Review + Artifact + Subagent Sidecar]
+  WAPI --> CMD[Slash Commands]
   PROJ --> DB[(zWorkforce Repository)]
   CTX --> MEM[Tenant Memory]
-  ART --> STORE[Content-addressed Artifacts]
-
-  CMD --> ORCH[Agent/Workflow Orchestrator]
-  ORCH --> SKILLS[Governed Skill Catalog]
-  SKILLS --> POLICY[Policy / Approvals]
-  ORCH --> SANDBOX[Scoped Workspace Sandbox]
-  SANDBOX --> GIT[Worktree/Branch Adapter]
+  SIDE --> ART[Content-addressed Artifacts]
+  CMD --> ORCH[Agent / Workflow Orchestrator]
+  ORCH --> SKILL[Governed Skill Lifecycle]
+  SKILL --> POLICY[Policy + Approvals]
+  ORCH --> SANDBOX[Scoped Local Sandbox]
+  SANDBOX --> GIT[Worktree / Branch Adapter]
   ORCH --> ZIDER[Browser-use Adapter]
-
   ORCH --> COST[FinOps Preflight + Ledger]
-  ORCH --> TRACE[Subagent / Tool / Artifact Trace]
+  ORCH --> ZETO[Zeto Publishing + Design Policy]
+  MEM --> IMPORT[Memory Import Batches]
 ```
 
-## 5. Security rules for adoption
+## 6. Security invariants
 
-1. Local-folder access is a scoped workspace grant, never arbitrary host filesystem access.
-2. Browser automation is read-only by default; clicks, form submits, uploads, purchases, account changes and publishing remain mutation-gated.
-3. Skill installation never grants capabilities not already authorized by policy.
-4. Automatic system-skill updates cannot silently expand tool allowlists, escalate read→write mutability, or weaken approval rules.
-5. Old skill versions remain available for rollback until retention policy removes them.
-6. Context compaction creates an attributable summary artifact; it does not silently rewrite durable memory.
-7. Conversation/project identity is tenant-scoped and cannot be reassigned across tenants.
-8. Subagent visibility exposes sanitized execution metadata, not hidden secrets or raw credentials.
-9. Credit/budget preflight is advisory plus policy enforcement; billing state must come from durable ledger/provider evidence.
-10. API signing protects service-to-service integrity but never replaces user/tenant authorization.
+1. Workspace access is an explicit canonical-root grant, never arbitrary host filesystem access.
+2. Browser automation is read-only by default; form submit, upload, purchase, account change and publishing are mutations.
+3. Skill install/update never expands authority without explicit review/policy.
+4. System-skill auto-update cannot add tools, escalate read→write, or weaken approval.
+5. Old skill versions remain available for rollback until retention rules permit removal.
+6. Context compaction creates a versioned summary artifact/snapshot; it never destroys source conversation history.
+7. Projects, conversations, artifacts, memory and imports remain tenant scoped.
+8. Subagent/tool visibility exposes sanitized evidence, not credentials or hidden secrets.
+9. Cost preflight is backed by durable usage/policy data; never invent balances.
+10. Imported memory and design guidelines cannot silently become system authorization.
+11. Social publishing remains an approval/idempotency/outbox-governed external mutation.
 
-## 6. End-to-end delivery streams
+## 7. End-to-end delivery streams
 
-### SW1 — Projects, conversations and context continuity
+### SW0 — Governed skill lifecycle
 
-Deliver project-scoped durable conversations, IDs, search, pin/archive, auto naming, question anchors, context-budget telemetry, explicit compaction and deletion/forget flows.
+**Implemented in PR #83 foundation.** Immediate active resolution, semantic versions, enable/disable, safe system auto-update, explicit rollback and fail-closed disabled-version execution. Automatic updates reject silent tool expansion, mutability escalation and approval weakening.
 
-Primary surfaces:
-- `zworkforce/database.py` / repository interfaces
-- `zworkforce/api.py`
-- `zworkforce/static/`
-- `ZWorkforceClient/`
-- tenant memory and artifact services
+### SW1 — Durable projects and conversations
 
-### SW2 — Workspace sandbox and isolated coding workspaces
+**Implemented on stacked PR #84.** Actual repository surfaces are:
 
-Add operator-granted local workspace roots, path canonicalization, deny traversal/symlink escape, bounded subprocess execution, git branch/worktree isolation, diff review, cleanup leases and auditable mutation approvals.
+- `zworkforce/db_schema_workspace.py`
+- `zworkforce/db_workspace.py`
+- `zworkforce/db_base.py`
+- `zworkforce/db.py`
+- `zworkforce/workspace_api.py`
+- `zworkforce/workspace_cli.py`
+- `tests/test_workspace.py`
+- `tests/test_workspace_api.py`
+- PostgreSQL coverage in `tests/test_v3_postgres.py`
 
-### SW3 — Review sidecar, artifact manifest and subagent trace
+The implementation uses composite tenant ownership, deterministic message ordinals, authenticated scopes, retention-aware deletion and audit without raw message bodies.
 
-Expose task summary, artifacts generated/changed, review state, file preview, delegated-agent hierarchy, tool timeline, failures/retries and message-to-follow-up forks from durable execution events.
+### SW2 — Context status, compaction and slash commands
 
-### SW4 — Context-aware composer and command registry
+Next slice. Persist context snapshots and summary artifacts, use measured provider usage where available, label estimates explicitly, bound provider calls/chunks/retries and require `workspace:compact` for durable/cost-incurring compaction.
 
-Add rich/mixed attachment composition and slash commands such as `/plan`, `/review`, `/compact`, `/goal`, `/status`, `/artifacts`, `/cost`, `/skill`, `/workflow`, with server-resolved command authorization.
+### SW3 — Task summary / artifact / subagent sidecar
 
-### SW5 — Skill lifecycle and reusable workflows
+Project durable task/workflow events into review state, artifacts, sanitized tool calls, delegated-agent hierarchy, retries/failures/approvals, cost/model route and next actions.
 
-- install and immediately resolve enabled skill versions;
-- enable/disable and explicit rollback;
-- safe system-skill auto-update;
-- marketplace/remote signed package integration through the existing skill registry;
-- repeated workflow detection that emits a **draft** reusable-skill/workflow candidate requiring review, tests and approval before activation;
-- skill discovery ranking from task intent, capability constraints and observed outcomes.
+### SW4 — Scoped local sandbox + git worktrees
 
-**Implemented foundation in the first Skywork-inspired PR:** governed active-version resolution, enable/disable, safe auto-update, rollback and tests in `packages/zarvis/services/zarvis-orchestrator/src/skill-catalog.mjs`.
+Canonical path checks, traversal/symlink escape denial, command allowlists, resource/time/output bounds, sanitized environment, explicit write approval, isolated feature branches/worktrees and safe cleanup.
 
-### SW6 — Browser-use and connector orchestration
+### SW5 — Zider browser-use contract
 
-Extend Zider into a first-class browser-use adapter with explicit read/mutate tool classes, domain allowlists, per-action evidence, cancellation, timeouts and human approval for side effects. Reuse MCP/connectors for IM and private systems.
+Separate read tools from mutating actions, enforce URL/domain policy, SSRF protections, cancellation/timeouts, external-side-effect idempotency and approval evidence.
 
-### SW7 — Notification and proactive work center
+### SW6 — Skill marketplace + reusable workflow candidates
 
-Project/task completion, approval-needed, question-needed, failure, budget-risk and scheduled-agent events feed a tenant-scoped notification inbox plus optional approved connector delivery.
+Signed package trust, publisher/source metadata, discovery scoring and repeated-workflow detection that creates **draft** workflow/skill candidates requiring validation/tests/review before activation.
 
-### SW8 — Operator UX and artifact-native previews
+### SW7 — Notifications + proactive operator center
 
-Add task quick-start templates, next-step suggestions, multi-tab sidecar, theme profiles, Markdown source/rendered mode, HTML preview sandboxing, native open/reveal where supported, and resilient artifact history.
+Durable task completion, approval-needed, question-needed, failure, budget-risk, scheduled-run and stalled-agent events. External delivery remains opt-in via approved connectors.
 
-### SW9 — FinOps preflight and credit ledger
+### SW8 — Zeto social publishing + design guidelines + memory portability
 
-Expose per-task predicted spend, tenant budget headroom, provider/model usage, actual cost events and chargeback. Any future request-signing or billing-provider work must be backed by a separately verified requirement/source rather than inferred from an unverified Skywork release.
+Improve Zeto publishing UX on existing durable primitives; add versioned design policies/QA; add memory import preview/provenance/dedupe/commit/rollback without trusting imported instructions.
 
-### SW10 — Release and evidence
+### SW9 — FinOps preflight
 
-Add contract/unit/integration/browser/package/Windows/security tests, accessibility review, sandbox escape tests, cross-tenant negatives, skill-update authority tests, load/failure drills, docs, migrations and rollback evidence.
+Per-task cost range, tenant budget headroom, actual usage and chargeback drilldown by tenant/project/task/agent/model. Any future billing or request-signing capability requires its own verified requirement/source.
 
-## 7. Recommended PR sequence
+### SW10 — Web/WinUI UX + release hardening
 
-1. **Skill lifecycle foundation** — active version, disable/enable, safe auto-update, rollback, tests. *(started in this upgrade)*
-2. **Durable workspace/project/conversation schema and APIs**.
-3. **Context budget + compaction artifact + slash command registry**.
-4. **Task summary/artifact manifest + subagent execution projection**.
-5. **Scoped local workspace sandbox + git worktree adapter**.
-6. **Zider browser-use tool contract and approval-gated mutation executor**.
-7. **Notification center + approved connector delivery**.
-8. **Reusable workflow candidate compiler + skill discovery ranking**.
-9. **FinOps preflight + detailed ledger**.
-10. **Workspace UX/WinUI parity, hardening, E2E and release evidence**.
+Projects/conversations, pin/archive/search, context gauge, `/compact`, command palette, artifact/review sidecar, Markdown/source preview, safe HTML preview, themes, accessibility, E2E/security/load/failure/release evidence.
 
-## 8. Definition of complete
+## 8. PR sequence
 
-The Skywork-inspired upgrade is complete only when the implemented zWorkforce capabilities are durable, tenant-scoped, authorization-safe, observable and tested end-to-end. UI similarity or a documented roadmap is not sufficient. Every mutating workflow must preserve explicit zWorkforce approval/policy semantics, and any external connector, provider or production environment remains evidence-gated.
+1. `feat/skywork-inspired-workspace-upgrade` — research/roadmap + governed skill lifecycle.
+2. `feat/workspace-project-conversations` — durable project/conversation/message store and API.
+3. `feat/workspace-context-commands` — context snapshots/compaction + slash commands.
+4. `feat/workspace-task-sidecar` — artifact/review/subagent trace.
+5. `feat/workspace-local-sandbox` — scoped local executor.
+6. `feat/workspace-git-worktrees` — isolated coding workflow.
+7. `feat/zider-browser-use-contract` — browser read/mutate boundary.
+8. `feat/skill-marketplace-reusable-workflows` — signed install/discovery/candidate compiler.
+9. `feat/zeto-design-memory-portability` — social publishing/design policy/memory imports.
+10. `feat/workspace-notifications-finops` — notifications and budget/ledger UX.
+11. `feat/workspace-ux-hardening` — Web/WinUI parity, accessibility, E2E and release evidence.
+
+## 9. Definition of complete
+
+The Skywork-inspired upgrade is complete only when the implemented capabilities are durable, tenant-scoped, bounded, authorization-safe, observable, rollback-capable and tested end-to-end. UI resemblance or documentation alone is not completion. External production claims remain subject to `docs/PRODUCTION-EVIDENCE.md`.
