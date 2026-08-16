@@ -44,4 +44,8 @@ Artifact metadata is reduced to metadata key names. The artifact content hash re
 
 All projection queries are tenant-scoped and hard bounded. The sidecar is assembled at read time from authoritative durable records, so it cannot drift into a second source of truth. Missing optional evidence produces empty collections rather than synthesized records.
 
+The response uses `returned_counts`, not `total_counts`. Per-collection hard bounds are published in `limits`, and `possibly_truncated[name]` is true whenever the returned collection reaches its bound. Consumers must not infer completeness when that flag is true.
+
+Approvals currently use the existing task-scoped approval read without a separate projection limit because task approval cardinality is itself bounded by task policy. Event, tool-call, artifact, child-task and workflow-reference projections all have explicit sidecar limits.
+
 The sidecar is presentation-independent and may be consumed by Web, WinUI, Z.A.R.V.I.S. or future review panels without changing execution state.
