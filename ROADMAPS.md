@@ -148,14 +148,55 @@ Target interactive SLOs remain engineering targets until measured in staging:
 - [ ] Accessibility verification for keyboard, screen reader and reduced-motion modes.
 - [ ] Rollback target and feature flags documented.
 
-## 4. Non-goals
+---
+
+## 6. Monorepo Sub-Package Forward Roadmaps
+
+### 6.1 ZSP AI Studio & Video Renderer (`packages/zsp-aitool`)
+- **Mission**: Thai-First Shopee Affiliate Marketing Platform and HyperFrames multi-scene video rendering engine (`:3005` / `studio.zeaz.dev`).
+- **Milestones**:
+  - [x] Integrate 23 Prisma 5.22 schema models with strict tenant isolation.
+  - [x] App Router app shell (`AppLayout`, `Sidebar`, `Header`, `MobileNav`).
+  - [x] Admin & Operator audit panel gated behind `ADMIN_PANEL_ENABLED`.
+  - [ ] Autonomous Shopee API scraping & product OCR vision ingestion pipeline.
+  - [ ] Multi-platform social publishing adapters (TikTok, Facebook Reels, YouTube Shorts).
+  - [ ] Video rendering watchdog with automated stale-job recovery.
+
+### 6.2 Zider AI Browser Companion (`packages/zider`)
+- **Mission**: Manifest V3 AI Browser Sidebar Companion with Shadow DOM isolation, ChatPDF document intelligence, and multi-model group streaming (`:8085`).
+- **Milestones**:
+  - [x] Shadow DOM isolated sidebar and selection toolbar.
+  - [x] Service worker background orchestrator and Chrome runtime message bus.
+  - [x] Multi-model router with OpenRouter Free model fallback.
+  - [ ] Group AI multi-model streaming compare (parallel SSE).
+  - [ ] ChatPDF tenant-scoped vector indexing and citation highlights.
+  - [ ] Realtime YouTube transcript summarizer and multi-language translator.
+
+### 6.3 Zeto AI Content Factory (`packages/zeto`)
+- **Mission**: Enterprise AI content lifecycle engine executing `IDEATE → GENERATE → WRITE → APPROVE → SCHEDULE → PUBLISH → MONITOR → LEARN`.
+- **Milestones**:
+  - [x] ProMeta prompt compiler architecture.
+  - [x] M12 tool registry & point-cloud canvas HUD.
+  - [ ] Multi-tenant content scheduling outbox with HMAC signatures.
+  - [ ] Automated QA scorecard evaluation and self-correction loops.
+
+### 6.4 Master Orchestrator & CLI Tooling (`control.sh` & `cmd/zctl`)
+- **Mission**: Single-command unified operator interface for lifecycle management, verification, and diagnostics.
+- **Milestones**:
+  - [x] Tracked executable orchestrator [`control.sh`](control.sh) with interactive menu.
+  - [x] Compiled native Go CLI [`cmd/zctl/`](cmd/zctl/) (`go1.26 linux/amd64`).
+  - [x] Real-time service health matrix, doctor diagnostics, and secret-vault masking.
+
+---
+
+## 7. Non-goals
 
 - Do not embed `apps/zvoice` with an iframe; its defensive framing policy is intentional.
-- Do not send provider or service credentials to the dashboard.
+- Do not send provider or service credentials to the dashboard or client extensions.
 - Do not replace durable zWorkforce scheduler/approval/audit systems with a parallel OpenJarvis runtime.
 - Do not claim a provider, model or external service is production-ready until operator evidence exists.
 - Do not grant continuous agents unrestricted shell/network/action access.
 
-## 5. Completion definition
+## 8. Completion definition
 
-The Z.A.R.V.I.S. upgrade is feature-complete when the dashboard and ZVoice share one tested realtime voice contract, speech providers are pluggable, skills and agent modes are policy-governed, scheduled/continuous operation has health and recovery controls, memory remains consent/tenant scoped, and all mutation continues through explicit zWorkforce approval/action boundaries.
+The zWorkforce Monorepo platform is feature-complete when the control plane, Z.A.R.V.I.S. voice gateway, ZSP studio, Zider companion, and Zeto factory share unified tenant and secret boundaries, skills and agent modes are policy-governed, scheduled/continuous operation has health and recovery controls, memory remains consent/tenant scoped, and all mutation continues through explicit approval/action boundaries.
