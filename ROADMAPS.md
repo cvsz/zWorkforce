@@ -36,39 +36,39 @@ Keep zWorkforce's stronger existing security boundaries: server-side secrets, te
 
 ### R0 — Architecture and compatibility contract
 
-- [ ] Record the OpenJarvis-to-Z.A.R.V.I.S. file mapping in `packages/zarvis/docs/architecture/openjarvis-upgrade-map.md`.
-- [ ] Keep Apache-2.0 attribution for any source material actually adapted.
-- [ ] Define a browser-safe voice contract that contains no provider/service credentials.
-- [ ] Define one canonical Z.A.R.V.I.S. conversation state machine:
+- [x] Record the OpenJarvis-to-Z.A.R.V.I.S. file mapping in `packages/zarvis/docs/architecture/openjarvis-upgrade-map.md`.
+- [x] Keep Apache-2.0 attribution for any source material actually adapted.
+- [x] Define a browser-safe voice contract that contains no provider/service credentials.
+- [x] Define one canonical Z.A.R.V.I.S. conversation state machine:
   `idle -> arming -> listening -> transcribing -> thinking -> speaking -> idle`, plus `muted`, `interrupted`, `approval_required`, and `error` substates.
-- [ ] Preserve existing `zarvis.command.requested.v1` and approval/action contracts unless a versioned migration is required.
+- [x] Preserve existing `zarvis.command.requested.v1` and approval/action contracts unless a versioned migration is required.
 
 ### R1 — Z.A.R.V.I.S. CARD in the zWorkforce frontend
 
 Goal: talk to Z.A.R.V.I.S. directly from the AI Workforce control plane.
 
-- [ ] Add a dedicated `Z.A.R.V.I.S.` dashboard card in `zworkforce/static/index.html`.
-- [ ] Add a GPU-friendly animated AI orb with state-driven animation in `zworkforce/static/styles.css`.
-- [ ] Add push-to-talk to `zworkforce/static/app.js`:
+- [x] Add a dedicated `Z.A.R.V.I.S.` dashboard card in `zworkforce/static/index.html`.
+- [x] Add a GPU-friendly animated AI orb with state-driven animation in `zworkforce/static/styles.css`.
+- [x] Add push-to-talk to `zworkforce/static/app.js`:
   - pointer/touch press-and-hold;
   - `Space` press-and-hold when focus is not in an editable control;
   - explicit microphone permission state;
   - keyboard-accessible toggle fallback;
   - barge-in/cancel while Z.A.R.V.I.S. is speaking.
-- [ ] Show live state, partial/final transcript, last reply, runtime/model label, microphone state and approval-required state.
-- [ ] Reuse/extract the existing ZVoice PCM16/AudioWorklet realtime client instead of embedding ZVoice in an iframe.
-- [ ] Keep credentials server-side through a zWorkforce BFF/session endpoint.
-- [ ] Respect `prefers-reduced-motion` and provide a non-animated accessible state representation.
+- [x] Show live state, partial/final transcript, last reply, runtime/model label, microphone state and approval-required state.
+- [x] Reuse/extract the existing ZVoice PCM16/AudioWorklet realtime client instead of embedding ZVoice in an iframe.
+- [x] Keep credentials server-side through a zWorkforce BFF/session endpoint.
+- [x] Respect `prefers-reduced-motion` and provide a non-animated accessible state representation.
 
 **R1 acceptance:** an authenticated control-plane user can hold PTT, speak, see the orb move through listening/thinking/speaking states, hear the answer, interrupt playback, and never receive an upstream credential.
 
 ### R2 — Shared browser voice client
 
-- [ ] Extract browser-safe capture/session/event logic from `apps/zvoice/public/app.js` into a shared Z.A.R.V.I.S. voice-client package.
-- [ ] Keep AudioWorklet PCM16 capture at 16 kHz and realtime interruption semantics.
-- [ ] Make ZVoice and the dashboard card consume the same client contract.
-- [ ] Add contract tests for session lifecycle, interruption, reconnect, ticket expiry and microphone denial.
-- [ ] Ensure the shared library cannot accept or serialize service/provider secrets.
+- [x] Extract browser-safe capture/session/event logic from `apps/zvoice/public/app.js` into a shared Z.A.R.V.I.S. voice-client package.
+- [x] Keep AudioWorklet PCM16 capture at 16 kHz and realtime interruption semantics.
+- [x] Make ZVoice and the dashboard card consume the same client contract.
+- [x] Add contract tests for session lifecycle, interruption, reconnect, ticket expiry and microphone denial.
+- [x] Ensure the shared library cannot accept or serialize service/provider secrets.
 
 ### R3 — Speech provider registry
 
