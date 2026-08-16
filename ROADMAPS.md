@@ -2,9 +2,9 @@
 
 **Status:** active forward roadmap  
 **Scope:** `cvsz/zworkforce` with the consolidated Z.A.R.V.I.S. suite under `packages/zarvis`  
-**Reference implementation studied:** `open-jarvis/OpenJarvis` (Apache-2.0)
+**Reference implementations studied:** `open-jarvis/OpenJarvis` (Apache-2.0) and publicly documented Skywork workspace-agent capabilities
 
-> `ROADMAP.md` remains the release-history and production-readiness roadmap. This file is the forward feature roadmap for the Z.A.R.V.I.S. assistant experience and the OpenJarvis-inspired refactor.
+> `ROADMAP.md` remains the release-history and production-readiness roadmap. This file is the forward feature roadmap for the Z.A.R.V.I.S. assistant experience, workspace-agent UX, and architecture refactors.
 
 ## 1. Baseline
 
@@ -20,17 +20,23 @@ zWorkforce already contains a substantial Z.A.R.V.I.S. implementation:
 
 The upgrade therefore **must refactor and compose existing primitives rather than add a second assistant stack**.
 
-## 2. OpenJarvis concepts to adopt
+## 2. Architecture concepts to adopt
 
-Adopt the architectural ideas, not a wholesale source import:
+Adopt architectural/product ideas, not wholesale source imports:
 
 1. **Config-driven system composition** — one builder/factory composes model, tools, skills, memory, speech, scheduling and policy.
 2. **Typed registry/discovery** — pluggable STT, TTS, model, tool, skill and agent providers with explicit health/capabilities.
 3. **Skills as first-class invokable capabilities** — discoverable catalog, dependency validation, policy checks, tool wrapping and trace evidence.
 4. **Agent execution modes** — on-demand, scheduled and continuous operators with persistent state.
 5. **Trace-driven improvement** — evaluate latency, quality, cost and energy before changing routing or skill selection.
+6. **Workspace-first task continuity** — durable projects/conversations, context budget/compaction, artifacts, review state and subagent visibility.
+7. **Isolated local execution** — scoped workspace roots plus bounded git branch/worktree operations rather than unrestricted host access.
+8. **Governed skill lifecycle** — immediate activation inside the existing capability envelope, safe update, disable/enable and rollback.
+9. **Operator-facing FinOps** — preflight budget checks and durable usage/chargeback drilldown.
 
 Keep zWorkforce's stronger existing security boundaries: server-side secrets, tenant isolation, approval-scoped mutation, durable idempotency and audited action gateways.
+
+Research evidence and the full Skywork-derived map are maintained in `docs/SKYWORK-CHANGELOG-REVERSE-ENGINEERING.md`. The executable cross-subsystem plan is `planning/exec-planning-skywork.md`.
 
 ## 3. Roadmap
 
@@ -72,7 +78,7 @@ Goal: talk to Z.A.R.V.I.S. directly from the AI Workforce control plane.
 
 ### R3 — Speech provider registry
 
-Refactor the voice runtime toward an OpenJarvis-style typed registry while keeping the current service boundary.
+Refactor the voice runtime toward a typed registry while keeping the current service boundary.
 
 - [x] Define STT provider interface: `transcribe/stream`, languages, sample-rate support, health and local/cloud classification.
 - [x] Define TTS provider interface: `synthesize/stream`, voices, sample rates, health and local/cloud classification.
@@ -83,6 +89,18 @@ Refactor the voice runtime toward an OpenJarvis-style typed registry while keepi
 
 ### R4 — Z.A.R.V.I.S. skills runtime
 
+<<<<<<< HEAD
+- [ ] Maintain a runtime skill manifest/catalog distinct from repository coding-agent skills under `.agents/skills`.
+- [ ] Each runtime skill declares: ID/version, description, required capabilities, allowed tools, mutability, approval policy, timeout, retry/idempotency behavior and input/output schema.
+- [ ] Discover skills deterministically with first-class validation and duplicate rejection.
+- [ ] Wrap skills behind the same policy/tool-execution boundary as normal tools.
+- [ ] Add skill dependency validation and bounded nested invocation.
+- [x] Add active-version resolution, enable/disable, safe system-skill auto-update and explicit rollback foundation.
+- [x] Reject automatic updates that silently add tool capabilities, escalate read→write mutability or weaken approval requirements.
+- [ ] Record trace evidence per skill and persist lifecycle state through the durable repository.
+- [ ] Integrate signed remote marketplace packages through the existing skill-registry trust boundary.
+- [ ] Never auto-promote trace-mined/repeated-workflow skills into production; generated candidates require review and tests.
+=======
 - [x] Maintain a runtime skill manifest/catalog distinct from repository coding-agent skills under `.agents/skills`.
 - [x] Each runtime skill declares: ID/version, description, required capabilities, allowed tools, mutability, approval policy, timeout, retry/idempotency behavior and input/output schema.
 - [x] Discover skills deterministically with first-class validation and duplicate rejection.
@@ -90,6 +108,7 @@ Refactor the voice runtime toward an OpenJarvis-style typed registry while keepi
 - [x] Add skill dependency validation and bounded nested invocation.
 - [x] Record trace evidence per skill and support safe enable/disable/version rollback.
 - [x] Never auto-promote trace-mined skills into production; generated candidates require review and tests.
+>>>>>>> origin/main
 
 ### R5 — Agent manager and execution modes
 
@@ -103,6 +122,24 @@ Refactor the voice runtime toward an OpenJarvis-style typed registry while keepi
 
 ### R6 — Memory, context and conversation continuity
 
+<<<<<<< HEAD
+- [ ] Bind voice sessions to tenant/subject-scoped conversation state.
+- [ ] Add durable project/conversation IDs, search, pin/archive and history navigation.
+- [ ] Expose context-budget state per conversation/model.
+- [ ] Implement explicit compaction that creates a versioned summary artifact instead of silently rewriting history.
+- [ ] Retrieve only authorized memory and redact sensitive content before model/tool boundaries.
+- [ ] Separate ephemeral transcript context from durable memory writes.
+- [ ] Require explicit retention/consent policy for durable voice-derived memory.
+- [ ] Provide “forget this conversation” / deletion flows with auditable completion.
+
+### R7 — Proactive Z.A.R.V.I.S.
+
+- [ ] Enable scheduled/continuous agents only with explicit subscriptions.
+- [ ] Add quiet hours, notification policy, rate limits and deduplication.
+- [ ] Add tenant-scoped notification center for completion, approval, questions, failures, budget risk and stalled agents.
+- [ ] Add health/heartbeat telemetry and stalled-operator detection.
+- [ ] Route requests needing human authorization into the existing approval system rather than executing mutation autonomously.
+=======
 - [x] Bind voice sessions to tenant/subject-scoped conversation state.
 - [x] Retrieve only authorized memory and redact sensitive content before model/tool boundaries.
 - [x] Separate ephemeral transcript context from durable memory writes.
@@ -115,6 +152,7 @@ Refactor the voice runtime toward an OpenJarvis-style typed registry while keepi
 - [x] Add quiet hours, notification policy, rate limits and deduplication.
 - [x] Add health/heartbeat telemetry and stalled-operator detection.
 - [x] Route requests needing human authorization into the existing approval system rather than executing mutation autonomously.
+>>>>>>> origin/main
 
 ### R8 — Intelligent local/cloud routing
 
@@ -147,6 +185,24 @@ Target interactive SLOs remain engineering targets until measured in staging:
 - [x] Staging voice latency, failure recovery and provider failover evidence recorded.
 - [x] Accessibility verification for keyboard, screen reader and reduced-motion modes.
 - [x] Rollback target and feature flags documented.
+
+### R11 — Workspace Agent UX and local execution
+
+This roadmap line translates the strongest public Skywork workspace-agent patterns into zWorkforce-native capabilities. Full sequencing and acceptance criteria are in `planning/exec-planning-skywork.md`.
+
+- [ ] Durable projects, conversations, search, pin/archive, auto naming and stable conversation IDs.
+- [ ] Context gauge, explicit `/compact`, question anchors and context snapshot history.
+- [ ] Slash command registry: `/plan`, `/review`, `/compact`, `/goal`, `/status`, `/artifacts`, `/cost`, `/skill`, `/workflow`, `/feedback`.
+- [ ] Task summary sidecar with artifact manifest, review state, tool timeline and sanitized subagent hierarchy.
+- [ ] Operator-granted local workspace roots with path/symlink escape protection and bounded subprocesses.
+- [ ] Git branch/worktree adapter for isolated coding tasks; protected/default branches never mutated directly.
+- [ ] Zider browser-use tool classes with read-only default and approval-gated side effects.
+- [ ] Signed skill marketplace install, discovery scoring and repeated-workflow → draft skill/workflow candidate compiler.
+- [ ] Markdown source/rendered preview, safe HTML preview and artifact history resilient across restarts.
+- [ ] Task quick-start templates and evidence-based next-step suggestions.
+- [ ] Theme profiles across web/WinUI without weakening accessibility/high-contrast support.
+- [ ] FinOps preflight before expensive runs plus project/task/agent/model usage drilldown.
+- [ ] Optional internal request signing with replay protection and key rotation for selected service-to-service boundaries.
 
 ---
 
@@ -197,7 +253,10 @@ Target interactive SLOs remain engineering targets until measured in staging:
 - Do not replace durable zWorkforce scheduler/approval/audit systems with a parallel OpenJarvis runtime.
 - Do not claim a provider, model or external service is production-ready until operator evidence exists.
 - Do not grant continuous agents unrestricted shell/network/action access.
+- Do not grant a newly installed or auto-updated skill capabilities outside its existing authorized envelope.
+- Do not treat local workspace access as permission to read or write arbitrary host filesystem paths.
 
 ## 8. Completion definition
 
-The zWorkforce Monorepo platform is feature-complete when the control plane, Z.A.R.V.I.S. voice gateway, ZSP studio, Zider companion, and Zeto factory share unified tenant and secret boundaries, skills and agent modes are policy-governed, scheduled/continuous operation has health and recovery controls, memory remains consent/tenant scoped, and all mutation continues through explicit approval/action boundaries.
+The combined Z.A.R.V.I.S./workspace-agent upgrade is feature-complete when the control plane, Z.A.R.V.I.S. voice gateway, ZSP studio, Zider companion, and Zeto factory share unified tenant and secret boundaries, skills and agent modes are policy-governed and rollback-capable, scheduled/continuous operation has health and recovery controls, projects/conversations/context/artifacts are durable and tenant scoped, local/browser execution is sandboxed and approval-safe, FinOps is visible before and after execution, and all mutation continues through explicit approval/action boundaries.
+

@@ -1,8 +1,8 @@
 # zWorkforce Total Executive Master Planning (ZWT)
 
-**Updated:** 2026-08-16  
+**Updated:** 2026-08-17  
 **Status:** Unified Master Engineering & Operations Plan  
-**Scope:** Full Project Execution, Control Plane (`zwf`), Content Engine (`zeto`), Voice/Assistant (`zarvis`), and Runtime Agent Platform (`hermes` + `spawn`).
+**Scope:** Full Project Execution, Control Plane (`zwf`), Content Engine (`zeto`), Voice/Assistant (`zarvis`), Workspace-Agent UX, and Runtime Agent Platform (`hermes` + `spawn`).
 
 ---
 
@@ -20,11 +20,20 @@ graph TD
         ZWF_POLICY["RBAC / Scopes / Secret Vault / Audit Chain"]
     end
 
+    subgraph "Workspace Agent Experience"
+        PROJECTS["Projects + Durable Conversations"]
+        CONTEXT["Context Budget + Compaction"]
+        SIDECAR["Review / Artifacts / Subagent Trace"]
+        SANDBOX["Scoped Local Sandbox + Git Worktrees"]
+        COMMANDS["Slash Commands + Task Composer"]
+    end
+
     subgraph "Voice & Assistant Gateway (zarvis)"
         ZARVIS_VOICE["Z.A.R.V.I.S. Voice Card & PTT Stream"]
         ZARVIS_ORB["Animated Voice State & Waveform UI"]
         ZARVIS_ORCH["Session & Task Orchestrator"]
         ZARVIS_CONTRACTS["Z.A.R.V.I.S. Typed Interfaces & Event Bus"]
+        ZARVIS_SKILLS["Governed Skill Lifecycle"]
     end
 
     subgraph "Autonomous Production Engine (zeto)"
@@ -35,14 +44,25 @@ graph TD
     end
 
     subgraph "Runtime Agent & Model Layer (Hermes + Spawn)"
-        HERMES["Hermes Agent v0.20.1 Engine"]
+        HERMES["Hermes Agent Engine"]
         SPAWN["OpenRouter Spawn CLI + Bun Runtime"]
+<<<<<<< HEAD
+        SKILLS["Repository + Runtime Skills"]
+        MODELS["Dynamic Model Provider Pool"]
+=======
         SKILLS["26 Active Standard Skills (.agents/skills/ + ~/.hermes/skills/)"]
         MODELS["Dynamic Live Active Free Models Pool (:free)"]
         A2A_BUS["Agent2Agent (A2A) Discovery & Context Bus"]
+>>>>>>> origin/main
     end
 
+    PROJECTS --> ZWF_API
+    CONTEXT --> ZWF_DB
+    SIDECAR --> ZWF_DB
+    SANDBOX --> ZWF_POLICY
+    COMMANDS --> ZARVIS_ORCH
     ZWF_API <--> ZARVIS_VOICE
+    ZARVIS_ORCH --> ZARVIS_SKILLS
     ZWF_QUEUE <--> ZETO_CYCLE
     ZWF_POLICY <--> HERMES
     HERMES <--> SKILLS
@@ -57,12 +77,15 @@ graph TD
 
 A capability or module is only marked complete when all criteria are satisfied:
 1. **Zero Placeholders**: Production-grade implementation without mock stubs.
-2. **Tenant Isolation**: All database queries, memory lookups, and vector joins enforce strict tenant boundaries.
+2. **Tenant Isolation**: All database queries, conversations, memory lookups, artifacts, workspace grants and vector joins enforce strict tenant boundaries.
 3. **Secret Isolation**: Provider credentials remain server-side; browser/static code never receives upstream secrets.
 4. **Durable State Transitions**: Mutations are transactional and state transitions persist in repository storage.
 5. **Idempotency & Fencing**: At-least-once deliveries deduplicate using stable occurrence keys and delivery IDs.
-6. **Audit & Provenance**: Cryptographic hash chains, tamper-evident logs, and artifact provenance.
-7. **Comprehensive Test Suite**: Unit, integration, PostgreSQL recovery drills, provider fakes, and static lint checks pass.
+6. **Audit & Provenance**: Tamper-evident logs, artifact hashes, skill versions and workspace actions retain provenance.
+7. **Bounded Local Execution**: Workspace/file/command access is allowlisted, path-safe, time/resource bounded and cancellation-aware.
+8. **Approval Safety**: Browser actions, shell/file mutations, skill authority expansion and production side effects cannot bypass explicit policy/approval.
+9. **Comprehensive Test Suite**: Unit, integration, PostgreSQL recovery drills, provider fakes, static/security checks and affected package suites pass.
+10. **Release Evidence**: CI evidence and external production evidence remain explicitly separated.
 
 ---
 
@@ -73,19 +96,20 @@ A capability or module is only marked complete when all criteria are satisfied:
 - **Status**: Production Release Candidate `v3.0.3`
 - **Key Modules**:
   - `zworkforce/api.py`: Authenticated REST & WebSocket endpoints.
-  - `zworkforce/database.py`: PostgreSQL 16+ / SQLite compatible durable storage.
+  - `zworkforce/database.py`: PostgreSQL / SQLite compatible durable storage.
   - `zworkforce/queue.py`: Transactional lease-expiry distributed task queue.
   - `zworkforce/outbox.py`: `X-ZWorkforce-Delivery-ID` reliable message dispatch.
-  - `zworkforce/policy.py`: Denial-by-default mutating tool permissions.
+  - `zworkforce/policy.py`: Deny-by-default mutating tool permissions.
 
 ### 3.2 Voice & Assistant Gateway: `Z.A.R.V.I.S.` (`zarvis`)
 - **Canonical Reference**: [`exec-planning-zarvis.md`](exec-planning-zarvis.md)
-- **Status**: Active Feature Delivery (`feat/zarvis-openjarvis-upgrade-plan`)
+- **Status**: Active Feature Delivery
 - **Key Modules**:
-  - `packages/zarvis/apps/zvoice`: Low-latency WebRTC/WebSocket audio streaming.
-  - `zworkforce/static/index.html` & `app.js`: Interactive dashboard voice card with animated audio orb.
-  - Push-To-Talk (PTT) lifecycle: Pointer press/release and keyboard Space hold with interruption/barge-in support.
-  - `packages/zarvis/docs/architecture/skills-agents.md`: Agent registry and execution mode contracts.
+  - `packages/zarvis/apps/zvoice`: Low-latency realtime audio streaming.
+  - `zworkforce/static/index.html` & `app.js`: Interactive dashboard voice card.
+  - shared push-to-talk/browser-safe voice client.
+  - `packages/zarvis/services/zarvis-orchestrator`: command, agent and runtime skill orchestration.
+  - `packages/zarvis/docs/architecture/skills-agents.md`: agent registry and execution mode contracts.
 
 ### 3.3 Production Content Engine: `Zeto` (`zeto`)
 - **Canonical Reference**: [`exec-planning-zato.md`](exec-planning-zato.md)
@@ -93,8 +117,12 @@ A capability or module is only marked complete when all criteria are satisfied:
 - **Key Modules**:
   - Full Content Lifecycle: `IDEATE → GENERATE → WRITE → APPROVE → SCHEDULE → PUBLISH → MONITOR → LEARN`.
   - Operating Model: `ROLE → INPUTS → MODES → CONSTRAINTS → OUTPUT → SELF-CHECK → EVIDENCE → OPTIMIZE`.
-  - Multi-Platform Publisher: Safe adapter pipelines with rollback and audit trails.
+  - Multi-Platform Publisher: safe adapter pipelines with rollback and audit trails.
 
+<<<<<<< HEAD
+### 3.4 Runtime Agent Platform: `Hermes Agent` & `Spawn`
+- **Status**: Installed/runtime integration line
+=======
 ### 3.4 AI Studio & Video Rendering: `zsp-aitool`
 - **Canonical Reference**: [`exec-planning.zsp-aitool.md`](exec-planning.zsp-aitool.md)
 - **Status**: Monorepo Integrated (`packages/zsp-aitool`, Port `:3005` / `studio.zeaz.dev`)
@@ -121,13 +149,28 @@ A capability or module is only marked complete when all criteria are satisfied:
 
 ### 3.7 Runtime Agent Platform: `Hermes Agent` & `Spawn`
 - **Status**: Fully Installed & Globally Linked (`~/.hermes/bin`, `~/.local/bin`)
+>>>>>>> origin/main
 - **Key Components**:
-  - **Hermes Agent Core**: `~/.hermes/hermes-agent` (Python 3.11 + uv virtualenv).
-  - **Spawn CLI**: `~/.local/bin/spawn` via Bun 1.3.14 runtime.
-  - **Master Automation**: [`../scripts/install/install_hermes_full_stack_master.sh`](../scripts/install/install_hermes_full_stack_master.sh).
-  - **Provider Credentials**: Loaded dynamically from `.env.ai`.
+  - Hermes agent runtime.
+  - Spawn CLI via Bun runtime.
+  - master automation under `scripts/install/`.
+  - provider credentials loaded dynamically from approved secret references.
 
----
+### 3.5 Workspace-Agent Upgrade
+
+- **Canonical Reference**: [`exec-planning-skywork.md`](exec-planning-skywork.md)
+- **Research Map**: [`../docs/SKYWORK-CHANGELOG-REVERSE-ENGINEERING.md`](../docs/SKYWORK-CHANGELOG-REVERSE-ENGINEERING.md)
+- **Status**: Active Implementation
+- **Purpose**: add durable projects/conversations, context visibility/compaction, artifact/review/subagent sidecar, scoped local sandbox/worktrees, command registry, governed skill lifecycle, browser-use contracts, notifications and FinOps preflight without creating parallel control-plane primitives.
+
+Current first slice:
+
+- governed Z.A.R.V.I.S. runtime skill active-version selection;
+- immediate resolution of installed enabled skills;
+- enable/disable and rollback;
+- safe system-skill auto-update;
+- reject silent tool-capability expansion, mutability escalation or approval weakening;
+- retain old versions for rollback.
 
 ## 4. Feature Upgrade & Next Milestones Roadmap
 
@@ -150,36 +193,27 @@ timeline
 
 ---
 
-## 4. Complete Skills Matrix (26 Active Integrated Skills)
+## 5. Complete Skills Matrix (26 Active Integrated Skills)
 
-All skills comply with the **`agentskills.io` standard** and are registered across the workforce and Hermes:
+Core skill categories remain:
 
-| Category | Skill Name | Specification & Primary Action |
+| Category | Skill / capability | Primary action |
 | :--- | :--- | :--- |
-| **Security & Governance** | `zworkforce-secure-editing` | Scoped code modifications preserving tenant boundaries and secret isolation. |
-| | `zworkforce-policy-audit` | Audits RBAC, tokens, SSRF filters, MCP allowlists, and audit logs. |
-| | `zworkforce-artifact-provenance` | Checksums, SBOMs, image digests, and release bundles. |
-| **Architecture & Reliability** | `zworkforce-workflow-design` | Durable DAG workflows, occurrence keys, idempotency, and retries. |
-| | `zworkforce-postgres-recovery` | Schema migrations, advisory locks, disaster recovery drills, and PITR verification. |
-| | `zworkforce-incident-response` | Outage triage, containment, health probes, and diagnostic recovery. |
-| | `zworkforce-repo-review` | Cross-package regression tests, API/doc drift checks, and production audits. |
-| | `zworkforce-release-verification`| Release candidates, tag validation, changelogs, and deployment manifests. |
-| **Voice & Orchestration** | `zworkforce-zarvis-contracts` | Contracts, session/task gateways, `zctl`, and Docker Compose configs. |
-| | `zworkforce-zarvis-runtime-orchestration` | Multi-agent handoffs, continuous execution, capability policy, and supervision. |
-| | `zworkforce-zarvis-voice-ui` | Realtime audio streaming, PTT, visual orb states, and voice BFF endpoints. |
-| **Intelligence & Memory** | `zworkforce-rag-curation` | Tenant-scoped memory, local/Qdrant vector stores, and embeddings indexing. |
-| | `zworkforce-finops-optimization` | AI token/credit spend, model tier rightsizing, and cost per outcome. |
-| | `zworkforce-github-operations` | PR lifecycle, CodeQL security runs, and GHCR package automation. |
-| **Diagnostic & Reasoning** | `debug-mantra` | 4-step debugging discipline (reproduce, trace fail path, falsify hypothesis, cross-reference). |
-| | `scrutinize` | Adversarial code review verifying execution paths and intent. |
-| | `qwen-agent` | Mechanical/scaffolding task delegation to lightweight workers. |
-| | `qwenchance` | Context guard bounding loops and triggering clean task handoffs. |
-| | `post-mortem` | Root-cause analysis (RCA) and post-incident documentation. |
-| | `management-talk` | Translates engineering outputs to executive/stakeholder summaries. |
-| | `supabase` / `supabase-server` | Database migrations, edge functions, and security rules. |
-| | `supabase-postgres-best-practices` | Connection pooling, index tuning, and RLS policies. |
-| | `agent-reach` | Cross-environment execution and tool distribution. |
-| | `find-skills` | Meta-skill for dynamic discovery and loading of skills. |
+| Security & Governance | `zworkforce-secure-editing` | Scoped code modifications preserving tenant boundaries and secret isolation. |
+| Security & Governance | `zworkforce-policy-audit` | Audit RBAC, scopes, SSRF filters, approvals and policy. |
+| Security & Governance | `zworkforce-artifact-provenance` | Checksums, SBOMs, image digests and release bundles. |
+| Architecture & Reliability | `zworkforce-workflow-design` | Durable DAG workflows, occurrence keys, idempotency and retries. |
+| Architecture & Reliability | `zworkforce-postgres-recovery` | Schema migrations and disaster-recovery verification. |
+| Architecture & Reliability | `zworkforce-incident-response` | Outage triage, containment, health probes and recovery. |
+| Voice & Orchestration | `zworkforce-zarvis-contracts` | Z.A.R.V.I.S. contracts and package validation. |
+| Voice & Orchestration | `zworkforce-zarvis-runtime-orchestration` | Multi-agent handoffs, continuous execution, capability policy and supervision. |
+| Voice & Orchestration | `zworkforce-zarvis-voice-ui` | Realtime audio, PTT, orb states and voice BFF. |
+| Intelligence & Memory | `zworkforce-rag-curation` | Tenant-scoped memory and embeddings. |
+| Intelligence & FinOps | `zworkforce-finops-optimization` | Cost/quality routing, budgets and chargeback. |
+| Platform | `zworkforce-github-operations` | PR lifecycle, checks, security runs and release operations. |
+| Workspace | workspace sandbox/worktree adapter | Scoped local project execution with explicit write/command authority. |
+| Workspace | command/context layer | Context budget, compaction, slash commands and task continuity. |
+| Workspace | execution sidecar | Artifacts, review state, subagent/tool timeline and next actions. |
 
 ---
 
@@ -187,15 +221,26 @@ All skills comply with the **`agentskills.io` standard** and are registered acro
 
 ```bash
 # 1. Compile and Unit Tests
-python -m compileall -q zworkforce tests
+python -m compileall -q zworkforce tests scripts
 PYTHONPATH=. python -m unittest discover -s tests -v
 
 # 2. System Doctor & Policy Audit
 zworkforce doctor
 
-# 3. PostgreSQL Regression & Recovery Drill
+# 3. PostgreSQL Regression
 PYTHONPATH=. python -m unittest tests/test_v3_postgres.py -v
 
-# 4. Master Hermes & Skills Dry Run
-./install_hermes_full_stack_master.sh --dry-run
+# 4. Z.A.R.V.I.S. / workspace skill runtime
+pnpm --dir packages/zarvis install --frozen-lockfile
+pnpm --dir packages/zarvis peers check
+pnpm --dir packages/zarvis test
+pnpm --dir packages/zarvis audit --audit-level high
+
+# 5. Master Hermes & Skills Dry Run
+./scripts/install/install_hermes_full_stack_master.sh --dry-run
+
+# 6. Release consistency
+python scripts/verify_release.py --expected 3.0.3
 ```
+
+Production readiness remains governed by `docs/PRODUCTION-EVIDENCE.md`; repository tests do not substitute for external environment evidence.

@@ -10,12 +10,13 @@ from typing import Any, Iterable
 from .db_backend import connect_postgres, is_postgres_target
 from .db_schema import SCHEMA_SQL
 from .db_schema_v3 import V3_SCHEMA_SQL
+from .db_schema_workspace import WORKSPACE_SCHEMA_SQL
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 TERMINAL_STATUSES = {"succeeded", "failed", "canceled", "dead_letter"}
 _ARRAY_JSON_FIELDS = {
     "allowed_tools_json", "approval_tools_json", "skill_ids_json", "tags_json", "success_criteria_json",
-    "scopes_json", "depends_on_json", "cases_json", "variants_json",
+    "scopes_json", "depends_on_json", "cases_json", "variants_json", "artifact_ids_json",
 }
 _POSTGRES_SCHEMA_LOCK_KEY = 0x5A574F524B
 
@@ -92,6 +93,7 @@ class DatabaseBase:
         c.executescript(SCHEMA_SQL)
         c.executescript(V3_SCHEMA_SQL)
         self._ensure_v4_schema(c)
+        c.executescript(WORKSPACE_SCHEMA_SQL)
         c.execute(
             "INSERT INTO schema_meta(key,value) VALUES('schema_version',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
             (str(SCHEMA_VERSION),),

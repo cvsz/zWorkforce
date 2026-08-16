@@ -31,7 +31,7 @@ s3 = ["boto3>=1.40,<2"]
 all = ["boto3>=1.40,<2"]
 
 [project.scripts]
-zworkforce = "zworkforce.cli:main"
+zworkforce = "zworkforce.workspace_cli:main"
 zktcoder = "zworkforce.zktcoder:main"
 
 [tool.setuptools]

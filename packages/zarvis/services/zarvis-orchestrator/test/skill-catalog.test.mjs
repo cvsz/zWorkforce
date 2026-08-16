@@ -4,6 +4,9 @@ import {
   createSkillCatalog,
   DuplicateSkillError,
   SkillNotFoundError,
+  SkillDisabledError,
+  SkillVersionError,
+  CapabilityExpansionError,
   ToolNotAllowedError,
   ApprovalRequiredError
 } from '../src/skill-catalog.mjs';
@@ -39,11 +42,32 @@ const WRITE_SKILL = {
   audit_events: ['skill.memory.write.started', 'skill.memory.write.completed'],
 };
 
+const SYSTEM_SKILL_V1 = {
+  ...READ_SKILL,
+  id: 'dev.zworkforce.zarvis.skill.system.summary',
+  version: '1.0.0',
+  name: 'System Summary',
+  source: 'system',
+  update_policy: 'auto',
+  capability_allowlist: ['memory.read'],
+};
+
+const SYSTEM_SKILL_V2 = {
+  ...SYSTEM_SKILL_V1,
+  version: '1.1.0',
+};
+
 test('register/get round-trip', () => {
   const catalog = createSkillCatalog();
   catalog.register(READ_SKILL);
   const skill = catalog.get(READ_SKILL.id, READ_SKILL.version);
   assert.deepEqual(skill, READ_SKILL);
+});
+
+test('install makes a skill immediately resolvable', () => {
+  const catalog = createSkillCatalog();
+  catalog.install(READ_SKILL);
+  assert.equal(catalog.resolve(READ_SKILL.id).version, '1.0.0');
 });
 
 test('DuplicateSkillError on collision', () => {
@@ -103,7 +127,7 @@ test('ApprovalRequiredError for write skills with empty string token', () => {
   }, ApprovalRequiredError);
 });
 
-test('list() returns sorted entries', () => {
+test('list() returns sorted entries with lifecycle metadata', () => {
   const catalog = createSkillCatalog();
   catalog.register(WRITE_SKILL);
   catalog.register(READ_SKILL);
@@ -111,6 +135,9 @@ test('list() returns sorted entries', () => {
   assert.equal(list.length, 2);
   assert.equal(list[0].id, WRITE_SKILL.id);
   assert.equal(list[1].id, READ_SKILL.id);
+  assert.equal(list[0].enabled, true);
+  assert.equal(list[0].source, 'local');
+  assert.equal(list[0].update_policy, 'manual');
 });
 
 test('findByDomain filters correctly', () => {
@@ -120,4 +147,76 @@ test('findByDomain filters correctly', () => {
   const memorySkills = catalog.findByDomain('memory');
   assert.equal(memorySkills.length, 1);
   assert.equal(memorySkills[0].id, WRITE_SKILL.id);
+});
+
+test('resolve selects the highest enabled semantic version', () => {
+  const catalog = createSkillCatalog();
+  catalog.register(READ_SKILL);
+  catalog.register({ ...READ_SKILL, version: '1.2.0' });
+  catalog.register({ ...READ_SKILL, version: '1.10.0' });
+  assert.equal(catalog.resolve(READ_SKILL.id).version, '1.10.0');
+});
+
+test('disabling the active version falls back to the latest enabled version', () => {
+  const catalog = createSkillCatalog();
+  catalog.register(READ_SKILL);
+  catalog.register({ ...READ_SKILL, version: '2.0.0' });
+  catalog.setEnabled(READ_SKILL.id, '2.0.0', false);
+  assert.equal(catalog.resolve(READ_SKILL.id).version, '1.0.0');
+});
+
+test('resolve fails closed when all versions are disabled', () => {
+  const catalog = createSkillCatalog();
+  catalog.register(READ_SKILL);
+  catalog.setEnabled(READ_SKILL.id, '1.0.0', false);
+  assert.throws(() => catalog.resolve(READ_SKILL.id), SkillDisabledError);
+});
+
+test('safe system skill auto-update activates the newer version and preserves rollback', () => {
+  const catalog = createSkillCatalog();
+  catalog.register(SYSTEM_SKILL_V1);
+  catalog.updateSystemSkill(SYSTEM_SKILL_V2);
+  assert.equal(catalog.resolve(SYSTEM_SKILL_V1.id).version, '1.1.0');
+  catalog.rollback(SYSTEM_SKILL_V1.id, '1.0.0');
+  assert.equal(catalog.resolve(SYSTEM_SKILL_V1.id).version, '1.0.0');
+});
+
+test('automatic update rejects non-system or manual update policies', () => {
+  const catalog = createSkillCatalog();
+  catalog.register(READ_SKILL);
+  assert.throws(
+    () => catalog.updateSystemSkill({ ...READ_SKILL, version: '1.1.0' }),
+    SkillVersionError,
+  );
+});
+
+test('automatic update rejects downgrade or same version', () => {
+  const catalog = createSkillCatalog();
+  catalog.register(SYSTEM_SKILL_V2);
+  assert.throws(() => catalog.updateSystemSkill(SYSTEM_SKILL_V1), SkillVersionError);
+});
+
+test('automatic update rejects silent capability expansion', () => {
+  const catalog = createSkillCatalog();
+  catalog.register(SYSTEM_SKILL_V1);
+  assert.throws(
+    () => catalog.updateSystemSkill({
+      ...SYSTEM_SKILL_V2,
+      capability_allowlist: ['memory.read', 'shell.exec'],
+    }),
+    CapabilityExpansionError,
+  );
+});
+
+test('automatic update rejects mutability escalation', () => {
+  const catalog = createSkillCatalog();
+  catalog.register(SYSTEM_SKILL_V1);
+  assert.throws(
+    () => catalog.updateSystemSkill({
+      ...SYSTEM_SKILL_V2,
+      mutability: 'write',
+      approval_rule: 'human_required',
+    }),
+    CapabilityExpansionError,
+  );
 });

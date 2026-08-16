@@ -93,8 +93,13 @@ class PostgresIntegrationTests(unittest.TestCase):
             self.assertEqual(failures, [], [str(exc) for exc in failures])
             with psycopg.connect(self.url, autocommit=True) as connection:
                 relations = connection.execute(
-                    "SELECT to_regclass(%s), to_regclass(%s), to_regclass(%s)",
-                    (f"{schema}.tenants", f"{schema}.tasks2", f"{schema}.event_rules3"),
+                    "SELECT to_regclass(%s), to_regclass(%s), to_regclass(%s), to_regclass(%s)",
+                    (
+                        f"{schema}.tenants",
+                        f"{schema}.tasks2",
+                        f"{schema}.event_rules3",
+                        f"{schema}.workspace_conversations5",
+                    ),
                 ).fetchone()
                 schema_version = connection.execute(
                     f'SELECT value FROM "{schema}".schema_meta WHERE key=%s',
@@ -102,9 +107,14 @@ class PostgresIntegrationTests(unittest.TestCase):
                 ).fetchone()[0]
             self.assertEqual(
                 relations,
-                (f"{schema}.tenants", f"{schema}.tasks2", f"{schema}.event_rules3"),
+                (
+                    f"{schema}.tenants",
+                    f"{schema}.tasks2",
+                    f"{schema}.event_rules3",
+                    f"{schema}.workspace_conversations5",
+                ),
             )
-            self.assertEqual(schema_version, "4")
+            self.assertEqual(schema_version, "5")
         finally:
             with psycopg.connect(self.url, autocommit=True) as connection:
                 connection.execute(f'DROP SCHEMA "{schema}" CASCADE')
@@ -123,6 +133,45 @@ class PostgresIntegrationTests(unittest.TestCase):
         claimed = self.db.claim_outbox("pg-outbox-a", 30)
         self.assertEqual([item_id], [item["id"] for item in claimed])
         self.assertEqual([], self.db.claim_outbox("pg-outbox-b", 30))
+
+    def test_workspace_v5_round_trip_and_tenant_isolation(self):
+        project = self.db.create_workspace_project(self.tenant_id, "Postgres workspace", self.tenant_id)
+        conversation = self.db.create_workspace_conversation(
+            self.tenant_id,
+            self.tenant_id,
+            project_id=project["id"],
+            title="Postgres conversation",
+        )
+        first = self.db.append_workspace_message(
+            self.tenant_id,
+            conversation["id"],
+            "user",
+            self.tenant_id,
+            content="first",
+        )
+        second = self.db.append_workspace_message(
+            self.tenant_id,
+            conversation["id"],
+            "assistant",
+            "agent",
+            content="second",
+        )
+        self.assertEqual([first["ordinal"], second["ordinal"]], [1, 2])
+        self.assertEqual(
+            [item["content"] for item in self.db.list_workspace_messages(self.tenant_id, conversation["id"])],
+            ["first", "second"],
+        )
+
+        other_tenant = f"other-{uuid.uuid4().hex}"
+        self.db.ensure_tenant(other_tenant, "Other")
+        self.assertIsNone(self.db.get_workspace_project(other_tenant, project["id"]))
+        with self.assertRaisesRegex(ValueError, "project not found"):
+            self.db.create_workspace_conversation(
+                other_tenant,
+                other_tenant,
+                project_id=project["id"],
+                title="cross tenant",
+            )
 
 
 if __name__ == "__main__": unittest.main()

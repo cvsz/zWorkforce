@@ -241,21 +241,41 @@ export class ZarvisOrchestrator {
     return this.skillCatalog.register(manifest);
   }
 
+  installSkill(manifest) {
+    return this.skillCatalog.install(manifest);
+  }
+
+  setSkillEnabled(skillId, version, enabled) {
+    return this.skillCatalog.setEnabled(skillId, version, enabled);
+  }
+
+  updateSystemSkill(manifest) {
+    return this.skillCatalog.updateSystemSkill(manifest);
+  }
+
+  rollbackSkill(skillId, version) {
+    return this.skillCatalog.rollback(skillId, version);
+  }
+
   /**
-   * Execute a registered skill according to its manifest policy.
-   * Enforces allowlists, mutability rules, approval token checks, and audit emission.
+   * Execute a registered and enabled skill according to its manifest policy.
+   * If version is omitted, the catalog's active enabled version is selected.
+   * Enforces lifecycle state, mutability rules, approval token checks, and the
+   * existing skill execution envelope.
    */
   async executeSkill({ skillId, version, input, actor, approvalToken = null, idempotencyKey = randomUUID(), handler }) {
-    const manifest = this.skillCatalog.get(skillId, version);
+    const manifest = version
+      ? this.skillCatalog.resolveVersion(skillId, version)
+      : this.skillCatalog.resolve(skillId);
     this.skillCatalog.assertApprovalValid(manifest, approvalToken, this.now());
-    
+
     const invocationId = this.idFactory();
     const startedAt = performance.now();
-    
+
     try {
       const output = await handler(input);
       const durationMs = Math.round(performance.now() - startedAt);
-      
+
       return {
         invocation_id: invocationId,
         skill_id: manifest.id,
@@ -287,4 +307,3 @@ export class ZarvisOrchestrator {
     }
   }
 }
-
