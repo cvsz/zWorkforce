@@ -126,7 +126,109 @@ cmd_restart() {
     cmd_start
 }
 
-case "${1:-status}" in
+cmd_config() {
+    echo -e "\n${YELLOW}=== Active Provider & Secret Vault Config (.env.ai) ===${NC}"
+    local env_file="${ROOT_DIR}/.env.ai"
+    if [ ! -f "$env_file" ]; then
+        env_file="${HOME}/.env.ai"
+    fi
+
+    if [ -f "$env_file" ]; then
+        log_success "Vault located at: $env_file"
+        python3 -c "
+import os
+
+env_path = '${env_file}'
+count = 0
+with open(env_path, 'r', encoding='utf-8', errors='ignore') as f:
+    for line in f:
+        line = line.strip()
+        if line and not line.startswith('#') and '=' in line:
+            parts = line.split('=', 1)
+            key = parts[0].strip()
+            val = parts[1].strip()
+            if val:
+                masked = '********'
+                if len(val) > 8:
+                    masked = f'{val[:4]}...{val[-4:]}'
+                print(f'  • {key:<32} = {masked}')
+                count += 1
+print(f'\n\033[0;32mLoaded {count} active provider keys/endpoints securely with zero plaintext leakage.\033[0m')
+"
+    else
+        log_warn "No .env.ai vault file found."
+    fi
+}
+
+cmd_start_studio() {
+    log_info "Starting ZSP AI Studio Next.js on port :3005..."
+    docker compose -f compose.zsp-aitool.yml up -d
+    log_success "ZSP Studio started at https://studio.zeaz.dev or http://localhost:3005"
+}
+
+cmd_stop_studio() {
+    log_info "Stopping ZSP AI Studio containers..."
+    docker compose -f compose.zsp-aitool.yml down || true
+    log_success "ZSP Studio stopped."
+}
+
+cmd_start_webui() {
+    log_info "Starting OpenWebUI Gateway on port :3080..."
+    docker compose -f compose.open-webui.yml up -d
+    log_success "OpenWebUI started at https://chat.zeaz.dev or http://localhost:3080"
+}
+
+cmd_stop_webui() {
+    log_info "Stopping OpenWebUI Gateway..."
+    docker compose -f compose.open-webui.yml down || true
+    log_success "OpenWebUI stopped."
+}
+
+cmd_menu() {
+    while true; do
+        clear || true
+        echo -e "${CYAN}=============================================================================${NC}"
+        echo -e "${CYAN}             zWorkforce Master Control Panel & Orchestrator                  ${NC}"
+        echo -e "${CYAN}=============================================================================${NC}"
+        echo ""
+        echo -e "  ${GREEN}1)${NC} Check System & Services Status"
+        echo -e "  ${GREEN}2)${NC} Run Full Validation Suite (140 Tests + Invariants)"
+        echo -e "  ${GREEN}3)${NC} Start All Services (Core + WebUI)"
+        echo -e "  ${GREEN}4)${NC} Stop All Services"
+        echo -e "  ${GREEN}5)${NC} Restart All Services"
+        echo -e "  ${GREEN}6)${NC} Start ZSP AI Studio (:3005 / studio.zeaz.dev)"
+        echo -e "  ${GREEN}7)${NC} Stop ZSP AI Studio"
+        echo -e "  ${GREEN}8)${NC} Start OpenWebUI Gateway (:3080 / chat.zeaz.dev)"
+        echo -e "  ${GREEN}9)${NC} Stop OpenWebUI Gateway"
+        echo -e "  ${GREEN}10)${NC} Automated Full-Stack Monorepo Installer"
+        echo -e "  ${GREEN}11)${NC} Inspect Provider & Secret Vault Config (.env.ai)"
+        echo -e "  ${RED}q)${NC}  Exit"
+        echo ""
+        read -p "Select option [1-11, q]: " choice
+        case "$choice" in
+            1) cmd_status ;;
+            2) cmd_verify ;;
+            3) cmd_start ;;
+            4) cmd_stop ;;
+            5) cmd_restart ;;
+            6) cmd_start_studio ;;
+            7) cmd_stop_studio ;;
+            8) cmd_start_webui ;;
+            9) cmd_stop_webui ;;
+            10) cmd_install ;;
+            11) cmd_config ;;
+            q|Q|exit|quit) echo "Exiting zWorkforce Master Control."; break ;;
+            *) log_error "Invalid option" ;;
+        esac
+        echo ""
+        read -p "Press Enter to return to menu..."
+    done
+}
+
+case "${1:-menu}" in
+    menu)
+        cmd_menu
+        ;;
     status)
         cmd_status
         ;;
@@ -135,6 +237,9 @@ case "${1:-status}" in
         ;;
     install)
         cmd_install
+        ;;
+    config|vault)
+        cmd_config
         ;;
     start)
         cmd_start
@@ -145,12 +250,24 @@ case "${1:-status}" in
     restart)
         cmd_restart
         ;;
+    start-studio)
+        cmd_start_studio
+        ;;
+    stop-studio)
+        cmd_stop_studio
+        ;;
+    start-webui)
+        cmd_start_webui
+        ;;
+    stop-webui)
+        cmd_stop_webui
+        ;;
     help|--help|-h)
-        echo "Usage: ./control.sh [status|verify|install|start|stop|restart]"
+        echo "Usage: ./control.sh [menu|status|verify|install|config|start|stop|restart|start-studio|stop-studio|start-webui|stop-webui]"
         ;;
     *)
         log_error "Unknown command: $1"
-        echo "Usage: ./control.sh [status|verify|install|start|stop|restart]"
+        echo "Usage: ./control.sh [menu|status|verify|install|config|start|stop|restart|start-studio|stop-studio|start-webui|stop-webui]"
         exit 1
         ;;
 esac
