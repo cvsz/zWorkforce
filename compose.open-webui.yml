@@ -44,7 +44,7 @@ services:
       ENABLE_COMMUNITY_SHARING: "false"
       
       # Enterprise Auth & Security
-      WEBUI_AUTH: "false" # Instant frictionless access
+      WEBUI_AUTH: "${WEBUI_AUTH:-true}" # Set to true when existing users are present
       ENABLE_SIGNUP: "true"
       DEFAULT_USER_ROLE: "admin"
       

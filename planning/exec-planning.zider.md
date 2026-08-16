@@ -3,7 +3,7 @@
 **Updated:** 2026-08-16  
 **Package:** `packages/zider` (AI Browser Sidebar, ChatPDF, Summarizer, Multi-Model Group Chat & Web Assistant)  
 **Control Plane:** `zWorkforce` (v3.0.2 / v3.0.3-rc)  
-**Parent Plan:** [`exec-planning.zwt.md`](exec-planning.zwt.md)
+**Parent Plan:** [`exec-planning.master.md`](exec-planning.master.md)
 
 ---
 
@@ -92,7 +92,7 @@ graph TD
 
 ## 5. Evidence Ledger & Audit Provenance (ZIDER-Evidence)
 
-All releases of `packages/zider` must document cryptographic evidence in [`docs/PRODUCTION-EVIDENCE.md`](docs/PRODUCTION-EVIDENCE.md):
+All releases of `packages/zider` must document cryptographic evidence in [`../docs/PRODUCTION-EVIDENCE.md`](../docs/PRODUCTION-EVIDENCE.md):
 - **Extension Zip SHA-256**: Hash of the packed Manifest V3 extension bundle.
 - **Server Image Digest**: GHCR container digest for `zider-server:latest`.
 - **Static Assets Security Audit**: Regex check asserting zero hardcoded API keys in `packages/zider/extension/` and `packages/zider/web/`.

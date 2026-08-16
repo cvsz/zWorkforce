@@ -3,11 +3,11 @@
 **Updated:** 2026-08-16  
 **Candidate:** `v3.0.3` on `agent/exec-plan-v3.0.3-readiness`  
 **Baseline main:** `456ebde0e2bebba1fd4355cb66cda8197065ac33`  
-**Parent Framework:** [`exec-planning.zwt.md`](exec-planning.zwt.md) & [`AGENTS.md`](AGENTS.md)
+**Parent Framework:** [`exec-planning.master.md`](exec-planning.master.md) & [`../AGENTS.md`](../AGENTS.md)
 
 This is the production-readiness execution plan for the root `zWorkforce` control plane. It defines required validation gates, state invariants, secret safety, PostgreSQL operations, and durable release proofs before tagging `v3.0.3`.
 
-The durable evidence ledger for this candidate is [`docs/PRODUCTION-EVIDENCE.md`](docs/PRODUCTION-EVIDENCE.md). Any external deployment stage without cryptographic proof remains `PENDING EXTERNAL EVIDENCE`.
+The durable evidence ledger for this candidate is [`../docs/PRODUCTION-EVIDENCE.md`](../docs/PRODUCTION-EVIDENCE.md). Any external deployment stage without cryptographic proof remains `PENDING EXTERNAL EVIDENCE`.
 
 ---
 
