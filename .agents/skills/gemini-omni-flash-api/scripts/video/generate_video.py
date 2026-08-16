@@ -15,6 +15,7 @@ import sys
 import time
 import urllib.request
 import urllib.error
+import urllib.parse
 import uuid
 from google import genai
 
@@ -32,7 +33,16 @@ def is_file_uri(uri):
     """Returns True if the string is a standard Gemini File URI."""
     if not uri:
         return False
-    return "files/" in uri and ("generativelanguage.googleapis.com" in uri or uri.startswith("files/"))
+
+    if uri.startswith("files/"):
+        return True
+
+    parsed = urllib.parse.urlparse(uri)
+    return (
+        parsed.scheme == "https"
+        and parsed.hostname == "generativelanguage.googleapis.com"
+        and parsed.path.startswith("/files/")
+    )
 
 def normalize_file_uri(uri):
     """Normalizes any File API URI/reference to the standard https://generativelanguage.googleapis.com/files/{id} format."""
