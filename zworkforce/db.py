@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .db_base import DatabaseBase, SCHEMA_VERSION, TERMINAL_STATUSES, json_dumps, json_loads, utc_after, utcnow
+from .db_base import DatabaseBase, SCHEMA_VERSION as BASE_SCHEMA_VERSION, TERMINAL_STATUSES, json_dumps, json_loads, utc_after, utcnow
 from .db_migration import MigrationMixin
 from .db_tasks import TaskMixin
 from .db_finops import FinOpsMixin
@@ -9,9 +9,21 @@ from .db_automation import AutomationMixin
 from .db_evidence import EvidenceMixin
 from .db_workspace import WorkspaceMixin
 from .db_workspace_context import WorkspaceContextMixin
+from .db_workspace_grants import WorkspaceGrantMixin
+from .db_schema_workspace_grants import WORKSPACE_GRANT_SCHEMA_SQL
+
+SCHEMA_VERSION = 6
 
 
-class Database(WorkspaceContextMixin, WorkspaceMixin, EvidenceMixin, AutomationMixin, TaskMixin, FinOpsMixin, GovernanceMixin, MigrationMixin, DatabaseBase):
+class Database(WorkspaceGrantMixin, WorkspaceContextMixin, WorkspaceMixin, EvidenceMixin, AutomationMixin, TaskMixin, FinOpsMixin, GovernanceMixin, MigrationMixin, DatabaseBase):
+    def _initialize_schema(self, c) -> None:
+        super()._initialize_schema(c)
+        c.executescript(WORKSPACE_GRANT_SCHEMA_SQL)
+        c.execute(
+            "INSERT INTO schema_meta(key,value) VALUES('schema_version',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            (str(SCHEMA_VERSION),),
+        )
+
     def ready(self) -> bool:
         try:
             with self.connection() as c:
@@ -98,4 +110,4 @@ class Database(WorkspaceContextMixin, WorkspaceMixin, EvidenceMixin, AutomationM
         return task
 
 
-__all__ = ["Database", "SCHEMA_VERSION", "TERMINAL_STATUSES", "json_dumps", "json_loads", "utc_after", "utcnow"]
+__all__ = ["Database", "SCHEMA_VERSION", "BASE_SCHEMA_VERSION", "TERMINAL_STATUSES", "json_dumps", "json_loads", "utc_after", "utcnow"]
