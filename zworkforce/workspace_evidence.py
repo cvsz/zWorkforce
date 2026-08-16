@@ -5,6 +5,12 @@ from typing import Any
 
 from .security import SENSITIVE_KEYS
 
+EVENT_LIMIT = 500
+TOOL_LIMIT = 500
+ARTIFACT_LIMIT = 500
+SUBTASK_LIMIT = 200
+WORKFLOW_REF_LIMIT = 100
+
 
 def _duration_ms(task: dict[str, Any]) -> float | None:
     if not task.get("started_at") or not task.get("finished_at"):
@@ -92,12 +98,12 @@ def build_task_evidence_sidecar(db, tenant_id: str, task_id: str) -> dict[str, A
     if not task:
         return None
 
-    events = db.list_task_events(tenant_id, task_id, 500)
+    events = db.list_task_events(tenant_id, task_id, EVENT_LIMIT)
     approvals = db.list_approvals(tenant_id, task_id)
-    tools = db.list_tool_events(tenant_id, task_id, 500)
-    artifacts = db.list_task_artifacts(tenant_id, task_id, 500)
-    children = db.list_child_tasks(tenant_id, task_id, 200)
-    workflow_refs = db.list_workflow_refs_for_task(tenant_id, task_id, 100)
+    tools = db.list_tool_events(tenant_id, task_id, TOOL_LIMIT)
+    artifacts = db.list_task_artifacts(tenant_id, task_id, ARTIFACT_LIMIT)
+    children = db.list_child_tasks(tenant_id, task_id, SUBTASK_LIMIT)
+    workflow_refs = db.list_workflow_refs_for_task(tenant_id, task_id, WORKFLOW_REF_LIMIT)
 
     artifact_projection = [
         {
@@ -112,6 +118,22 @@ def build_task_evidence_sidecar(db, tenant_id: str, task_id: str) -> dict[str, A
         }
         for item in artifacts
     ]
+
+    returned_counts = {
+        "events": len(events),
+        "approvals": len(approvals),
+        "tool_calls": len(tools),
+        "artifacts": len(artifacts),
+        "subtasks": len(children),
+        "workflow_refs": len(workflow_refs),
+    }
+    limits = {
+        "events": EVENT_LIMIT,
+        "tool_calls": TOOL_LIMIT,
+        "artifacts": ARTIFACT_LIMIT,
+        "subtasks": SUBTASK_LIMIT,
+        "workflow_refs": WORKFLOW_REF_LIMIT,
+    }
 
     return {
         "task": _task_summary(task),
@@ -139,13 +161,8 @@ def build_task_evidence_sidecar(db, tenant_id: str, task_id: str) -> dict[str, A
         "artifacts": artifact_projection,
         "subtasks": [_task_summary(item) for item in children],
         "workflow_refs": workflow_refs,
-        "counts": {
-            "events": len(events),
-            "approvals": len(approvals),
-            "tool_calls": len(tools),
-            "artifacts": len(artifacts),
-            "subtasks": len(children),
-            "workflow_refs": len(workflow_refs),
-        },
+        "returned_counts": returned_counts,
+        "limits": limits,
+        "possibly_truncated": {name: returned_counts[name] >= limit for name, limit in limits.items()},
         "next_actions": _next_actions(task, artifacts),
     }
