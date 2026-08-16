@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import fnmatch
 import re
+import time
 from typing import Any
 
 from .engine import Engine
+from .tools import ToolError, is_mutating_tool
+from .workspace_tool_executor import WorkspaceGrantedToolExecutor
 
 
 class PolicyError(ValueError):
@@ -41,7 +44,6 @@ def validate_policy(document: dict[str, Any]) -> dict[str, Any]:
 
 
 def decide(policies: list[dict[str, Any]], action: str, context: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
-    # Deny always wins. Explicit allow overrides a policy document's default deny.
     allowed_seen = False
     default_denied = False
     matched: list[str] = []
@@ -78,7 +80,13 @@ def _matches(when: dict[str, Any], context: dict[str, Any]) -> bool:
 
 
 class PolicyEngine(Engine):
-    """Engine with tenant policy-as-code checks on task creation and tool execution."""
+    """Engine with tenant policy-as-code checks and grant-aware workspace file tools."""
+
+    _WORKSPACE_FILE_TOOLS = {"workspace_list", "workspace_read", "workspace_write"}
+
+    def __init__(self, settings, db, provider):
+        super().__init__(settings, db, provider)
+        self.tools = WorkspaceGrantedToolExecutor(settings, db)
 
     def _policy_decision(self, tenant_id: str, action: str, context: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
         if not hasattr(self.db, "list_policies"):
@@ -103,6 +111,52 @@ class PolicyEngine(Engine):
             raise PolicyError("task denied by tenant policy")
         return super().submit(tenant_id, agent_id, prompt, actor=actor, mutating=mutating, tier_override=tier_override, **kwargs)
 
+    @staticmethod
+    def _workspace_event_args(name: str, args: dict[str, Any]) -> dict[str, Any]:
+        event_args: dict[str, Any] = {
+            "workspace_id": str(args.get("workspace_id") or ""),
+            "path": str(args.get("path") or ("." if name == "workspace_list" else ""))[:4096],
+        }
+        if name == "workspace_read":
+            try:
+                event_args["max_bytes"] = int(args.get("max_bytes", 65536))
+            except (TypeError, ValueError):
+                event_args["max_bytes"] = "invalid"
+        if name == "workspace_write":
+            event_args["create_parents"] = bool(args.get("create_parents", False))
+            event_args["content_bytes"] = len(str(args.get("content", "")).encode("utf-8"))
+        return event_args
+
+    def _execute_workspace_file_tool(self, task: dict[str, Any], name: str, args: dict[str, Any]) -> Any:
+        started = time.monotonic()
+        success = False
+        error = ""
+        try:
+            result = self.tools.execute(
+                name,
+                args,
+                tenant_id=task["tenant_id"],
+                agent_id=task["agent_id"],
+                actor=f"agent:{task['agent_id']}",
+            )
+            success = True
+            return result
+        except (ToolError, OSError, ValueError) as exc:
+            error = str(exc)
+            return {"error": error}
+        finally:
+            self.db.record_tool_event(
+                task["tenant_id"],
+                task["id"],
+                task["agent_id"],
+                name,
+                is_mutating_tool(name),
+                success,
+                (time.monotonic() - started) * 1000,
+                self._workspace_event_args(name, args),
+                error,
+            )
+
     def _execute_tool(self, task: dict[str, Any], name: str, args: dict[str, Any]) -> Any:
         agent = self.db.get_agent(task["tenant_id"], task["agent_id"]) or {}
         context = {
@@ -118,4 +172,6 @@ class PolicyEngine(Engine):
             if hasattr(self.db, "audit"):
                 self.db.audit(task["tenant_id"], "runtime", "policy.deny", "task", task["id"], {"action": f"tool.{name}", **decision})
             return {"error": f"tool {name!r} denied by tenant policy"}
+        if name in self._WORKSPACE_FILE_TOOLS:
+            return self._execute_workspace_file_tool(task, name, args)
         return super()._execute_tool(task, name, args)
