@@ -71,6 +71,59 @@ occurrence key automatically. Task and workflow execution remain at-least-once
 after lease expiry; external mutating consumers must deduplicate their own
 side effects.
 
+## Workspace projects / conversations
+
+Workspace state is durable, tenant-scoped and shared by the Web/CLI/Windows
+operator surfaces. A project groups conversations. A conversation stores ordered
+messages and can reference existing task/workflow provenance without becoming a
+second task scheduler or memory system.
+
+Read endpoints require `workspace:read` and at least the `viewer` role:
+
+```text
+GET  /api/v1/workspaces/projects
+GET  /api/v1/workspaces/projects/{id}
+GET  /api/v1/workspaces/conversations
+GET  /api/v1/workspaces/conversations/{id}
+GET  /api/v1/workspaces/conversations/{id}/messages
+```
+
+List endpoints accept bounded query parameters. Projects support `q`, `status`,
+`limit`, `offset`; conversations support `q`, `project_id`, `status`, `limit`,
+`offset`. Search is literal substring matching rather than a SQL wildcard API.
+
+Mutation endpoints require `workspace:write` and at least the `operator` role:
+
+```text
+POST /api/v1/workspaces/projects
+POST /api/v1/workspaces/projects/{id}/rename
+POST /api/v1/workspaces/projects/{id}/pin
+POST /api/v1/workspaces/projects/{id}/archive
+POST /api/v1/workspaces/conversations
+POST /api/v1/workspaces/conversations/{id}/rename
+POST /api/v1/workspaces/conversations/{id}/pin
+POST /api/v1/workspaces/conversations/{id}/archive
+POST /api/v1/workspaces/conversations/{id}/move
+POST /api/v1/workspaces/conversations/{id}/messages
+```
+
+The external message endpoint accepts only `role=user`; assistant/system/tool
+messages remain internal runtime outputs so a client cannot forge model/tool
+history. Message ordering uses a durable per-conversation ordinal, not wall-clock
+time alone. Artifact references are IDs, not host filesystem paths.
+
+Conversation deletion uses the existing action-endpoint convention instead of a
+new HTTP method and requires `workspace:delete` plus the `admin` role:
+
+```text
+POST /api/v1/workspaces/conversations/{id}/delete
+```
+
+Deletion is refused when `retention_policy=compliance_hold`. Project,
+conversation and message ownership is constrained by `(tenant_id, id)` at both
+the repository and database foreign-key layers, preventing cross-tenant project
+or conversation attachment.
+
 ## Evaluation
 
 ```text
