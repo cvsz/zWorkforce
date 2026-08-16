@@ -11,7 +11,7 @@
 
 This document uses Skywork only as a product-capability reference. It does not copy proprietary implementation details, hidden prompts, UI assets, or code. The goal is to identify publicly documented product patterns that can improve zWorkforce while preserving zWorkforce's stronger existing boundaries: tenant isolation, server-side secrets, durable state, explicit mutation approval, bounded execution, audit/provenance, and release evidence.
 
-The Help changelog page is JavaScript-driven and does not expose its full historical list to the current fetcher. The Help landing page currently exposes recent web-product changelog items including Social Publishing Flow, Design Guidelines in Knowledge Base, and SkyClaw memory import. The official Skywork Desktop changelog provides the complete release history currently visible from 1.1.0 through 2.5.0 and is therefore the main chronological evidence source below.
+The Help changelog page is JavaScript-driven and does not expose its full historical list to the current fetcher. The Help landing page currently exposes recent web-product changelog items including Social Publishing Flow, Design Guidelines in Knowledge Base, and SkyClaw memory import. The official English Skywork Desktop changelog currently exposes the release history from 1.1.0 through **2.4.0 (2026-07-30)** and labels 2.4.0 as **Latest**. A separate official Skywork source confirming a Desktop 2.5.0 release was not found during the 2026-08-17 verification pass, so this document intentionally stops at the latest version that can be verified from the official changelog.
 
 ## 2. Public changelog timeline and reusable product patterns
 
@@ -33,7 +33,6 @@ The Help changelog page is JavaScript-driven and does not expose its full histor
 | 2.2.0 | 2026-07-16 | conversation IDs, auto naming, historical-question navigation, rich composer, context status/compaction, slash commands, image skill | durable conversation identity, context-budget telemetry, compaction artifacts, command registry, multimodal skill invocation |
 | 2.3.0 | 2026-07-23 | task quick start, next-step suggestions, credit preflight warning, summary side panel, richer attachments | task templates, evidence-based next-action recommender, budget preflight, unified summary/artifact panel |
 | 2.4.0 | 2026-07-30 | personalized themes, immediate skill use after install, repeated workflow → reusable skill, system skill auto-update, better discovery/interruption | theme profiles, active skill versioning, workflow-to-skill candidate compiler, governed auto-update, skill matching/telemetry |
-| 2.5.0 | 2026-08-05 | detailed credit ledger, in-app subscription/purchase, API signing improvements, Markdown source/preview toggle | chargeback event explorer, billing-provider boundary, signed service requests, dual Markdown source/rendered artifact view |
 
 ## 3. Current zWorkforce overlap
 
@@ -140,9 +139,9 @@ Project/task completion, approval-needed, question-needed, failure, budget-risk 
 
 Add task quick-start templates, next-step suggestions, multi-tab sidecar, theme profiles, Markdown source/rendered mode, HTML preview sandboxing, native open/reveal where supported, and resilient artifact history.
 
-### SW9 — FinOps preflight, credit ledger and signed service calls
+### SW9 — FinOps preflight and credit ledger
 
-Expose per-task predicted spend, tenant budget headroom, provider/model usage, actual cost events and chargeback. Add request signing only to internal service boundaries where replay protection, key rotation and clock-skew handling are defined.
+Expose per-task predicted spend, tenant budget headroom, provider/model usage, actual cost events and chargeback. Any future request-signing or billing-provider work must be backed by a separately verified requirement/source rather than inferred from an unverified Skywork release.
 
 ### SW10 — Release and evidence
 
@@ -158,7 +157,7 @@ Add contract/unit/integration/browser/package/Windows/security tests, accessibil
 6. **Zider browser-use tool contract and approval-gated mutation executor**.
 7. **Notification center + approved connector delivery**.
 8. **Reusable workflow candidate compiler + skill discovery ranking**.
-9. **FinOps preflight + detailed ledger + signed internal service requests**.
+9. **FinOps preflight + detailed ledger**.
 10. **Workspace UX/WinUI parity, hardening, E2E and release evidence**.
 
 ## 8. Definition of complete
