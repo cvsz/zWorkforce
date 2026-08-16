@@ -2,7 +2,7 @@
 
 **Updated:** 2026-08-16  
 **Scope:** `packages/zarvis` (Autonomous Assistant Suite, Voice Gateway, Perception/Memory, Task/Action Engine, and Operator Runtime)  
-**Parent Framework:** [`exec-planning.zwt.md`](file:///home/cvsz/zworkforce/exec-planning.zwt.md) & [`AGENTS.md`](file:///home/cvsz/zworkforce/packages/zarvis/AGENTS.md)  
+**Parent Framework:** [`exec-planning.master.md`](exec-planning.master.md) & [`../packages/zarvis/AGENTS.md`](../packages/zarvis/AGENTS.md)  
 **Branch:** `feat/zarvis-openjarvis-upgrade-plan`
 
 ---

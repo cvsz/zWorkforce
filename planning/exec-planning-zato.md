@@ -353,7 +353,7 @@ Compiler requirements:
 - Append brand-kit policy to generation requests.
 - Record prompt hash, compiler version, model route and cost estimate.
 
-M01 Strategy:
+M01 Strategy & Deep Research:
 
 - 90-day strategy.
 - Content pillars.
@@ -361,6 +361,9 @@ M01 Strategy:
 - Idea scoring.
 - Hook bank.
 - Daily/weekly optimization routines.
+- **Deep Research Engine**: Iterative multi-hop search, citation cross-referencing, document verification, and synthesis pipeline.
+- **Multimodal Super Agent Office Suite**: Automated compilation of research into structured Markdown whitepapers, Slide deck schemas, Excel/CSV analytical sheets, and podcast scripts.
+- **SkyClaw Cross-Model Memory Migration**: Import/export protocol for migrating memories across Luna/Terra/Sol tiers and external LLMs.
 
 M02 Image:
 

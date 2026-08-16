@@ -31,6 +31,9 @@ All v2 capabilities remain: multi-tenancy, RBAC/scopes, four-eyes approvals, pro
 The repository also contains:
 - The consolidated **Z.A.R.V.I.S.** product suite under [`packages/zarvis/`](packages/zarvis/), including its realtime voice client, speech provider registry, runtime skill catalog, API, operator surfaces, Windows client, and package-level CI.
 - The **Zeto** AI Content Factory & M11/M12 Neural Operator Stack under [`packages/zeto/`](packages/zeto/), including ProMeta prompt compilers, multi-platform publishing adapters, QA scorecards, point-cloud canvas HUD, and M12 tool registry.
+- The **ZSP AI Studio** & HyperFrames Video Generator under [`packages/zsp-aitool/`](packages/zsp-aitool/), an enterprise Thai-first affiliate marketing suite with 23 Prisma models, multi-scene video rendering, and vision OCR.
+- The **Zider** AI Browser Companion under [`packages/zider/`](packages/zider/), a Manifest V3 Shadow DOM isolated sidebar, ChatPDF document intelligence, and multi-model group streaming gateway.
+- The **Master Orchestrator & CLI** in [`control.sh`](control.sh) and [`cmd/zctl/`](cmd/zctl/) for single-command lifecycle management, diagnostics, and full validation.
 
 
 ## Architecture
