@@ -89,26 +89,16 @@ Refactor the voice runtime toward a typed registry while keeping the current ser
 
 ### R4 — Z.A.R.V.I.S. skills runtime
 
-<<<<<<< HEAD
-- [ ] Maintain a runtime skill manifest/catalog distinct from repository coding-agent skills under `.agents/skills`.
-- [ ] Each runtime skill declares: ID/version, description, required capabilities, allowed tools, mutability, approval policy, timeout, retry/idempotency behavior and input/output schema.
-- [ ] Discover skills deterministically with first-class validation and duplicate rejection.
-- [ ] Wrap skills behind the same policy/tool-execution boundary as normal tools.
-- [ ] Add skill dependency validation and bounded nested invocation.
-- [x] Add active-version resolution, enable/disable, safe system-skill auto-update and explicit rollback foundation.
-- [x] Reject automatic updates that silently add tool capabilities, escalate read→write mutability or weaken approval requirements.
-- [ ] Record trace evidence per skill and persist lifecycle state through the durable repository.
-- [ ] Integrate signed remote marketplace packages through the existing skill-registry trust boundary.
-- [ ] Never auto-promote trace-mined/repeated-workflow skills into production; generated candidates require review and tests.
-=======
 - [x] Maintain a runtime skill manifest/catalog distinct from repository coding-agent skills under `.agents/skills`.
 - [x] Each runtime skill declares: ID/version, description, required capabilities, allowed tools, mutability, approval policy, timeout, retry/idempotency behavior and input/output schema.
 - [x] Discover skills deterministically with first-class validation and duplicate rejection.
 - [x] Wrap skills behind the same policy/tool-execution boundary as normal tools.
 - [x] Add skill dependency validation and bounded nested invocation.
-- [x] Record trace evidence per skill and support safe enable/disable/version rollback.
-- [x] Never auto-promote trace-mined skills into production; generated candidates require review and tests.
->>>>>>> origin/main
+- [x] Add active-version resolution, enable/disable, safe system-skill auto-update and explicit rollback foundation.
+- [x] Reject automatic updates that silently add tool capabilities, escalate read→write mutability or weaken approval requirements.
+- [ ] Persist complete lifecycle/trace state through the durable repository and prove restart-safe recovery for every lifecycle transition.
+- [ ] Integrate signed remote marketplace packages through the existing skill-registry trust boundary.
+- [x] Never auto-promote trace-mined/repeated-workflow skills into production; generated candidates require review and tests.
 
 ### R5 — Agent manager and execution modes
 
@@ -122,25 +112,10 @@ Refactor the voice runtime toward a typed registry while keeping the current ser
 
 ### R6 — Memory, context and conversation continuity
 
-<<<<<<< HEAD
-- [ ] Bind voice sessions to tenant/subject-scoped conversation state.
-- [ ] Add durable project/conversation IDs, search, pin/archive and history navigation.
+- [x] Bind voice sessions to tenant/subject-scoped conversation state.
+- [x] Add durable project/conversation IDs, search, pin/archive and stable history navigation foundation.
 - [ ] Expose context-budget state per conversation/model.
 - [ ] Implement explicit compaction that creates a versioned summary artifact instead of silently rewriting history.
-- [ ] Retrieve only authorized memory and redact sensitive content before model/tool boundaries.
-- [ ] Separate ephemeral transcript context from durable memory writes.
-- [ ] Require explicit retention/consent policy for durable voice-derived memory.
-- [ ] Provide “forget this conversation” / deletion flows with auditable completion.
-
-### R7 — Proactive Z.A.R.V.I.S.
-
-- [ ] Enable scheduled/continuous agents only with explicit subscriptions.
-- [ ] Add quiet hours, notification policy, rate limits and deduplication.
-- [ ] Add tenant-scoped notification center for completion, approval, questions, failures, budget risk and stalled agents.
-- [ ] Add health/heartbeat telemetry and stalled-operator detection.
-- [ ] Route requests needing human authorization into the existing approval system rather than executing mutation autonomously.
-=======
-- [x] Bind voice sessions to tenant/subject-scoped conversation state.
 - [x] Retrieve only authorized memory and redact sensitive content before model/tool boundaries.
 - [x] Separate ephemeral transcript context from durable memory writes.
 - [x] Require explicit retention/consent policy for durable voice-derived memory.
@@ -150,9 +125,9 @@ Refactor the voice runtime toward a typed registry while keeping the current ser
 
 - [x] Enable scheduled/continuous agents only with explicit subscriptions.
 - [x] Add quiet hours, notification policy, rate limits and deduplication.
+- [ ] Add tenant-scoped notification center for completion, approval, questions, failures, budget risk and stalled agents.
 - [x] Add health/heartbeat telemetry and stalled-operator detection.
 - [x] Route requests needing human authorization into the existing approval system rather than executing mutation autonomously.
->>>>>>> origin/main
 
 ### R8 — Intelligent local/cloud routing
 
@@ -170,7 +145,7 @@ Refactor the voice runtime toward a typed registry while keeping the current ser
 - [x] Continuous-agent heartbeat, stale-run and rate-limit metrics.
 - [x] Dashboard health view for the complete speech/agent pipeline.
 
-Target interactive SLOs remain engineering targets until measured in staging:
+Target interactive SLOs remain engineering targets until measured in an authorized production-equivalent environment:
 
 - session ticket p95 < 100 ms on local network;
 - end-of-turn detection ~300–600 ms;
@@ -179,18 +154,21 @@ Target interactive SLOs remain engineering targets until measured in staging:
 
 ### R10 — Production release gate
 
-- [x] Full Python, Node, voice, contract, static asset and Windows tests green.
-- [x] Security review of microphone, WebSocket, auth, CSP, secrets and approval boundaries.
-- [x] Dependency/SBOM/provenance gates green.
-- [x] Staging voice latency, failure recovery and provider failover evidence recorded.
-- [x] Accessibility verification for keyboard, screen reader and reduced-motion modes.
-- [x] Rollback target and feature flags documented.
+Repository/CI evidence and external production evidence are distinct. Completion of repository checks does not imply the following external gates have passed.
+
+- [x] Repository Python, Node, voice, contract, static asset and Windows validation surfaces are defined and covered by CI/release tooling.
+- [x] Security review requirements for microphone, WebSocket, auth, CSP, secrets and approval boundaries are defined.
+- [x] Dependency/SBOM/provenance gates are represented in repository workflows.
+- [ ] Record authorized staging voice latency, failure recovery and provider failover evidence for the exact release candidate.
+- [x] Accessibility verification coverage for keyboard, screen reader and reduced-motion modes is implemented in the repository surface.
+- [x] Rollback target and feature flags are documented.
 
 ### R11 — Workspace Agent UX and local execution
 
 This roadmap line translates the strongest public Skywork workspace-agent patterns into zWorkforce-native capabilities. Full sequencing and acceptance criteria are in `planning/exec-planning-skywork.md`.
 
-- [ ] Durable projects, conversations, search, pin/archive, auto naming and stable conversation IDs.
+- [x] Durable projects, conversations, search, pin/archive and stable conversation IDs foundation.
+- [ ] Auto naming and richer history navigation UX.
 - [ ] Context gauge, explicit `/compact`, question anchors and context snapshot history.
 - [ ] Slash command registry: `/plan`, `/review`, `/compact`, `/goal`, `/status`, `/artifacts`, `/cost`, `/skill`, `/workflow`, `/feedback`.
 - [ ] Task summary sidecar with artifact manifest, review state, tool timeline and sanitized subagent hierarchy.
@@ -211,38 +189,38 @@ This roadmap line translates the strongest public Skywork workspace-agent patter
 ### 6.1 ZSP AI Studio & Video Renderer (`packages/zsp-aitool`)
 - **Mission**: Thai-First Shopee Affiliate Marketing Platform and HyperFrames multi-scene video rendering engine (`:3005` / `studio.zeaz.dev`).
 - **Milestones**:
-  - [x] Integrate 23 Prisma 5.22 schema models with strict tenant isolation.
+  - [x] Integrate the package data model with strict tenant isolation requirements.
   - [x] App Router app shell (`AppLayout`, `Sidebar`, `Header`, `MobileNav`).
   - [x] Admin & Operator audit panel gated behind `ADMIN_PANEL_ENABLED`.
-  - [x] Autonomous Shopee API scraping & product OCR vision ingestion pipeline.
-  - [x] Multi-platform social publishing adapters (TikTok, Facebook Reels, YouTube Shorts).
-  - [x] Video rendering watchdog with automated stale-job recovery.
+  - [x] Shopee API product ingestion and OCR vision pipeline foundation.
+  - [x] Multi-platform social publishing adapter surfaces.
+  - [x] Video rendering watchdog with stale-job recovery.
 
 ### 6.2 Zider AI Browser Companion (`packages/zider`)
 - **Mission**: Manifest V3 AI Browser Sidebar Companion with Shadow DOM isolation, ChatPDF document intelligence, and multi-model group streaming (`:8085`).
 - **Milestones**:
   - [x] Shadow DOM isolated sidebar and selection toolbar.
   - [x] Service worker background orchestrator and Chrome runtime message bus.
-  - [x] Multi-model router with OpenRouter Free model fallback.
-  - [x] Group AI multi-model streaming compare (parallel SSE).
+  - [x] Multi-model router with configured fallback support.
+  - [x] Group AI multi-model streaming compare.
   - [x] ChatPDF tenant-scoped vector indexing and citation highlights.
-  - [x] Realtime YouTube transcript summarizer and multi-language translator.
+  - [x] YouTube transcript summarizer and multi-language translator surfaces.
 
 ### 6.3 Zeto AI Content Factory (`packages/zeto`)
 - **Mission**: Enterprise AI content lifecycle engine executing `IDEATE → GENERATE → WRITE → APPROVE → SCHEDULE → PUBLISH → MONITOR → LEARN`.
 - **Milestones**:
   - [x] ProMeta prompt compiler architecture.
-  - [x] M12 tool registry & point-cloud canvas HUD.
-  - [x] Multi-tenant content scheduling outbox with HMAC signatures.
+  - [x] Tool registry and point-cloud canvas HUD foundation.
+  - [x] Multi-tenant content scheduling outbox with integrity protection.
   - [x] Automated QA scorecard evaluation and self-correction loops.
 
-### 6.5 Autonomous Workspace & Deep Research Super Agents (`zworkforce` + `packages/zeto`)
-- **Mission**: Skywork-inspired multimodal workspace intelligence capable of turning simple prompts into end-to-end research reports, slide decks, structured spreadsheets, and podcasts.
+### 6.4 Autonomous Workspace & Deep Research Super Agents (`zworkforce` + `packages/zeto`)
+- **Mission**: Skywork-inspired multimodal workspace intelligence capable of turning prompts into end-to-end research reports, slide specs, structured spreadsheets, and TTS-ready audio scripts while retaining source provenance and approval boundaries.
 - **Architectural Paradigms**:
-  - **A2A (Agent2Agent) Protocol Support**: Open standard interoperability for workforce agents to discover capabilities, exchange contextual tokens, and delegate sub-tasks across heterogeneous runtimes.
-  - **Deep Research Autonomous Engine**: Iterative multi-hop search, citation cross-referencing, document verification, and synthesis pipeline with source provenance.
-  - **Cross-Model Memory Import (SkyClaw)**: Standardized memory import/export protocol enabling seamless migration of contextual memories across Luna/Terra/Sol tiers and external LLMs.
-  - **Multimodal Document Output Formats**: Direct compilation of verified research into formatted Markdown, presentation slide specs, CSV/Excel data sheets, and TTS-ready audio scripts.
+  - **A2A (Agent2Agent) Protocol Support**: interoperability for workforce agents to discover capabilities, exchange bounded context, and delegate sub-tasks across heterogeneous runtimes.
+  - **Deep Research Autonomous Engine**: iterative multi-hop search, citation cross-referencing, document verification, and synthesis pipeline with source provenance.
+  - **Cross-Model Memory Import**: standardized memory import/export with tenant, consent, and provenance controls.
+  - **Multimodal Document Output Formats**: compilation of verified research into formatted Markdown, presentation specs, CSV/Excel data sheets, and TTS-ready audio scripts.
 
 ---
 
@@ -259,4 +237,3 @@ This roadmap line translates the strongest public Skywork workspace-agent patter
 ## 8. Completion definition
 
 The combined Z.A.R.V.I.S./workspace-agent upgrade is feature-complete when the control plane, Z.A.R.V.I.S. voice gateway, ZSP studio, Zider companion, and Zeto factory share unified tenant and secret boundaries, skills and agent modes are policy-governed and rollback-capable, scheduled/continuous operation has health and recovery controls, projects/conversations/context/artifacts are durable and tenant scoped, local/browser execution is sandboxed and approval-safe, FinOps is visible before and after execution, and all mutation continues through explicit approval/action boundaries.
-
