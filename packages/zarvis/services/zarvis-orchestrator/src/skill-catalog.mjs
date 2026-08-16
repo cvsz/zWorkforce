@@ -176,6 +176,15 @@ export class SkillCatalog {
     return manifest;
   }
 
+  resolveVersion(id, version) {
+    const manifest = this.get(id, version);
+    const state = this.lifecycle.get(this._getKey(id, version));
+    if (!state?.enabled) {
+      throw new SkillDisabledError(`Skill ${id}@${version} is disabled`);
+    }
+    return manifest;
+  }
+
   resolve(id) {
     const activeVersion = this.activeVersions.get(id);
     if (activeVersion) {
@@ -216,11 +225,7 @@ export class SkillCatalog {
   }
 
   rollback(id, version) {
-    const manifest = this.get(id, version);
-    const state = this.lifecycle.get(this._getKey(id, version));
-    if (!state?.enabled) {
-      throw new SkillDisabledError(`Skill ${id}@${version} is disabled`);
-    }
+    const manifest = this.resolveVersion(id, version);
     this.activeVersions.set(id, version);
     return manifest;
   }
