@@ -8,7 +8,7 @@
 
 ## 1. Executive Master Architecture
 
-`exec-planning.zwt.md` is the consolidated source of truth unifying the three project lines with real-time agent execution capabilities:
+`exec-planning.master.md` is the consolidated source of truth unifying the project lines with real-time agent execution capabilities:
 
 ```mermaid
 graph TD
@@ -31,6 +31,7 @@ graph TD
         ZETO_CYCLE["IDEATE → GENERATE → WRITE → APPROVE → PUBLISH → MONITOR → LEARN"]
         ZETO_MODES["PRODUCTION | OPS | OPTIMIZE | REVIEW"]
         ZETO_MEDIA["Multi-platform Content & Media Adapters"]
+        ZETO_RESEARCH["Skywork-style Deep Research & A2A Interoperability"]
     end
 
     subgraph "Runtime Agent & Model Layer (Hermes + Spawn)"
@@ -38,6 +39,7 @@ graph TD
         SPAWN["OpenRouter Spawn CLI + Bun Runtime"]
         SKILLS["26 Active Standard Skills (.agents/skills/ + ~/.hermes/skills/)"]
         MODELS["Dynamic Live Active Free Models Pool (:free)"]
+        A2A_BUS["Agent2Agent (A2A) Discovery & Context Bus"]
     end
 
     ZWF_API <--> ZARVIS_VOICE
@@ -46,6 +48,7 @@ graph TD
     HERMES <--> SKILLS
     HERMES <--> SPAWN
     SPAWN <--> MODELS
+    ZETO_RESEARCH <--> A2A_BUS
 ```
 
 ---
@@ -92,13 +95,58 @@ A capability or module is only marked complete when all criteria are satisfied:
   - Operating Model: `ROLE → INPUTS → MODES → CONSTRAINTS → OUTPUT → SELF-CHECK → EVIDENCE → OPTIMIZE`.
   - Multi-Platform Publisher: Safe adapter pipelines with rollback and audit trails.
 
-### 3.4 Runtime Agent Platform: `Hermes Agent` & `Spawn`
+### 3.4 AI Studio & Video Rendering: `zsp-aitool`
+- **Canonical Reference**: [`exec-planning.zsp-aitool.md`](exec-planning.zsp-aitool.md)
+- **Status**: Monorepo Integrated (`packages/zsp-aitool`, Port `:3005` / `studio.zeaz.dev`)
+- **Key Modules**:
+  - Presentation & Studio UI: Next.js 15.5 App Router + Tailwind CSS dashboard.
+  - HyperFrames Video Studio: Multi-scene video generation, render queue, and background worker recovery.
+  - Affiliate Intelligence & Vision OCR: Shopee OpenAPI product scraping and image text extraction.
+  - Data & Storage: PostgreSQL 16 schema (23 models) with strict tenant isolation.
+
+### 3.5 AI Browser Companion: `zider`
+- **Canonical Reference**: [`exec-planning.zider.md`](exec-planning.zider.md)
+- **Status**: Manifest V3 Production Target (`packages/zider`, Gateway Port `:8085`)
+- **Key Modules**:
+  - Extension Architecture: Shadow DOM isolated sidebar, service worker background orchestrator, and selection toolbar.
+  - Multi-Model Router: SSE streaming, single chat, Group AI multi-model comparison, and OpenRouter Free fallback.
+  - Document & Media Engines: ChatPDF tenant vector indexing, YouTube transcript extraction, and real-time translation.
+
+### 3.6 Security & Vulnerability Remediation Loop: `zred-team`
+- **Canonical Reference**: [`exec-zred-team.md`](exec-zred-team.md)
+- **Status**: Active Continuous Security Hardening
+- **Key Modules**:
+  - Loop: `DISCOVER → TRIAGE → VALIDATE → ROOT-CAUSE → PATCH → TEST → REGRESSION TEST → SECURITY REVIEW → RE-SCAN`.
+  - Boundaries: Zero raw secret leakage, SSRF IP filtering, PBKDF2 salted API tokens, bounded tool execution.
+
+### 3.7 Runtime Agent Platform: `Hermes Agent` & `Spawn`
 - **Status**: Fully Installed & Globally Linked (`~/.hermes/bin`, `~/.local/bin`)
 - **Key Components**:
   - **Hermes Agent Core**: `~/.hermes/hermes-agent` (Python 3.11 + uv virtualenv).
   - **Spawn CLI**: `~/.local/bin/spawn` via Bun 1.3.14 runtime.
   - **Master Automation**: [`../scripts/install/install_hermes_full_stack_master.sh`](../scripts/install/install_hermes_full_stack_master.sh).
   - **Provider Credentials**: Loaded dynamically from `.env.ai`.
+
+---
+
+## 4. Feature Upgrade & Next Milestones Roadmap
+
+```mermaid
+timeline
+    title zWorkforce Platform Next Roadmap (2026 Q3-Q4)
+    section Control Plane (zwf)
+      v3.0.3 Release : Full 140-test suite green : SQLite/Postgres verified
+      Distributed HA Queue : Advisory-locked migrations : Multi-replica leader election
+    section Z.A.R.V.I.S. (zarvis)
+      Voice Card & Orb UI : PTT Barge-in lifecycle : Worklet PCM16 streaming
+      OpenJarvis Upgrade : Dynamic skill registry : Autonomous operator modes
+    section Studio (zsp-aitool)
+      Next.js 15.5 Upgrade : 23 Prisma models : HyperFrames batch rendering
+      Shopee Auto-Affiliate : Vision OCR ingestion : Live analytics dashboard
+    section Companion (zider)
+      Manifest V3 Sidebar : Shadow DOM isolation : Group AI streaming
+      ChatPDF Intelligence : Tenant vector graph : YouTube live translator
+```
 
 ---
 
