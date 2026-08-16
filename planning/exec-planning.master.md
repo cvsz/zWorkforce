@@ -46,14 +46,9 @@ graph TD
     subgraph "Runtime Agent & Model Layer (Hermes + Spawn)"
         HERMES["Hermes Agent Engine"]
         SPAWN["OpenRouter Spawn CLI + Bun Runtime"]
-<<<<<<< HEAD
         SKILLS["Repository + Runtime Skills"]
         MODELS["Dynamic Model Provider Pool"]
-=======
-        SKILLS["26 Active Standard Skills (.agents/skills/ + ~/.hermes/skills/)"]
-        MODELS["Dynamic Live Active Free Models Pool (:free)"]
         A2A_BUS["Agent2Agent (A2A) Discovery & Context Bus"]
->>>>>>> origin/main
     end
 
     PROJECTS --> ZWF_API
@@ -119,25 +114,21 @@ A capability or module is only marked complete when all criteria are satisfied:
   - Operating Model: `ROLE → INPUTS → MODES → CONSTRAINTS → OUTPUT → SELF-CHECK → EVIDENCE → OPTIMIZE`.
   - Multi-Platform Publisher: safe adapter pipelines with rollback and audit trails.
 
-<<<<<<< HEAD
-### 3.4 Runtime Agent Platform: `Hermes Agent` & `Spawn`
-- **Status**: Installed/runtime integration line
-=======
 ### 3.4 AI Studio & Video Rendering: `zsp-aitool`
 - **Canonical Reference**: [`exec-planning.zsp-aitool.md`](exec-planning.zsp-aitool.md)
 - **Status**: Monorepo Integrated (`packages/zsp-aitool`, Port `:3005` / `studio.zeaz.dev`)
 - **Key Modules**:
   - Presentation & Studio UI: Next.js 15.5 App Router + Tailwind CSS dashboard.
-  - HyperFrames Video Studio: Multi-scene video generation, render queue, and background worker recovery.
-  - Affiliate Intelligence & Vision OCR: Shopee OpenAPI product scraping and image text extraction.
-  - Data & Storage: PostgreSQL 16 schema (23 models) with strict tenant isolation.
+  - HyperFrames Video Studio: multi-scene video generation, render queue, and background worker recovery.
+  - Affiliate Intelligence & Vision OCR: Shopee OpenAPI product ingestion and image text extraction.
+  - Data & Storage: PostgreSQL schema with strict tenant isolation requirements.
 
 ### 3.5 AI Browser Companion: `zider`
 - **Canonical Reference**: [`exec-planning.zider.md`](exec-planning.zider.md)
 - **Status**: Manifest V3 Production Target (`packages/zider`, Gateway Port `:8085`)
 - **Key Modules**:
   - Extension Architecture: Shadow DOM isolated sidebar, service worker background orchestrator, and selection toolbar.
-  - Multi-Model Router: SSE streaming, single chat, Group AI multi-model comparison, and OpenRouter Free fallback.
+  - Multi-Model Router: SSE streaming, single chat, Group AI multi-model comparison, and OpenRouter fallback.
   - Document & Media Engines: ChatPDF tenant vector indexing, YouTube transcript extraction, and real-time translation.
 
 ### 3.6 Security & Vulnerability Remediation Loop: `zred-team`
@@ -145,32 +136,31 @@ A capability or module is only marked complete when all criteria are satisfied:
 - **Status**: Active Continuous Security Hardening
 - **Key Modules**:
   - Loop: `DISCOVER → TRIAGE → VALIDATE → ROOT-CAUSE → PATCH → TEST → REGRESSION TEST → SECURITY REVIEW → RE-SCAN`.
-  - Boundaries: Zero raw secret leakage, SSRF IP filtering, PBKDF2 salted API tokens, bounded tool execution.
+  - Boundaries: zero raw secret leakage, SSRF filtering, salted API tokens, bounded tool execution.
 
 ### 3.7 Runtime Agent Platform: `Hermes Agent` & `Spawn`
-- **Status**: Fully Installed & Globally Linked (`~/.hermes/bin`, `~/.local/bin`)
->>>>>>> origin/main
+- **Status**: Repository integration line; external host installation/runtime evidence is not implied by repository state.
 - **Key Components**:
-  - Hermes agent runtime.
+  - Hermes agent runtime integration.
   - Spawn CLI via Bun runtime.
   - master automation under `scripts/install/`.
   - provider credentials loaded dynamically from approved secret references.
 
-### 3.5 Workspace-Agent Upgrade
+### 3.8 Workspace-Agent Upgrade
 
 - **Canonical Reference**: [`exec-planning-skywork.md`](exec-planning-skywork.md)
 - **Research Map**: [`../docs/SKYWORK-CHANGELOG-REVERSE-ENGINEERING.md`](../docs/SKYWORK-CHANGELOG-REVERSE-ENGINEERING.md)
 - **Status**: Active Implementation
 - **Purpose**: add durable projects/conversations, context visibility/compaction, artifact/review/subagent sidecar, scoped local sandbox/worktrees, command registry, governed skill lifecycle, browser-use contracts, notifications and FinOps preflight without creating parallel control-plane primitives.
 
-Current first slice:
+Current delivered foundation includes:
 
 - governed Z.A.R.V.I.S. runtime skill active-version selection;
 - immediate resolution of installed enabled skills;
-- enable/disable and rollback;
-- safe system-skill auto-update;
-- reject silent tool-capability expansion, mutability escalation or approval weakening;
-- retain old versions for rollback.
+- enable/disable and rollback foundations;
+- safe system-skill auto-update inside the authorized capability envelope;
+- rejection of silent tool-capability expansion, mutability escalation or approval weakening;
+- durable tenant-scoped projects and conversations with ordered messages.
 
 ## 4. Feature Upgrade & Next Milestones Roadmap
 
@@ -178,22 +168,22 @@ Current first slice:
 timeline
     title zWorkforce Platform Next Roadmap (2026 Q3-Q4)
     section Control Plane (zwf)
-      v3.0.3 Release : Full 140-test suite green : SQLite/Postgres verified
+      v3.0.3 Release : Repository candidate verification : External evidence pending where required
       Distributed HA Queue : Advisory-locked migrations : Multi-replica leader election
     section Z.A.R.V.I.S. (zarvis)
       Voice Card & Orb UI : PTT Barge-in lifecycle : Worklet PCM16 streaming
-      OpenJarvis Upgrade : Dynamic skill registry : Autonomous operator modes
+      Workspace Upgrade : Governed skill registry : Context and sandbox milestones
     section Studio (zsp-aitool)
-      Next.js 15.5 Upgrade : 23 Prisma models : HyperFrames batch rendering
-      Shopee Auto-Affiliate : Vision OCR ingestion : Live analytics dashboard
+      Next.js Upgrade : Tenant data model : HyperFrames batch rendering
+      Affiliate Automation : Vision OCR ingestion : Analytics dashboard
     section Companion (zider)
       Manifest V3 Sidebar : Shadow DOM isolation : Group AI streaming
-      ChatPDF Intelligence : Tenant vector graph : YouTube live translator
+      ChatPDF Intelligence : Tenant vector graph : YouTube translator
 ```
 
 ---
 
-## 5. Complete Skills Matrix (26 Active Integrated Skills)
+## 5. Complete Skills Matrix
 
 Core skill categories remain:
 
@@ -217,7 +207,7 @@ Core skill categories remain:
 
 ---
 
-## 5. Verification & Validation Protocol
+## 6. Verification & Validation Protocol
 
 ```bash
 # 1. Compile and Unit Tests
