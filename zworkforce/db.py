@@ -6,11 +6,12 @@ from .db_tasks import TaskMixin
 from .db_finops import FinOpsMixin
 from .db_governance import GovernanceMixin
 from .db_automation import AutomationMixin
+from .db_evidence import EvidenceMixin
 from .db_workspace import WorkspaceMixin
 from .db_workspace_context import WorkspaceContextMixin
 
 
-class Database(WorkspaceContextMixin, WorkspaceMixin, AutomationMixin, TaskMixin, FinOpsMixin, GovernanceMixin, MigrationMixin, DatabaseBase):
+class Database(WorkspaceContextMixin, WorkspaceMixin, EvidenceMixin, AutomationMixin, TaskMixin, FinOpsMixin, GovernanceMixin, MigrationMixin, DatabaseBase):
     def ready(self) -> bool:
         try:
             with self.connection() as c:
