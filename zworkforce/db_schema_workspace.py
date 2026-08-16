@@ -59,4 +59,39 @@ WORKSPACE_SCHEMA_SQL = '''
                 );
                 CREATE INDEX IF NOT EXISTS idx_workspace_messages5_conversation
                     ON workspace_messages5(tenant_id,conversation_id,ordinal);
+
+                CREATE TABLE IF NOT EXISTS workspace_context_snapshots5(
+                    tenant_id TEXT NOT NULL,
+                    id TEXT NOT NULL,
+                    conversation_id TEXT NOT NULL,
+                    model_id TEXT NOT NULL,
+                    context_ceiling_tokens INTEGER NOT NULL,
+                    estimated_tokens INTEGER NOT NULL,
+                    compaction_threshold_tokens INTEGER NOT NULL,
+                    reason TEXT NOT NULL,
+                    summary TEXT NOT NULL DEFAULT '',
+                    summary_sha256 TEXT NOT NULL DEFAULT '',
+                    created_by TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    PRIMARY KEY(tenant_id,id),
+                    FOREIGN KEY(tenant_id,conversation_id)
+                        REFERENCES workspace_conversations5(tenant_id,id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS idx_workspace_context_snapshots5_conversation
+                    ON workspace_context_snapshots5(tenant_id,conversation_id,created_at DESC,id DESC);
+
+                CREATE TABLE IF NOT EXISTS workspace_context_members5(
+                    tenant_id TEXT NOT NULL,
+                    snapshot_id TEXT NOT NULL,
+                    message_id TEXT NOT NULL,
+                    ordinal INTEGER NOT NULL,
+                    estimated_tokens INTEGER NOT NULL,
+                    PRIMARY KEY(tenant_id,snapshot_id,message_id),
+                    FOREIGN KEY(tenant_id,snapshot_id)
+                        REFERENCES workspace_context_snapshots5(tenant_id,id) ON DELETE CASCADE,
+                    FOREIGN KEY(tenant_id,message_id)
+                        REFERENCES workspace_messages5(tenant_id,id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS idx_workspace_context_members5_snapshot
+                    ON workspace_context_members5(tenant_id,snapshot_id,ordinal);
 '''
