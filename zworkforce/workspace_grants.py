@@ -69,8 +69,9 @@ class WorkspaceGrantService:
             raise WorkspaceGrantError("commands contain executables outside the configured shell allowlist")
         read = body.get("read", True)
         write = body.get("write", False)
-        if not isinstance(read, bool) or not isinstance(write, bool):
-            raise WorkspaceGrantError("read and write must be booleans")
+        enabled = body.get("enabled", True)
+        if not isinstance(read, bool) or not isinstance(write, bool) or not isinstance(enabled, bool):
+            raise WorkspaceGrantError("read, write and enabled must be booleans")
         network_policy = str(body.get("network_policy") or "deny").strip().lower()
         if network_policy not in {"deny", "allowlisted"}:
             raise WorkspaceGrantError("network_policy must be deny or allowlisted")
@@ -82,7 +83,7 @@ class WorkspaceGrantService:
             "write": write,
             "commands": commands,
             "network_policy": network_policy,
-            "enabled": bool(body.get("enabled", True)),
+            "enabled": enabled,
             "expires_at": self.validate_expiry(str(body.get("expires_at") or "")),
         }
 
