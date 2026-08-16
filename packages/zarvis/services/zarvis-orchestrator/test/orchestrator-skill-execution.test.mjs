@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { ZarvisOrchestrator } from '../src/orchestrator.mjs';
-import { ApprovalRequiredError } from '../src/skill-catalog.mjs';
+import { ApprovalRequiredError, SkillDisabledError } from '../src/skill-catalog.mjs';
 
 const SAMPLE_SKILL = {
   id: 'dev.zworkforce.zarvis.skill.conversation.summarize',
@@ -35,7 +35,7 @@ describe('ZarvisOrchestrator.executeSkill', () => {
   it('executes a read skill and returns a valid skill result envelope', async () => {
     const orchestrator = new ZarvisOrchestrator();
     orchestrator.registerSkill(SAMPLE_SKILL);
-    
+
     const result = await orchestrator.executeSkill({
       skillId: SAMPLE_SKILL.id,
       version: SAMPLE_SKILL.version,
@@ -43,16 +43,49 @@ describe('ZarvisOrchestrator.executeSkill', () => {
       actor: { tenant_id: 'tenant-test', type: 'user', id: 'user-1' },
       handler: async () => ({ summary: 'hello', key_points: ['point1'] }),
     });
-    
+
     assert.equal(result.status, 'succeeded');
     assert.equal(result.skill_id, SAMPLE_SKILL.id);
     assert.equal(result.output.summary, 'hello');
   });
 
+  it('uses the active enabled skill version when version is omitted', async () => {
+    const orchestrator = new ZarvisOrchestrator();
+    orchestrator.installSkill(SAMPLE_SKILL);
+    orchestrator.installSkill({ ...SAMPLE_SKILL, version: '1.1.0' });
+
+    const result = await orchestrator.executeSkill({
+      skillId: SAMPLE_SKILL.id,
+      input: { turns: [] },
+      actor: { tenant_id: 'tenant-test', type: 'user', id: 'user-1' },
+      handler: async () => ({ summary: 'active-version' }),
+    });
+
+    assert.equal(result.status, 'succeeded');
+    assert.equal(result.skill_version, '1.1.0');
+  });
+
+  it('fails closed when an explicitly requested skill version is disabled', async () => {
+    const orchestrator = new ZarvisOrchestrator();
+    orchestrator.installSkill(SAMPLE_SKILL);
+    orchestrator.setSkillEnabled(SAMPLE_SKILL.id, SAMPLE_SKILL.version, false);
+
+    await assert.rejects(
+      () => orchestrator.executeSkill({
+        skillId: SAMPLE_SKILL.id,
+        version: SAMPLE_SKILL.version,
+        input: { turns: [] },
+        actor: { tenant_id: 'tenant-test', type: 'user', id: 'user-1' },
+        handler: async () => ({ summary: 'must-not-run' }),
+      }),
+      SkillDisabledError,
+    );
+  });
+
   it('rejects a mutating skill if approval token is missing', async () => {
     const orchestrator = new ZarvisOrchestrator();
     orchestrator.registerSkill(MUTATING_SKILL);
-    
+
     await assert.rejects(
       () => orchestrator.executeSkill({
         skillId: MUTATING_SKILL.id,
@@ -69,7 +102,7 @@ describe('ZarvisOrchestrator.executeSkill', () => {
   it('executes a mutating skill when a valid approval token is provided', async () => {
     const orchestrator = new ZarvisOrchestrator();
     orchestrator.registerSkill(MUTATING_SKILL);
-    
+
     const result = await orchestrator.executeSkill({
       skillId: MUTATING_SKILL.id,
       version: MUTATING_SKILL.version,
@@ -78,7 +111,7 @@ describe('ZarvisOrchestrator.executeSkill', () => {
       approvalToken: 'appr_valid_token_123',
       handler: async () => ({ proposal_id: 'p_123', status: 'proposed' }),
     });
-    
+
     assert.equal(result.status, 'succeeded');
     assert.equal(result.output.proposal_id, 'p_123');
   });
