@@ -180,12 +180,13 @@ Target interactive SLOs remain engineering targets until measured in staging:
   - [ ] Multi-tenant content scheduling outbox with HMAC signatures.
   - [ ] Automated QA scorecard evaluation and self-correction loops.
 
-### 6.4 Master Orchestrator & CLI Tooling (`control.sh` & `cmd/zctl`)
-- **Mission**: Single-command unified operator interface for lifecycle management, verification, and diagnostics.
-- **Milestones**:
-  - [x] Tracked executable orchestrator [`control.sh`](control.sh) with interactive menu.
-  - [x] Compiled native Go CLI [`cmd/zctl/`](cmd/zctl/) (`go1.26 linux/amd64`).
-  - [x] Real-time service health matrix, doctor diagnostics, and secret-vault masking.
+### 6.5 Autonomous Workspace & Deep Research Super Agents (`zworkforce` + `packages/zeto`)
+- **Mission**: Skywork-inspired multimodal workspace intelligence capable of turning simple prompts into end-to-end research reports, slide decks, structured spreadsheets, and podcasts.
+- **Architectural Paradigms**:
+  - **A2A (Agent2Agent) Protocol Support**: Open standard interoperability for workforce agents to discover capabilities, exchange contextual tokens, and delegate sub-tasks across heterogeneous runtimes.
+  - **Deep Research Autonomous Engine**: Iterative multi-hop search, citation cross-referencing, document verification, and synthesis pipeline with source provenance.
+  - **Cross-Model Memory Import (SkyClaw)**: Standardized memory import/export protocol enabling seamless migration of contextual memories across Luna/Terra/Sol tiers and external LLMs.
+  - **Multimodal Document Output Formats**: Direct compilation of verified research into formatted Markdown, presentation slide specs, CSV/Excel data sheets, and TTS-ready audio scripts.
 
 ---
 

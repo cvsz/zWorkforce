@@ -31,6 +31,7 @@ graph TD
         ZETO_CYCLE["IDEATE → GENERATE → WRITE → APPROVE → PUBLISH → MONITOR → LEARN"]
         ZETO_MODES["PRODUCTION | OPS | OPTIMIZE | REVIEW"]
         ZETO_MEDIA["Multi-platform Content & Media Adapters"]
+        ZETO_RESEARCH["Skywork-style Deep Research & A2A Interoperability"]
     end
 
     subgraph "Runtime Agent & Model Layer (Hermes + Spawn)"
@@ -38,6 +39,7 @@ graph TD
         SPAWN["OpenRouter Spawn CLI + Bun Runtime"]
         SKILLS["26 Active Standard Skills (.agents/skills/ + ~/.hermes/skills/)"]
         MODELS["Dynamic Live Active Free Models Pool (:free)"]
+        A2A_BUS["Agent2Agent (A2A) Discovery & Context Bus"]
     end
 
     ZWF_API <--> ZARVIS_VOICE
@@ -46,6 +48,7 @@ graph TD
     HERMES <--> SKILLS
     HERMES <--> SPAWN
     SPAWN <--> MODELS
+    ZETO_RESEARCH <--> A2A_BUS
 ```
 
 ---
