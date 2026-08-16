@@ -8,7 +8,7 @@
 
 ## 1. Executive Master Architecture
 
-`exec-planning.zwt.md` is the consolidated source of truth unifying the three project lines with real-time agent execution capabilities:
+`exec-planning.master.md` is the consolidated source of truth unifying the project lines with real-time agent execution capabilities:
 
 ```mermaid
 graph TD
