@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from pathlib import Path
 import json
 import os
+from pathlib import Path
 from typing import Any
 
 
@@ -18,8 +18,8 @@ class Rate:
 class BootstrapKey:
     secret: str
     role: str
-    tenant_id: str = "default"
-    name: str = "bootstrap"
+    tenant_id: str
+    name: str
     scopes: tuple[str, ...] = ("*",)
 
 
@@ -69,6 +69,8 @@ class Settings:
     tool_timeout_seconds: int = 30
     tool_max_output_bytes: int = 262_144
     workspace_write_max_bytes: int = 1_048_576
+    workspace_read_enabled: bool = True
+    workspace_write_enabled: bool = True
 
     max_request_bytes: int = 1_048_576
     api_rate_limit_per_minute: int = 240
@@ -160,6 +162,8 @@ class Settings:
             tool_timeout_seconds=i("ZWORKFORCE_TOOL_TIMEOUT_SECONDS", 30, 1),
             tool_max_output_bytes=i("ZWORKFORCE_TOOL_MAX_OUTPUT_BYTES", 262144, 4096),
             workspace_write_max_bytes=i("ZWORKFORCE_WORKSPACE_WRITE_MAX_BYTES", 1048576, 1024),
+            workspace_read_enabled=b("ZWORKFORCE_WORKSPACE_READ_ENABLED", True),
+            workspace_write_enabled=b("ZWORKFORCE_WORKSPACE_WRITE_ENABLED", True),
             max_request_bytes=i("ZWORKFORCE_MAX_REQUEST_BYTES", 1048576, 1024),
             api_rate_limit_per_minute=i("ZWORKFORCE_API_RATE_LIMIT_PER_MINUTE", 240, 1),
             cors_origins=csv("ZWORKFORCE_CORS_ORIGINS"),
@@ -182,102 +186,58 @@ def _slug(value: str, label: str) -> str:
 
 def _providers_from_env(env: str) -> tuple[ProviderConfig, ...]:
     raw = os.getenv("ZWORKFORCE_PROVIDERS_JSON", "").strip()
+    providers: list[ProviderConfig] = []
     if raw:
-        try:
-            items = json.loads(raw)
-        except json.JSONDecodeError as exc:
-            raise ValueError("ZWORKFORCE_PROVIDERS_JSON must be valid JSON") from exc
-        if not isinstance(items, list) or not items:
-            raise ValueError("ZWORKFORCE_PROVIDERS_JSON must be a non-empty array")
-        providers: list[ProviderConfig] = []
-        seen: set[str] = set()
-        for idx, item in enumerate(items):
+        data = json.loads(raw)
+        if not isinstance(data, list):
+            raise ValueError("ZWORKFORCE_PROVIDERS_JSON must be a JSON array")
+        for index, item in enumerate(data):
             if not isinstance(item, dict):
-                raise ValueError("each provider must be an object")
-            name = _slug(str(item.get("name") or f"provider-{idx+1}"), "provider")
-            if name in seen:
-                raise ValueError(f"duplicate provider name: {name}")
-            seen.add(name)
-            kind = str(item.get("kind", "openai-compatible")).strip().lower()
-            if kind not in {"mock", "openai-compatible", "zworkforce-local", "zworkforce-native"}:
-                raise ValueError(f"unsupported provider kind: {kind}")
-            if env == "production" and kind == "mock":
-                raise ValueError("mock providers are not allowed in production")
-            models = item.get("models") or {}
-            if not isinstance(models, dict):
-                raise ValueError(f"provider {name} models must be an object")
-            models = {tier: str(models.get(tier, "")) for tier in ("luna", "terra", "sol")}
+                raise ValueError("provider entry must be an object")
+            name = str(item.get("name") or f"provider-{index + 1}").strip()
+            kind = str(item.get("kind") or "openai-compatible").strip()
             api_key = str(item.get("api_key") or "")
-            api_key_env = str(item.get("api_key_env") or "")
-            if api_key_env:
-                api_key = os.getenv(api_key_env, "")
-            base_url = str(item.get("base_url") or "").rstrip("/")
-            if kind == "openai-compatible" and (not base_url or not any(models.values())):
-                raise ValueError(f"provider {name} requires base_url and at least one model")
-            if kind in {"zworkforce-local", "zworkforce-native"} and not any(models.values()):
-                models = {"luna": "deepseek/deepseek-v4-flash", "terra": "openai/gpt-5.6-luna", "sol": "deepseek/deepseek-v4-pro"}
-            if env == "production" and kind == "openai-compatible" and not api_key:
-                raise ValueError(f"provider {name} API key is missing in production")
-            providers.append(ProviderConfig(
+            provider = ProviderConfig(
                 name=name,
                 kind=kind,
-                base_url=base_url,
+                base_url=str(item.get("base_url") or "").rstrip("/"),
                 api_key=api_key,
-                priority=int(item.get("priority", 100 + idx)),
+                priority=int(item.get("priority", 100)),
                 timeout_seconds=max(1, int(item.get("timeout_seconds", 90))),
-                retries=max(1, int(item.get("retries", 2))),
-                models=models,
+                retries=max(1, min(int(item.get("retries", 2)), 5)),
+                models={str(k): str(v) for k, v in (item.get("models") or {}).items()},
                 enabled=bool(item.get("enabled", True)),
-            ))
-        return tuple(sorted(providers, key=lambda p: p.priority))
-
-    legacy_kind = os.getenv("ZWORKFORCE_PROVIDER", "mock").strip().lower()
-    if legacy_kind == "mock":
-        if env == "production":
-            raise ValueError("mock providers are not allowed in production")
-        return (ProviderConfig(name="mock", kind="mock", priority=100, models={"luna": "mock-luna", "terra": "mock-terra", "sol": "mock-sol"}),)
-    if legacy_kind != "openai-compatible":
-        raise ValueError("ZWORKFORCE_PROVIDER must be mock or openai-compatible")
-    key = os.getenv("ZWORKFORCE_PROVIDER_API_KEY", "")
-    if env == "production" and not key:
-        raise ValueError("ZWORKFORCE_PROVIDER_API_KEY is required in production")
-    return (ProviderConfig(
-        name="primary",
-        kind="openai-compatible",
-        base_url=os.getenv("ZWORKFORCE_PROVIDER_BASE_URL", "https://api.openai.com/v1").rstrip("/"),
-        api_key=key,
-        priority=100,
-        models={
-            "sol": os.getenv("ZWORKFORCE_MODEL_SOL", "gpt-5.6"),
-            "terra": os.getenv("ZWORKFORCE_MODEL_TERRA", "gpt-5.6-terra"),
-            "luna": os.getenv("ZWORKFORCE_MODEL_LUNA", "gpt-5.6-luna"),
-        },
-    ),)
+            )
+            providers.append(provider)
+    else:
+        provider = os.getenv("ZWORKFORCE_PROVIDER", "mock").strip()
+        if env == "production" and provider == "mock":
+            raise ValueError("mock provider is not allowed in production")
+        api_key = os.getenv("ZWORKFORCE_PROVIDER_API_KEY", "")
+        base_url = os.getenv("ZWORKFORCE_PROVIDER_BASE_URL", "")
+        models = {
+            "luna": os.getenv("ZWORKFORCE_MODEL_LUNA", "mock-luna" if provider == "mock" else ""),
+            "terra": os.getenv("ZWORKFORCE_MODEL_TERRA", "mock-terra" if provider == "mock" else ""),
+            "sol": os.getenv("ZWORKFORCE_MODEL_SOL", "mock-sol" if provider == "mock" else ""),
+        }
+        providers.append(ProviderConfig(name=provider, kind=provider, base_url=base_url.rstrip("/"), api_key=api_key, models=models))
+    return tuple(providers)
 
 
 def _keys_from_env(env: str, default_tenant: str) -> tuple[BootstrapKey, ...]:
     raw = os.getenv("ZWORKFORCE_API_KEYS", "").strip()
     if not raw:
         if env == "production":
-            raise ValueError("ZWORKFORCE_API_KEYS is required in production")
-        return (
-            BootstrapKey("dev-admin", "superadmin", default_tenant, "dev-admin"),
-            BootstrapKey("dev-operator", "operator", default_tenant, "dev-operator"),
-            BootstrapKey("dev-viewer", "viewer", default_tenant, "dev-viewer"),
-        )
-    keys: list[BootstrapKey] = []
-    allowed_roles = {"viewer", "operator", "admin", "superadmin"}
-    for idx, entry in enumerate(raw.split(","), 1):
-        parts = entry.split(":")
-        if len(parts) < 2 or len(parts) > 5:
-            raise ValueError("ZWORKFORCE_API_KEYS entries must use secret:role[:tenant[:name[:scope1|scope2]]]")
-        secret, role = parts[0].strip(), parts[1].strip().lower()
-        if not secret or role not in allowed_roles:
-            raise ValueError("invalid bootstrap API key entry")
-        tenant = _slug(parts[2] if len(parts) >= 3 and parts[2] else default_tenant, "tenant")
-        name = parts[3].strip() if len(parts) >= 4 and parts[3] else f"bootstrap-{idx}"
-        scopes = tuple(s for s in (parts[4].split("|") if len(parts) >= 5 and parts[4] else ["*"]) if s)
-        if env == "production" and len(secret) < 24:
-            raise ValueError(f"production API key {name!r} must be at least 24 characters")
-        keys.append(BootstrapKey(secret, role, tenant, name, scopes))
-    return tuple(keys)
+            return ()
+        return (BootstrapKey("dev-change-me", "superadmin", default_tenant, "development"),)
+    out = []
+    for index, item in enumerate(raw.split(",")):
+        parts = [x.strip() for x in item.split(":")]
+        secret, role, tenant = parts[:3]
+        name = parts[3] if len(parts) > 3 else f"key-{index + 1}"
+        if len(secret) < 12:
+            raise ValueError("API key secrets must be at least 12 characters")
+        if role not in {"viewer", "operator", "admin", "superadmin"}:
+            raise ValueError("invalid API key role")
+        out.append(BootstrapKey(secret, role, _slug(tenant, "tenant"), name))
+    return tuple(out)
