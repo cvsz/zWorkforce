@@ -83,6 +83,28 @@ class WorkspaceContextApiTests(unittest.TestCase):
         self.assertEqual(fetched["id"], snapshot["id"])
         self.assertEqual(len(fetched["members"]), 2)
 
+    def test_checkpoint_scope_cannot_create_summary_bearing_snapshot(self):
+        conversation, message_ids = self.create_conversation_with_messages()
+        _, write_only = self.auth.create_key(
+            "default", "checkpoint-writer", "operator", ["workspace:read", "workspace:write"]
+        )
+        status, payload = self.error(
+            f"/api/v1/workspaces/conversations/{conversation['id']}/context-snapshots",
+            "POST",
+            {
+                "model_id": "test-model",
+                "context_ceiling_tokens": 8192,
+                "compaction_threshold_tokens": 4096,
+                "message_ids": message_ids,
+                "summary": "must require compact authority",
+            },
+            token=write_only,
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(payload["error"]["code"], "invalid_request")
+        self.assertIn("/compact", payload["error"]["message"])
+        self.assertEqual(self.db.list_workspace_context_snapshots("default", conversation["id"]), [])
+
     def test_compact_requires_dedicated_scope_and_audit_redacts_summary(self):
         conversation, message_ids = self.create_conversation_with_messages()
         _, write_only = self.auth.create_key(
