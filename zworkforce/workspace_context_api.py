@@ -108,6 +108,8 @@ def handle_context_post(handler, app, path: str):
         handler._json(201, snapshot)
         return True
 
+    if str(body.get("summary", "")).strip():
+        raise ValueError("summary is only accepted by the /compact endpoint")
     snapshot = app.db.create_workspace_context_snapshot(
         tenant_id,
         conversation_id,
@@ -117,7 +119,7 @@ def handle_context_post(handler, app, path: str):
         compaction_threshold_tokens=body.get("compaction_threshold_tokens"),
         message_ids=body.get("message_ids"),
         reason=str(body.get("reason") or "context-checkpoint"),
-        summary=str(body.get("summary", "")),
+        summary="",
         snapshot_id=str(body["id"]) if body.get("id") else None,
     )
     _audit_snapshot(app, tenant_id, principal.name, "workspace.context.snapshot", snapshot)
