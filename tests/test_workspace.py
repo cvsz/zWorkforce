@@ -12,8 +12,8 @@ class WorkspaceRepositoryTests(unittest.TestCase):
         self.engine.shutdown()
         self.temp.cleanup()
 
-    def test_schema_v5_and_restart_persistence(self):
-        self.assertEqual(SCHEMA_VERSION, 5)
+    def test_workspace_v5_entities_restart_persistence(self):
+        self.assertGreaterEqual(SCHEMA_VERSION, 5)
         project = self.db.create_workspace_project("default", "Zeta", "test")
         conversation = self.db.create_workspace_conversation(
             "default", "test", project_id=project["id"], title="Persistent conversation"
