@@ -20,7 +20,7 @@ The durable evidence ledger for this candidate is [`docs/PRODUCTION-EVIDENCE.md`
   - `packages/zeto/` Autonomous production content lifecycle engine.
   - `packages/zider/` Manifest V3 AI sidebar, ChatPDF, and multi-model router.
   - `ZWorkforceClient/` Native Windows WinUI desktop client.
-- **Provider Credentials**: Loaded dynamically from [`.env.ai`](.env.ai).
+- **Provider Credentials**: Loaded dynamically from `.env.ai`.
 
 ---
 
