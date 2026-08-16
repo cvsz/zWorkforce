@@ -163,7 +163,7 @@ Target interactive SLOs remain engineering targets until measured in staging:
 
 ### R11 — Workspace Agent UX and local execution
 
-This roadmap line translates the strongest public Skywork workspace-agent patterns into zWorkforce-native capabilities. Full sequencing and acceptance criteria are in `planning/exec-planning-skywork.md`.
+This roadmap line translates the strongest **verified** public Skywork workspace-agent patterns into zWorkforce-native capabilities. Full sequencing and acceptance criteria are in `planning/exec-planning-skywork.md`.
 
 - [ ] Durable projects, conversations, search, pin/archive, auto naming and stable conversation IDs.
 - [ ] Context gauge, explicit `/compact`, question anchors and context snapshot history.
@@ -173,11 +173,16 @@ This roadmap line translates the strongest public Skywork workspace-agent patter
 - [ ] Git branch/worktree adapter for isolated coding tasks; protected/default branches never mutated directly.
 - [ ] Zider browser-use tool classes with read-only default and approval-gated side effects.
 - [ ] Signed skill marketplace install, discovery scoring and repeated-workflow → draft skill/workflow candidate compiler.
-- [ ] Markdown source/rendered preview, safe HTML preview and artifact history resilient across restarts.
+- [ ] Safe HTML preview and artifact history resilient across restarts.
 - [ ] Task quick-start templates and evidence-based next-step suggestions.
 - [ ] Theme profiles across web/WinUI without weakening accessibility/high-contrast support.
 - [ ] FinOps preflight before expensive runs plus project/task/agent/model usage drilldown.
-- [ ] Optional internal request signing with replay protection and key rotation for selected service-to-service boundaries.
+
+### R12 — Skywork Web capability mappings
+
+- [ ] Zeto social publishing UX on top of the existing approval/provider/outbox pipeline.
+- [ ] Versioned tenant design-guideline artifacts bound to brand/project policy and QA evidence.
+- [ ] Portable AI-memory import with preview, provenance, dedupe, explicit commit and batch rollback/delete; imported instructions remain untrusted data.
 
 ## 4. Non-goals
 
@@ -188,6 +193,7 @@ This roadmap line translates the strongest public Skywork workspace-agent patter
 - Do not grant continuous agents unrestricted shell/network/action access.
 - Do not grant a newly installed or auto-updated skill capabilities outside its existing authorized envelope.
 - Do not treat local workspace access as permission to read or write arbitrary host filesystem paths.
+- Do not promote a feature into the roadmap merely because it appeared in an unverified/non-official changelog result.
 
 ## 5. Completion definition
 
