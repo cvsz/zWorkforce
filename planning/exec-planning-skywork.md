@@ -2,380 +2,220 @@
 
 **Updated:** 2026-08-17  
 **Status:** active implementation plan  
-**Scope:** workspace UX, conversations/context, artifacts/review, skill lifecycle, sandbox/worktrees, browser automation, notifications, web-product flows and FinOps  
-**References:** `docs/SKYWORK-CHANGELOG-REVERSE-ENGINEERING.md`, official Skywork Help changelog surfaces, and the official Skywork Desktop changelog
+**Scope:** workspace UX, durable conversations/context, review/artifacts, governed skills, sandbox/worktrees, browser automation, notifications, Zeto web-product mappings and FinOps  
+**Evidence:** `docs/SKYWORK-CHANGELOG-REVERSE-ENGINEERING.md`
 
 ## 1. Mission
 
-Adopt the strongest publicly documented Skywork workspace-agent product patterns where they improve zWorkforce, without copying proprietary code or weakening zWorkforce security and governance.
+Adopt the strongest **verified public** Skywork product patterns where they improve zWorkforce, while preserving zWorkforce's existing tenant isolation, durable state, approvals, idempotency, audit/provenance and server-side secret boundaries. This is a zWorkforce-native implementation plan, not a clone.
 
-The target is not a clone. The target is a stronger zWorkforce operator/workspace experience built on existing durable tasks, workflows, artifacts, memory, approvals, MCP, Z.A.R.V.I.S., Zider, Zeto and FinOps.
+## 2. Global completion criteria
 
-## 2. Definition of complete
+The upgrade is complete only when all applicable requirements are durable, tenant scoped, authorization-safe, bounded, observable, rollback-capable and tested end-to-end. Documentation or visual similarity alone is not completion.
 
-The upgrade is complete only when all applicable criteria pass:
+Mandatory invariants:
 
-- project/conversation state is durable and tenant scoped;
-- context status and compaction are explicit and auditable;
-- artifacts and subagent/tool execution are reviewable from durable evidence;
-- local workspace access is sandboxed, allowlisted and bounded;
-- git worktree/branch operations are isolated and reviewable;
-- browser mutations remain explicit approval-gated actions;
-- skill install/update/enable/disable/rollback obey policy and preserve prior versions;
-- repeated workflows produce reviewable candidates, never silently activated production skills;
-- notifications are tenant scoped and connector delivery is opt-in/policy controlled;
-- FinOps preflight and actual usage are backed by durable ledger data;
-- social publishing continues through durable approval/outbox/provider boundaries;
-- design guidelines are versioned, attributable and enforced by generation/QA policy rather than UI hints only;
-- memory imports are previewable, provenance-preserving, consent-based and tenant scoped;
-- tests cover auth, tenancy, traversal, SSRF, skill authority expansion, idempotency, cancellation, retry and rollback;
-- required CI/security/package/Windows/release gates are green on the exact candidate SHA.
+- no parallel task scheduler, approval system, tenant model, artifact store, memory store or publishing control plane;
+- local workspace access is an explicit canonical-root grant;
+- browser/file/shell/publishing mutations remain policy/approval governed;
+- skill installation/update cannot silently expand authority;
+- context compaction preserves source history and writes attributable artifacts/snapshots;
+- imported memory remains untrusted data;
+- production claims remain governed by `docs/PRODUCTION-EVIDENCE.md`.
 
 ## 3. Delivery phases
 
-### Phase SW0 — Capability mapping and lifecycle foundation
+### SW0 — Governed skill lifecycle
 
-**Status:** IMPLEMENTED FOUNDATION / PR VALIDATION IN PROGRESS
+**Status:** IMPLEMENTED IN PR #83; CI/review gates still control merge.
 
-Deliverables:
+Implementation:
 
-- `docs/SKYWORK-CHANGELOG-REVERSE-ENGINEERING.md` with chronological public feature mapping.
-- `ROADMAPS.md` and master execution plan references.
-- governed skill lifecycle in Z.A.R.V.I.S. runtime:
-  - immediate active resolution after installation;
-  - enable/disable;
-  - active semantic version selection;
-  - safe system-skill automatic update;
-  - explicit rollback;
-  - no silent tool-capability expansion;
-  - no read→write escalation;
-  - no approval weakening.
-- orchestrator execution must resolve only enabled skill versions; lifecycle state is not presentation-only.
+- immediate resolution of installed enabled skills;
+- semantic-version-aware active version selection;
+- enable/disable;
+- explicit rollback;
+- safe automatic update only for approved `source=system` + `update_policy=auto` skills;
+- fail closed on tool-capability expansion, read→write escalation or approval weakening;
+- `ZarvisOrchestrator.executeSkill()` resolves only enabled versions.
 
-Primary implementation:
+Primary files:
 
 - `packages/zarvis/services/zarvis-orchestrator/src/skill-catalog.mjs`
 - `packages/zarvis/services/zarvis-orchestrator/src/orchestrator.mjs`
-- `packages/zarvis/services/zarvis-orchestrator/test/skill-catalog.test.mjs`
-- `packages/zarvis/services/zarvis-orchestrator/test/orchestrator-skill-execution.test.mjs`
+- corresponding skill-catalog/orchestrator tests.
 
-Exit criteria:
+### SW1 — Durable projects and conversations
 
-- existing catalog behavior remains compatible;
-- lifecycle tests pass;
-- disabled versions cannot execute;
-- auto-update fails closed on authority expansion;
-- prior versions remain resolvable for rollback;
-- affected Z.A.R.V.I.S., root CI, CodeQL and dependency gates pass.
+**Status:** IMPLEMENTED ON STACKED PR #84; exact-head CI/review gates still control merge.
 
-### Phase SW1 — Durable projects and conversations
+Architecture:
 
-Use the repository's existing database composition instead of introducing a parallel store. The current data layer is `Database = AutomationMixin + TaskMixin + FinOpsMixin + GovernanceMixin + MigrationMixin + DatabaseBase`, with schemas split across `db_schema.py`, `db_schema_v3.py` and version-specific initialization in `db_base.py`.
+- additive schema v5 through existing `DatabaseBase` initialization;
+- `WorkspaceMixin` composed into canonical `Database`;
+- no parallel datastore;
+- project → conversation → message ownership uses `(tenant_id,id)` composite keys/FKs;
+- messages use per-conversation ordinal ordering rather than wall-clock timestamp alone.
 
-Planned files:
+Implemented files:
 
-- `zworkforce/db_schema_workspace.py` — additive workspace schema kept separate from legacy/v3 schema blocks.
-- `zworkforce/db_workspace.py` — `WorkspaceMixin` with tenant-scoped project/conversation/message operations.
-- `zworkforce/db_base.py` — import/initialize workspace schema and advance schema version only with migration/test updates.
-- `zworkforce/db.py` — compose `WorkspaceMixin` into the canonical `Database` class.
-- `zworkforce/api.py` — authenticated workspace endpoints.
-- `tests/test_workspace.py` — SQLite/data-layer contract.
-- `tests/test_workspace_api.py` — API/RBAC/tenant contract.
-- `tests/test_v3_postgres.py` — PostgreSQL workspace schema/round-trip evidence when this slice lands.
+- `zworkforce/db_schema_workspace.py`
+- `zworkforce/db_workspace.py`
+- `zworkforce/db_base.py`
+- `zworkforce/db.py`
+- `zworkforce/workspace_api.py`
+- `zworkforce/workspace_cli.py`
+- `pyproject.toml`
+- `zworkforce/__main__.py`
+- `tests/test_workspace.py`
+- `tests/test_workspace_api.py`
+- PostgreSQL coverage in `tests/test_v3_postgres.py`
+- API contract in `docs/API.md`.
 
-Repository-backed entities:
-
-```text
-workspace_projects
-workspace_conversations
-workspace_messages
-```
-
-Future SW2 entities may add:
+API contract:
 
 ```text
-workspace_context_snapshots
-workspace_context_members
+GET/POST /api/v1/workspaces/projects
+GET      /api/v1/workspaces/projects/{id}
+POST     /api/v1/workspaces/projects/{id}/rename|pin|archive
+GET/POST /api/v1/workspaces/conversations
+GET      /api/v1/workspaces/conversations/{id}
+POST     /api/v1/workspaces/conversations/{id}/rename|pin|archive|move
+GET/POST /api/v1/workspaces/conversations/{id}/messages
+POST     /api/v1/workspaces/conversations/{id}/delete
 ```
 
-Use fields on project/conversation rows for pin/archive state instead of creating a redundant pin table unless multi-user pins become a requirement.
+Scopes:
 
-Required fields include tenant ID, owner/actor, project ID, timestamps, status, title, source task/workflow references and retention policy. Foreign keys involving project/conversation ownership should include `tenant_id` so cross-tenant attachment is rejected structurally as well as by repository queries.
+- read: `viewer + workspace:read`;
+- normal mutation: `operator + workspace:write`;
+- deletion: `admin + workspace:delete`;
+- external message creation accepts only `role=user`;
+- `compliance_hold` blocks deletion;
+- audit excludes raw message bodies.
 
-Initial APIs:
+### SW2 — Context status, compaction and slash commands
 
-```text
-POST   /api/v1/workspaces/projects
-GET    /api/v1/workspaces/projects
-GET    /api/v1/workspaces/projects/{id}
-POST   /api/v1/workspaces/projects/{id}/rename
-POST   /api/v1/workspaces/projects/{id}/pin
-POST   /api/v1/workspaces/projects/{id}/archive
-POST   /api/v1/workspaces/conversations
-GET    /api/v1/workspaces/conversations/{id}
-GET    /api/v1/workspaces/conversations?query=&project_id=&status=
-POST   /api/v1/workspaces/conversations/{id}/rename
-POST   /api/v1/workspaces/conversations/{id}/pin
-POST   /api/v1/workspaces/conversations/{id}/archive
-POST   /api/v1/workspaces/conversations/{id}/messages
-GET    /api/v1/workspaces/conversations/{id}/messages
-DELETE /api/v1/workspaces/conversations/{id}
-```
+**NEXT IMPLEMENTATION SLICE.**
 
-The current HTTP server primarily exposes GET/POST actions. Prefer explicit action endpoints for rename/pin/archive rather than adding PATCH solely for cosmetic REST symmetry.
+Deliver:
 
-Security:
+- `workspace_context_snapshots` and membership records;
+- measured provider token usage where available; deterministic estimates clearly labeled when exact tokenization is unavailable;
+- model-specific context ceiling/configuration;
+- explicit `/compact` creating a versioned content-addressed summary artifact + context snapshot;
+- source conversation history remains intact;
+- previous active snapshot remains valid on provider failure/cancel;
+- bounded input bytes, chunks, provider calls, retries and compaction rounds;
+- new `workspace:compact` authorization for durable/cost-incurring compaction;
+- slash-command registry for `/plan`, `/review`, `/compact`, `/goal`, `/status`, `/artifacts`, `/cost`, `/skill`, `/workflow`, `/feedback`.
 
-- every query is tenant scoped;
-- composite tenant ownership is enforced for project→conversation→message relationships;
-- conversation IDs are opaque and cannot switch tenant ownership;
-- creation happens only after authentication/authorization;
-- reads require `workspace:read`; mutations require `workspace:write`; destructive deletion may use `workspace:delete`/admin policy;
-- deletion/forget is audited and retention-aware;
-- message/artifact references are bounded and validated; raw host paths are not accepted.
+Tests: tenant isolation, deterministic membership, rollback/history, provider failure, cancellation, oversized content, sensitive-data redaction hooks and hard resource bounds.
 
-Tests:
+### SW3 — Task summary / artifact / subagent sidecar
 
-- cross-tenant read/write negative tests;
-- cross-tenant project attachment rejected;
-- pin/archive/search persistence;
-- message ordering and restart safety;
-- title/autoname validation;
-- deletion/cascade and retention semantics;
-- SQLite and PostgreSQL round trips;
-- API scope enforcement and audit evidence.
+Project existing durable execution evidence into:
 
-### Phase SW2 — Context budget and compaction
-
-Add explicit context accounting per conversation:
-
-- estimated/actual token budget;
-- model-specific context ceiling;
-- included message/artifact/memory references;
-- compaction threshold and reason;
-- compaction artifact hash/version.
-
-`/compact` creates a new attributable summary artifact and context snapshot. It does not overwrite durable conversation history or automatically write long-term memory.
-
-Tests:
-
-- deterministic snapshot membership;
-- no cross-tenant memory inclusion;
-- compaction rollback/read-old-context;
-- oversized attachment handling;
-- sensitive-data redaction hooks.
-
-### Phase SW3 — Slash command and task-composer registry
-
-Commands:
-
-```text
-/plan
-/review
-/compact
-/goal
-/status
-/artifacts
-/cost
-/skill
-/workflow
-/feedback
-```
-
-Implementation rules:
-
-- parser is presentation-independent;
-- server resolves command authorization and capabilities;
-- commands cannot bypass normal API/RBAC/policy checks;
-- attachment references are artifact IDs, not arbitrary host paths;
-- unknown commands fail safely with discoverable help.
-
-### Phase SW4 — Task summary, artifact manifest and execution sidecar
-
-For every task/workflow run expose:
-
-- summary;
+- task/workflow summary;
 - artifacts created/changed;
-- review state;
-- tool calls with sanitized parameters;
-- delegated subagents and parent/child relationships;
-- retries/failures/cancellations;
-- approvals requested/resolved;
+- review/approval state;
+- sanitized tool calls;
+- delegated subagent hierarchy;
+- retries/failures/cancellation;
 - cost/latency/model route;
-- recommended next actions.
+- evidence-based next actions.
 
-The UI can render main chat + review + file preview + side discussion without duplicating authoritative execution state.
+Do not duplicate authoritative execution state in the UI.
 
-### Phase SW5 — Scoped local workspace sandbox
+### SW4 — Scoped local workspace sandbox
 
-New workspace grant contract:
+Contract includes tenant/workspace ID, operator-approved canonical root, read/write flags, command allowlist, network policy and expiry.
 
-```json
-{
-  "tenant_id": "...",
-  "workspace_id": "...",
-  "root": "operator-approved canonical path",
-  "read": true,
-  "write": false,
-  "commands": ["git", "python", "npm"],
-  "network_policy": "deny|allowlisted",
-  "expires_at": "ISO-8601"
-}
-```
+Required controls:
 
-Requirements:
-
-- canonicalize before authorization;
-- block `..`, symlink/junction escape and device paths;
-- subprocesses use argument arrays, no `shell=True`;
-- time/memory/output/process limits;
+- path canonicalization before authorization;
+- deny `..`, symlink/junction/device escape;
+- subprocess argv arrays only; no `shell=True`;
 - sanitized environment;
-- write/command mutation requires policy/approval as configured;
-- audit start/end/exit code without leaking secrets.
+- time/memory/output/process limits;
+- cancellation and cleanup;
+- explicit approval/policy for write/command mutations;
+- secret-safe audit evidence.
 
-### Phase SW6 — Git branch/worktree isolation
+### SW5 — Git branch/worktree isolation
 
-Provide an adapter over approved repositories:
+- isolated feature worktree from an approved repository;
+- status/diff/check execution;
+- commits only with mutation authorization;
+- protected/default branches never rewritten directly;
+- PR delivery through GitHub boundary;
+- expired worktree cleanup with lease/evidence.
 
-- create named feature worktree;
-- inspect diff/status;
-- run allowlisted checks;
-- commit only with explicit mutation authorization;
-- open PR through GitHub boundary;
-- cleanup expired worktrees safely.
+### SW6 — Zider browser-use contract
 
-Never allow a task to rewrite protected/default branches directly.
+Split tools into read-only versus mutating classes. Mutating form submissions, uploads, purchases, account changes and publishing require explicit intent plus policy/approval. Add URL/domain allowlists, SSRF controls, timeouts/cancel, idempotency for external side effects and evidence capture.
 
-### Phase SW7 — Zider browser-use contract
+### SW7 — Signed skill marketplace + reusable workflow candidates
 
-Browser tools are split into classes:
-
-**Read-only:** navigate, inspect DOM/text, screenshot, extract structured fields.
-
-**Mutating:** click action controls, submit forms, uploads, purchases, account settings, send/publish actions.
-
-Mutating tools require explicit declared intent plus approval/policy where configured. Add domain/URL allowlists, SSRF protections, timeout/cancel, dedupe for external side effects, evidence screenshots/receipts where appropriate and secret-safe logging.
-
-### Phase SW8 — Skill marketplace, discovery and reusable workflow compiler
-
-Build on Phase SW0:
-
-- signed remote skill package install using existing registry trust controls;
-- source metadata and publisher/signature evidence;
+- existing signed skill-registry trust boundary;
+- publisher/source/signature metadata;
 - immediate activation only inside existing capability envelope;
-- safe automatic updates for approved `system` skills;
-- manual review for capability expansion;
-- discovery score based on task intent, domain, capability fit, outcome quality, latency and cost;
-- repeated-workflow detector creates a draft workflow/skill candidate;
-- generated candidates require schema validation, policy review and tests before enablement.
+- capability expansion requires explicit review;
+- discovery scoring from intent/capability/outcomes/cost/latency;
+- repeated workflow detection creates **draft candidates** only;
+- validation, tests and approval required before activation.
 
-### Phase SW8A — Skywork Web changelog integrations
+### SW8 — Notifications and proactive operator center
 
-The current Skywork Help landing page exposes three recent web-product changes that map cleanly onto existing zWorkforce subsystems. Treat them as capability references, not implementation dependencies.
+Durable events for completion, approval required, question required, failure, budget risk, scheduled run, stalled agent and policy denial. In-app first; external delivery remains opt-in through approved connectors.
 
-#### Social Publishing Flow → Zeto
+### SW9 — Skywork Web capability mappings
 
-- extend Zeto's existing content lifecycle rather than create a second publisher;
-- composition/approval/scheduling/publish remains `draft → review → approved → scheduled → publishing → live|failed`;
-- use existing durable queue/outbox, provider adapters, idempotency keys, audit trail and retry/dead-letter semantics;
-- provide social-format templates and platform previews as presentation features only; provider side effects still go through approval/policy.
+#### Zeto social publishing
 
-#### Design Guidelines in Knowledge Base → Brand/Design policy
+Improve compose/preview/approve/schedule/publish UX using the existing Zeto workflow, provider adapters, queue/outbox, idempotency, retry/dead-letter and audit controls.
 
-- store design guideline documents as versioned tenant artifacts/knowledge records with owner, source, hash and effective version;
-- project/brand contexts reference guideline versions explicitly;
-- generation tools receive derived non-secret design constraints;
-- Zeto QA/brand-safety evaluates outputs against the active guideline version;
-- zsp-aitool/Zider can preview guidelines but cannot silently modify active production policy.
+#### Design guidelines
 
-#### SkyClaw memory import → portable zWorkforce memory import
+Versioned tenant artifacts/knowledge with owner/source/hash/effective version; project/brand bindings; server-side generation constraints; QA evidence; controlled activation/rollback.
 
-- add import adapters for operator-supplied AI memory/export files rather than scraping private accounts;
-- support preview/dry-run, source/provider label, import batch ID, hash/dedupe, conflict handling and explicit commit;
-- imported memory is tenant scoped and records provenance, actor, timestamp and source artifact hash;
-- do not treat imported model instructions as trusted system policy;
-- redact/reject secrets and unsupported sensitive fields according to tenant policy;
-- allow batch rollback/delete through the recorded import batch where retention rules permit.
+#### Portable AI-memory import
 
-### Phase SW9 — Notification center and proactive delivery
+Operator-supplied export files only; preview/dry-run, source label, artifact hash, import batch, dedupe/conflicts, policy redaction, explicit commit and batch rollback/delete where retention permits. Imported instructions never become system policy or permissions.
 
-Durable notifications:
+### SW10 — FinOps preflight
 
-```text
-task_completed
-approval_required
-question_required
-task_failed
-budget_risk
-scheduled_run_completed
-agent_stalled
-security_policy_denied
-```
+Estimate model/tool/artifact spend ranges, compare against tenant/task budgets, warn/deny through policy, record actual usage, and expose drilldown by tenant/project/task/agent/model. Do not invent balances.
 
-Support in-app first. External IM/email/connector delivery remains opt-in and uses approved connector boundaries.
+### SW11 — Web/WinUI operator UX
 
-### Phase SW10 — FinOps preflight and detailed ledger
-
-Before expensive work:
-
-- estimate model/tool/artifact cost range;
-- compare with tenant/task budget;
-- warn or deny according to policy;
-- record actual provider/model/tool cost events;
-- expose chargeback/showback drilldown by tenant/project/task/agent/model.
-
-Do not invent credit balances. Subscription/purchase integration is a separate payment-provider boundary and must not be embedded into agent runtime authorization.
-
-### Phase SW11 — Operator UX parity
-
-Web and Windows surfaces:
-
-- project/conversation navigation;
-- pin/archive/search;
-- task quick start;
-- next-step suggestions;
-- context gauge + compact control;
+- projects/conversation navigation, search, pin/archive;
+- task quick start and next-action suggestions;
+- context gauge + explicit compact control;
 - review/artifact/subagent sidecar;
-- Markdown source/rendered toggle;
-- safe HTML preview sandbox;
+- safe HTML/artifact preview;
 - theme profiles;
-- notification center;
-- skill manager and version rollback;
-- cost/budget panel.
+- notifications;
+- skill manager/version rollback;
+- cost/budget panel;
+- keyboard, screen-reader, high-contrast and reduced-motion accessibility.
 
-Accessibility requirements include keyboard navigation, screen reader labels, high contrast, reduced motion and non-color status indicators.
+### SW12 — Hardening and release evidence
 
-### Phase SW12 — Hardening and release evidence
-
-Required suites:
-
-- Python unit/integration/PostgreSQL;
-- Node/Z.A.R.V.I.S. package tests;
-- Zider extension/server tests;
-- Windows build/test/package;
-- sandbox path/symlink escape tests;
-- command allowlist and cancellation tests;
-- browser mutation approval tests;
-- skill authority-expansion tests;
-- context/tenant negative tests;
-- social publish idempotency/provider-fake tests;
-- design guideline version/tenant enforcement tests;
-- memory import provenance/dedupe/rollback tests;
-- CodeQL, dependency review, SBOM/provenance;
-- staging E2E for workspace → plan → execute → review → approve → artifact → PR/publish.
+Run affected Python/PostgreSQL, Z.A.R.V.I.S., Zider, Windows, security, dependency, CodeQL, SBOM/provenance, sandbox escape, approval, tenant isolation, import provenance, Zeto publishing/idempotency and staging E2E tests. Record rollback/evidence; do not substitute CI simulations for external production evidence.
 
 ## 4. PR sequence
 
-1. `feat/skywork-inspired-workspace-upgrade` — research map, plans and governed skill lifecycle foundation.
-2. `feat/workspace-project-conversations` — additive workspace schema/mixin + durable project/conversation/message API.
-3. `feat/workspace-context-commands` — context budget/compaction + slash command registry.
-4. `feat/workspace-task-sidecar` — summaries, artifacts, subagent/tool trace projection.
-5. `feat/workspace-local-sandbox` — scoped local workspace executor.
-6. `feat/workspace-git-worktrees` — branch/worktree adapter and diff/PR workflow.
-7. `feat/zider-browser-use-contract` — read/mutate browser tool boundary.
+1. `feat/skywork-inspired-workspace-upgrade` — research/roadmap + governed skill lifecycle. **Implemented.**
+2. `feat/workspace-project-conversations` — durable project/conversation/message store + API. **Implemented as stacked PR.**
+3. `feat/workspace-context-commands` — context snapshots/compaction + slash commands. **Next.**
+4. `feat/workspace-task-sidecar` — review/artifact/subagent projection.
+5. `feat/workspace-local-sandbox` — scoped local executor.
+6. `feat/workspace-git-worktrees` — isolated coding workspaces.
+7. `feat/zider-browser-use-contract` — browser read/mutate boundary.
 8. `feat/skill-marketplace-reusable-workflows` — signed install/discovery/candidate compiler.
-9. `feat/zeto-design-memory-portability` — social publishing UX alignment, design guideline policy, memory import batches.
-10. `feat/workspace-notifications-finops` — notification center + cost preflight/ledger UX.
+9. `feat/zeto-design-memory-portability` — social publishing/design policy/memory imports.
+10. `feat/workspace-notifications-finops` — notifications + budget/usage UX.
 11. `feat/workspace-ux-hardening` — Web/WinUI parity, accessibility, E2E and release evidence.
 
 ## 5. Validation baseline
@@ -391,4 +231,4 @@ pnpm --dir packages/zarvis audit --audit-level high
 python scripts/verify_release.py --expected 3.0.3
 ```
 
-Changed packages must also execute their package-native type/build/test/security gates. PostgreSQL behavior changes must run the real CI PostgreSQL service tests. Production claims remain subject to `docs/PRODUCTION-EVIDENCE.md`.
+PostgreSQL behavior changes must run the real CI PostgreSQL service tests. Production readiness remains subject to `docs/PRODUCTION-EVIDENCE.md`.
