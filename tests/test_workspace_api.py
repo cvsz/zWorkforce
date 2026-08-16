@@ -6,7 +6,7 @@ import urllib.parse
 import urllib.request
 from http.server import ThreadingHTTPServer
 
-from common import stack
+from tests.common import stack
 from zworkforce.workspace_api import WorkspaceApp
 
 

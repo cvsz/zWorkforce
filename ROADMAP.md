@@ -84,6 +84,8 @@ skills, tamper-evident audit, outcome economics and hardened operations.
 - Added `docs/PRODUCTION-EVIDENCE.md` to separate CI evidence from real external
   PostgreSQL/PITR, identity, provider, storage, observability, Windows, and
   release-decision evidence.
+- Consolidated sub-packages `packages/zsp-aitool` (Shopee Affiliate AI Studio & HyperFrames), `packages/zider` (AI Browser Companion), `packages/zeto` (ProMeta Content Factory & Super Agent Office Suite), and `packages/zarvis` (Realtime Voice Assistant).
+- Added master orchestrator and compiled Go CLI toolchain (`control.sh` & `cmd/zctl/`) with service matrix health checks, zero-leak secret masking, and 140-test automated verification.
 
 The immutable `v3.0.3` tag is intentionally **not** created as part of repository
 candidate preparation. It is authorized only after the candidate is merged to

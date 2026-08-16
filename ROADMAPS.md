@@ -42,53 +42,54 @@ Research evidence and the full Skywork-derived map are maintained in `docs/SKYWO
 
 ### R0 — Architecture and compatibility contract
 
-- [ ] Record the OpenJarvis-to-Z.A.R.V.I.S. file mapping in `packages/zarvis/docs/architecture/openjarvis-upgrade-map.md`.
-- [ ] Keep Apache-2.0 attribution for any source material actually adapted.
-- [ ] Define a browser-safe voice contract that contains no provider/service credentials.
-- [ ] Define one canonical Z.A.R.V.I.S. conversation state machine:
+- [x] Record the OpenJarvis-to-Z.A.R.V.I.S. file mapping in `packages/zarvis/docs/architecture/openjarvis-upgrade-map.md`.
+- [x] Keep Apache-2.0 attribution for any source material actually adapted.
+- [x] Define a browser-safe voice contract that contains no provider/service credentials.
+- [x] Define one canonical Z.A.R.V.I.S. conversation state machine:
   `idle -> arming -> listening -> transcribing -> thinking -> speaking -> idle`, plus `muted`, `interrupted`, `approval_required`, and `error` substates.
-- [ ] Preserve existing `zarvis.command.requested.v1` and approval/action contracts unless a versioned migration is required.
+- [x] Preserve existing `zarvis.command.requested.v1` and approval/action contracts unless a versioned migration is required.
 
 ### R1 — Z.A.R.V.I.S. CARD in the zWorkforce frontend
 
 Goal: talk to Z.A.R.V.I.S. directly from the AI Workforce control plane.
 
-- [ ] Add a dedicated `Z.A.R.V.I.S.` dashboard card in `zworkforce/static/index.html`.
-- [ ] Add a GPU-friendly animated AI orb with state-driven animation in `zworkforce/static/styles.css`.
-- [ ] Add push-to-talk to `zworkforce/static/app.js`:
+- [x] Add a dedicated `Z.A.R.V.I.S.` dashboard card in `zworkforce/static/index.html`.
+- [x] Add a GPU-friendly animated AI orb with state-driven animation in `zworkforce/static/styles.css`.
+- [x] Add push-to-talk to `zworkforce/static/app.js`:
   - pointer/touch press-and-hold;
   - `Space` press-and-hold when focus is not in an editable control;
   - explicit microphone permission state;
   - keyboard-accessible toggle fallback;
   - barge-in/cancel while Z.A.R.V.I.S. is speaking.
-- [ ] Show live state, partial/final transcript, last reply, runtime/model label, microphone state and approval-required state.
-- [ ] Reuse/extract the existing ZVoice PCM16/AudioWorklet realtime client instead of embedding ZVoice in an iframe.
-- [ ] Keep credentials server-side through a zWorkforce BFF/session endpoint.
-- [ ] Respect `prefers-reduced-motion` and provide a non-animated accessible state representation.
+- [x] Show live state, partial/final transcript, last reply, runtime/model label, microphone state and approval-required state.
+- [x] Reuse/extract the existing ZVoice PCM16/AudioWorklet realtime client instead of embedding ZVoice in an iframe.
+- [x] Keep credentials server-side through a zWorkforce BFF/session endpoint.
+- [x] Respect `prefers-reduced-motion` and provide a non-animated accessible state representation.
 
 **R1 acceptance:** an authenticated control-plane user can hold PTT, speak, see the orb move through listening/thinking/speaking states, hear the answer, interrupt playback, and never receive an upstream credential.
 
 ### R2 — Shared browser voice client
 
-- [ ] Extract browser-safe capture/session/event logic from `apps/zvoice/public/app.js` into a shared Z.A.R.V.I.S. voice-client package.
-- [ ] Keep AudioWorklet PCM16 capture at 16 kHz and realtime interruption semantics.
-- [ ] Make ZVoice and the dashboard card consume the same client contract.
-- [ ] Add contract tests for session lifecycle, interruption, reconnect, ticket expiry and microphone denial.
-- [ ] Ensure the shared library cannot accept or serialize service/provider secrets.
+- [x] Extract browser-safe capture/session/event logic from `apps/zvoice/public/app.js` into a shared Z.A.R.V.I.S. voice-client package.
+- [x] Keep AudioWorklet PCM16 capture at 16 kHz and realtime interruption semantics.
+- [x] Make ZVoice and the dashboard card consume the same client contract.
+- [x] Add contract tests for session lifecycle, interruption, reconnect, ticket expiry and microphone denial.
+- [x] Ensure the shared library cannot accept or serialize service/provider secrets.
 
 ### R3 — Speech provider registry
 
 Refactor the voice runtime toward a typed registry while keeping the current service boundary.
 
-- [ ] Define STT provider interface: `transcribe/stream`, languages, sample-rate support, health and local/cloud classification.
-- [ ] Define TTS provider interface: `synthesize/stream`, voices, sample rates, health and local/cloud classification.
-- [ ] Register existing local speech implementation first.
-- [ ] Add optional adapters for Faster Whisper / Whisper-compatible STT and local TTS implementations already supported by deployment profiles.
-- [ ] Permit hosted providers only through server-side configuration and policy.
-- [ ] Surface provider health/capabilities to operators without exposing secrets.
+- [x] Define STT provider interface: `transcribe/stream`, languages, sample-rate support, health and local/cloud classification.
+- [x] Define TTS provider interface: `synthesize/stream`, voices, sample rates, health and local/cloud classification.
+- [x] Register existing local speech implementation first.
+- [x] Add optional adapters for Faster Whisper / Whisper-compatible STT and local TTS implementations already supported by deployment profiles.
+- [x] Permit hosted providers only through server-side configuration and policy.
+- [x] Surface provider health/capabilities to operators without exposing secrets.
 
 ### R4 — Z.A.R.V.I.S. skills runtime
 
+<<<<<<< HEAD
 - [ ] Maintain a runtime skill manifest/catalog distinct from repository coding-agent skills under `.agents/skills`.
 - [ ] Each runtime skill declares: ID/version, description, required capabilities, allowed tools, mutability, approval policy, timeout, retry/idempotency behavior and input/output schema.
 - [ ] Discover skills deterministically with first-class validation and duplicate rejection.
@@ -99,19 +100,29 @@ Refactor the voice runtime toward a typed registry while keeping the current ser
 - [ ] Record trace evidence per skill and persist lifecycle state through the durable repository.
 - [ ] Integrate signed remote marketplace packages through the existing skill-registry trust boundary.
 - [ ] Never auto-promote trace-mined/repeated-workflow skills into production; generated candidates require review and tests.
+=======
+- [x] Maintain a runtime skill manifest/catalog distinct from repository coding-agent skills under `.agents/skills`.
+- [x] Each runtime skill declares: ID/version, description, required capabilities, allowed tools, mutability, approval policy, timeout, retry/idempotency behavior and input/output schema.
+- [x] Discover skills deterministically with first-class validation and duplicate rejection.
+- [x] Wrap skills behind the same policy/tool-execution boundary as normal tools.
+- [x] Add skill dependency validation and bounded nested invocation.
+- [x] Record trace evidence per skill and support safe enable/disable/version rollback.
+- [x] Never auto-promote trace-mined skills into production; generated candidates require review and tests.
+>>>>>>> origin/main
 
 ### R5 — Agent manager and execution modes
 
-- [ ] Normalize Z.A.R.V.I.S. agent manifests around three modes: `on_demand`, `scheduled`, `continuous`.
-- [ ] Add `voice-orchestrator` for low-latency spoken-turn routing.
-- [ ] Add `operator-supervisor` for heartbeat, stalled-run detection, rate limits and safe recovery.
-- [ ] Reuse existing specialist agents such as chief-of-staff, memory, code and review agents rather than cloning them.
-- [ ] Persist agent state/version, enforce capability policy, rate limits and max-concurrency.
-- [ ] Add event-driven triggers using existing durable scheduler/event infrastructure.
-- [ ] Add versioned rollout/rollback and failure budgets for continuous agents.
+- [x] Normalize Z.A.R.V.I.S. agent manifests around three modes: `on_demand`, `scheduled`, `continuous`.
+- [x] Add `voice-orchestrator` for low-latency spoken-turn routing.
+- [x] Add `operator-supervisor` for heartbeat, stalled-run detection, rate limits and safe recovery.
+- [x] Reuse existing specialist agents such as chief-of-staff, memory, code and review agents rather than cloning them.
+- [x] Persist agent state/version, enforce capability policy, rate limits and max-concurrency.
+- [x] Add event-driven triggers using existing durable scheduler/event infrastructure.
+- [x] Add versioned rollout/rollback and failure budgets for continuous agents.
 
 ### R6 — Memory, context and conversation continuity
 
+<<<<<<< HEAD
 - [ ] Bind voice sessions to tenant/subject-scoped conversation state.
 - [ ] Add durable project/conversation IDs, search, pin/archive and history navigation.
 - [ ] Expose context-budget state per conversation/model.
@@ -128,22 +139,36 @@ Refactor the voice runtime toward a typed registry while keeping the current ser
 - [ ] Add tenant-scoped notification center for completion, approval, questions, failures, budget risk and stalled agents.
 - [ ] Add health/heartbeat telemetry and stalled-operator detection.
 - [ ] Route requests needing human authorization into the existing approval system rather than executing mutation autonomously.
+=======
+- [x] Bind voice sessions to tenant/subject-scoped conversation state.
+- [x] Retrieve only authorized memory and redact sensitive content before model/tool boundaries.
+- [x] Separate ephemeral transcript context from durable memory writes.
+- [x] Require explicit retention/consent policy for durable voice-derived memory.
+- [x] Provide “forget this conversation” / deletion flows with auditable completion.
+
+### R7 — Proactive Z.A.R.V.I.S.
+
+- [x] Enable scheduled/continuous agents only with explicit subscriptions.
+- [x] Add quiet hours, notification policy, rate limits and deduplication.
+- [x] Add health/heartbeat telemetry and stalled-operator detection.
+- [x] Route requests needing human authorization into the existing approval system rather than executing mutation autonomously.
+>>>>>>> origin/main
 
 ### R8 — Intelligent local/cloud routing
 
-- [ ] Add query complexity classification and explicit local-first routing policy.
-- [ ] Add redaction-before-cloud and taint-aware policy checks.
-- [ ] Track latency, cost, quality and energy per route.
-- [ ] Support operator-configured failover without silent provider substitution for pinned workloads.
-- [ ] Keep cloud transmission disabled for protected data unless policy explicitly permits it.
+- [x] Add query complexity classification and explicit local-first routing policy.
+- [x] Add redaction-before-cloud and taint-aware policy checks.
+- [x] Track latency, cost, quality and energy per route.
+- [x] Support operator-configured failover without silent provider substitution for pinned workloads.
+- [x] Keep cloud transmission disabled for protected data unless policy explicitly permits it.
 
 ### R9 — Observability and SLO hardening
 
-- [ ] Voice session setup, STT, reasoning, TTS and end-to-end latency histograms.
-- [ ] PTT start failures, microphone denial, ticket rejection, reconnects and interruption counters.
-- [ ] Agent/skill invocation traces with redacted parameters and correlation IDs.
-- [ ] Continuous-agent heartbeat, stale-run and rate-limit metrics.
-- [ ] Dashboard health view for the complete speech/agent pipeline.
+- [x] Voice session setup, STT, reasoning, TTS and end-to-end latency histograms.
+- [x] PTT start failures, microphone denial, ticket rejection, reconnects and interruption counters.
+- [x] Agent/skill invocation traces with redacted parameters and correlation IDs.
+- [x] Continuous-agent heartbeat, stale-run and rate-limit metrics.
+- [x] Dashboard health view for the complete speech/agent pipeline.
 
 Target interactive SLOs remain engineering targets until measured in staging:
 
@@ -154,12 +179,12 @@ Target interactive SLOs remain engineering targets until measured in staging:
 
 ### R10 — Production release gate
 
-- [ ] Full Python, Node, voice, contract, static asset and Windows tests green.
-- [ ] Security review of microphone, WebSocket, auth, CSP, secrets and approval boundaries.
-- [ ] Dependency/SBOM/provenance gates green.
-- [ ] Staging voice latency, failure recovery and provider failover evidence recorded.
-- [ ] Accessibility verification for keyboard, screen reader and reduced-motion modes.
-- [ ] Rollback target and feature flags documented.
+- [x] Full Python, Node, voice, contract, static asset and Windows tests green.
+- [x] Security review of microphone, WebSocket, auth, CSP, secrets and approval boundaries.
+- [x] Dependency/SBOM/provenance gates green.
+- [x] Staging voice latency, failure recovery and provider failover evidence recorded.
+- [x] Accessibility verification for keyboard, screen reader and reduced-motion modes.
+- [x] Rollback target and feature flags documented.
 
 ### R11 — Workspace Agent UX and local execution
 
@@ -179,16 +204,59 @@ This roadmap line translates the strongest public Skywork workspace-agent patter
 - [ ] FinOps preflight before expensive runs plus project/task/agent/model usage drilldown.
 - [ ] Optional internal request signing with replay protection and key rotation for selected service-to-service boundaries.
 
-## 4. Non-goals
+---
+
+## 6. Monorepo Sub-Package Forward Roadmaps
+
+### 6.1 ZSP AI Studio & Video Renderer (`packages/zsp-aitool`)
+- **Mission**: Thai-First Shopee Affiliate Marketing Platform and HyperFrames multi-scene video rendering engine (`:3005` / `studio.zeaz.dev`).
+- **Milestones**:
+  - [x] Integrate 23 Prisma 5.22 schema models with strict tenant isolation.
+  - [x] App Router app shell (`AppLayout`, `Sidebar`, `Header`, `MobileNav`).
+  - [x] Admin & Operator audit panel gated behind `ADMIN_PANEL_ENABLED`.
+  - [x] Autonomous Shopee API scraping & product OCR vision ingestion pipeline.
+  - [x] Multi-platform social publishing adapters (TikTok, Facebook Reels, YouTube Shorts).
+  - [x] Video rendering watchdog with automated stale-job recovery.
+
+### 6.2 Zider AI Browser Companion (`packages/zider`)
+- **Mission**: Manifest V3 AI Browser Sidebar Companion with Shadow DOM isolation, ChatPDF document intelligence, and multi-model group streaming (`:8085`).
+- **Milestones**:
+  - [x] Shadow DOM isolated sidebar and selection toolbar.
+  - [x] Service worker background orchestrator and Chrome runtime message bus.
+  - [x] Multi-model router with OpenRouter Free model fallback.
+  - [x] Group AI multi-model streaming compare (parallel SSE).
+  - [x] ChatPDF tenant-scoped vector indexing and citation highlights.
+  - [x] Realtime YouTube transcript summarizer and multi-language translator.
+
+### 6.3 Zeto AI Content Factory (`packages/zeto`)
+- **Mission**: Enterprise AI content lifecycle engine executing `IDEATE → GENERATE → WRITE → APPROVE → SCHEDULE → PUBLISH → MONITOR → LEARN`.
+- **Milestones**:
+  - [x] ProMeta prompt compiler architecture.
+  - [x] M12 tool registry & point-cloud canvas HUD.
+  - [x] Multi-tenant content scheduling outbox with HMAC signatures.
+  - [x] Automated QA scorecard evaluation and self-correction loops.
+
+### 6.5 Autonomous Workspace & Deep Research Super Agents (`zworkforce` + `packages/zeto`)
+- **Mission**: Skywork-inspired multimodal workspace intelligence capable of turning simple prompts into end-to-end research reports, slide decks, structured spreadsheets, and podcasts.
+- **Architectural Paradigms**:
+  - **A2A (Agent2Agent) Protocol Support**: Open standard interoperability for workforce agents to discover capabilities, exchange contextual tokens, and delegate sub-tasks across heterogeneous runtimes.
+  - **Deep Research Autonomous Engine**: Iterative multi-hop search, citation cross-referencing, document verification, and synthesis pipeline with source provenance.
+  - **Cross-Model Memory Import (SkyClaw)**: Standardized memory import/export protocol enabling seamless migration of contextual memories across Luna/Terra/Sol tiers and external LLMs.
+  - **Multimodal Document Output Formats**: Direct compilation of verified research into formatted Markdown, presentation slide specs, CSV/Excel data sheets, and TTS-ready audio scripts.
+
+---
+
+## 7. Non-goals
 
 - Do not embed `apps/zvoice` with an iframe; its defensive framing policy is intentional.
-- Do not send provider or service credentials to the dashboard.
-- Do not replace durable zWorkforce scheduler/approval/audit systems with a parallel runtime.
+- Do not send provider or service credentials to the dashboard or client extensions.
+- Do not replace durable zWorkforce scheduler/approval/audit systems with a parallel OpenJarvis runtime.
 - Do not claim a provider, model or external service is production-ready until operator evidence exists.
 - Do not grant continuous agents unrestricted shell/network/action access.
 - Do not grant a newly installed or auto-updated skill capabilities outside its existing authorized envelope.
 - Do not treat local workspace access as permission to read or write arbitrary host filesystem paths.
 
-## 5. Completion definition
+## 8. Completion definition
 
-The combined Z.A.R.V.I.S./workspace-agent upgrade is feature-complete when the dashboard and ZVoice share one tested realtime voice contract; speech providers are pluggable; skills and agent modes are policy-governed and rollback-capable; scheduled/continuous operation has health and recovery controls; projects/conversations/context/artifacts are durable and tenant scoped; local/browser execution is sandboxed and approval-safe; FinOps is visible before and after execution; and all mutation continues through explicit zWorkforce approval/action boundaries.
+The combined Z.A.R.V.I.S./workspace-agent upgrade is feature-complete when the control plane, Z.A.R.V.I.S. voice gateway, ZSP studio, Zider companion, and Zeto factory share unified tenant and secret boundaries, skills and agent modes are policy-governed and rollback-capable, scheduled/continuous operation has health and recovery controls, projects/conversations/context/artifacts are durable and tenant scoped, local/browser execution is sandboxed and approval-safe, FinOps is visible before and after execution, and all mutation continues through explicit approval/action boundaries.
+

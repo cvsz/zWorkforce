@@ -1,6 +1,6 @@
 import unittest
 
-from common import stack
+from tests.common import stack
 from zworkforce.db import Database, SCHEMA_VERSION
 
 
