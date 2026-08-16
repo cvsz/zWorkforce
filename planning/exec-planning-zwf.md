@@ -1,8 +1,8 @@
 # zWorkforce Production Readiness Execution Plan (zwf Core)
 
-**Updated:** 2026-08-16  
-**Candidate:** `v3.0.3` on `agent/exec-plan-v3.0.3-readiness`  
-**Baseline main:** `456ebde0e2bebba1fd4355cb66cda8197065ac33`  
+**Updated:** 2026-08-17  
+**Candidate:** `v3.0.3` repository candidate on `main`  
+**Baseline main:** `100fa0b90a31da723eedfa3107e50ba1a8b8bd75`  
 **Parent Framework:** [`exec-planning.master.md`](exec-planning.master.md) & [`../AGENTS.md`](../AGENTS.md)
 
 This is the production-readiness execution plan for the root `zWorkforce` control plane. It defines required validation gates, state invariants, secret safety, PostgreSQL operations, and durable release proofs before tagging `v3.0.3`.
@@ -13,7 +13,7 @@ The durable evidence ledger for this candidate is [`../docs/PRODUCTION-EVIDENCE.
 
 ## 1. Repository Baseline & Release Context
 
-- **Release Status**: Full Final Release `v3.0.2` (stable baseline); candidate branch advances to `v3.0.3`.
+- **Release Status**: Full Final Release `v3.0.2` remains the stable release; the `v3.0.3` repository candidate has been merged to `main` and remains evidence-gated before immutable tag creation.
 - **Target Surfaces**:
   - `zworkforce/` Python control plane, durable database repository, distributed queue, outbox engine, and API layer.
   - `packages/zarvis/` Voice gateway, session/task orchestrator, and multimodal runtime.
@@ -21,6 +21,7 @@ The durable evidence ledger for this candidate is [`../docs/PRODUCTION-EVIDENCE.
   - `packages/zider/` Manifest V3 AI sidebar, ChatPDF, and multi-model router.
   - `ZWorkforceClient/` Native Windows WinUI desktop client.
 - **Provider Credentials**: Loaded dynamically from `.env.ai`.
+- **Release Boundary**: Repository CI evidence does not substitute for external PostgreSQL/PITR, identity, provider, storage, observability, Windows signing, rollout, or GO/NO-GO evidence required by `docs/PRODUCTION-EVIDENCE.md`.
 
 ---
 
@@ -75,10 +76,11 @@ graph TD
 
 ### 4.1 PostgreSQL Point-In-Time Recovery (PITR)
 - **Target Metrics**: RPO $\le 5$ minutes, RTO $\le 30$ minutes.
-- **Automated Verification**:
+- **Repository Verification**:
   ```bash
   PYTHONPATH=. python3 -m unittest tests/test_v3_postgres.py -v
   ```
+- **Production Readiness**: A passing repository test is regression evidence only. Record managed/external backup, restore, PITR target, observed RPO/RTO, and durable artifact references in `docs/PRODUCTION-EVIDENCE.md` before claiming production recovery readiness.
 
 ### 4.2 Outbox & Queue Recovery
 - Unclaimed or expired task leases are re-queued automatically after timeout.
@@ -102,5 +104,5 @@ zworkforce doctor
 python3 -m unittest tests/test_static_assets.py -v
 
 # 4. Master full-stack dry run
-./install_hermes_full_stack_master.sh --dry-run
+./scripts/install/install_hermes_full_stack_master.sh --dry-run
 ```
