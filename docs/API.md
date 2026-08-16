@@ -124,6 +124,47 @@ conversation and message ownership is constrained by `(tenant_id, id)` at both
 the repository and database foreign-key layers, preventing cross-tenant project
 or conversation attachment.
 
+## Workspace context snapshots / compaction
+
+Context snapshots are durable, tenant-scoped checkpoints over an existing
+conversation. Source messages are never rewritten or deleted by snapshot or
+compaction operations. Snapshot membership is ordered by durable conversation
+ordinal and stores deterministic estimated-token accounting until provider-
+reported usage is available at the execution boundary.
+
+Context reads require `workspace:read` and at least the `viewer` role:
+
+```text
+GET /api/v1/workspaces/conversations/{id}/context-snapshots
+GET /api/v1/workspaces/context-snapshots/{snapshot_id}
+```
+
+Creating a normal checkpoint requires `workspace:write` and at least the
+`operator` role:
+
+```text
+POST /api/v1/workspaces/conversations/{id}/context-snapshots
+```
+
+Request fields are `model_id`, `context_ceiling_tokens`,
+`compaction_threshold_tokens`, optional `message_ids`, optional `reason`,
+optional `summary`, and optional snapshot `id`. Message IDs must belong to the
+same tenant-scoped conversation. Context ceilings and thresholds are bounded,
+and the threshold cannot exceed the ceiling.
+
+Explicit compaction is a separately authorized durable/cost-relevant operation
+and requires `workspace:compact` plus at least the `operator` role:
+
+```text
+POST /api/v1/workspaces/conversations/{id}/compact
+```
+
+Compaction requires a non-empty `summary` and creates a new snapshot rather than
+replacing history. Audit events record conversation/model/token/member metadata
+and the summary SHA-256 digest, but not the raw summary text. This endpoint does
+not grant provider/model authority by itself; provider-backed automatic
+summarization remains subject to normal model policy and budget controls.
+
 ## Evaluation
 
 ```text
