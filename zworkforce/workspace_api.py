@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import re
+import urllib.parse
 from typing import Any
+
+from .api import App as CoreApp
 
 NOT_HANDLED = object()
 _UUID_PATH = r"[0-9A-Fa-f-]{36}"
@@ -292,3 +295,48 @@ def handle_workspace_delete(handler, app, path: str):
         {"project_id": conversation.get("project_id"), "retention_policy": conversation["retention_policy"]},
     )
     return handler._json(200, {"ok": True, "id": conversation_id})
+
+
+class WorkspaceApp(CoreApp):
+    """Core zWorkforce API plus isolated workspace/project conversation routes."""
+
+    def handler(self):
+        app = self
+        ParentHandler = super().handler()
+
+        class Handler(ParentHandler):
+            def _get_api(self, path: str):
+                result = handle_workspace_get(self, app, path, self._query())
+                if result is not NOT_HANDLED:
+                    return result
+                return super()._get_api(path)
+
+            def do_POST(self):
+                path = urllib.parse.urlsplit(self.path).path
+                if not path.startswith("/api/v1/workspaces"):
+                    return super().do_POST()
+                self._prepare()
+                try:
+                    result = handle_workspace_post(self, app, path)
+                    if result is not NOT_HANDLED:
+                        return result
+                    return self._error(404, "not_found", "not found")
+                except (ValueError, TypeError) as exc:
+                    return self._error(400, "invalid_request", str(exc))
+                except Exception as exc:
+                    return self._error(500, "internal_error", "internal server error", str(exc))
+
+            def do_DELETE(self):
+                self._prepare()
+                path = urllib.parse.urlsplit(self.path).path
+                try:
+                    result = handle_workspace_delete(self, app, path)
+                    if result is not NOT_HANDLED:
+                        return result
+                    return self._error(404, "not_found", "not found")
+                except (ValueError, TypeError) as exc:
+                    return self._error(400, "invalid_request", str(exc))
+                except Exception as exc:
+                    return self._error(500, "internal_error", "internal server error", str(exc))
+
+        return Handler
