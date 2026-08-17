@@ -57,16 +57,15 @@ graph TD
 - [x] **Multi-Language Live Transcription Overlay (Phase 4)**:
   - Built `packages/zarvis/apps/zvoice/src/transcript_overlay.mjs` with timed caption display and BCP-47 language tag switching.
   - Test suite in `packages/zarvis/apps/zvoice/test/transcript_overlay.test.mjs`.
+- [x] **Native WinUI Assistant Deep Integration (Phase 2)**:
+  - Built `ZWorkforceClient/src/ZWorkforceClient.Core/Services/VoiceService.cs` providing native audio capture loop, state management, and `Win+Alt+Z` hotkey routing.
+  - Unit tests in `ZWorkforceClient/tests/ZWorkforceClient.Core.Tests/VoiceServiceTests.cs`.
 
 ---
 
 ## 3. Active & Upcoming Implementation Workstreams
 
-### Phase 2: Native WinUI Assistant Deep Integration
-- **Objective**: WinUI 3 background audio capture, system global hotkey (`Win+Alt+Z`), and live transcription overlay.
-- **Files**:
-  - `ZWorkforceClient/src/ZWorkforceClient.Core/Services/VoiceService.cs`: Native audio pipeline.
-  - `ZWorkforceClient/tests/ZWorkforceClient.Core.Tests/VoiceServiceTests.cs`: Unit tests.
+*(All Phases 1 through 4 for Z.A.R.V.I.S. Assistant Suite are now completed and verified).*
 
 ---
 
