@@ -24,13 +24,7 @@ def _origin(parsed) -> tuple[str, str, int]:
 
 
 class PlaywrightReadOnlyTransport:
-    """Playwright Chromium adapter for governed read-only browser actions.
-
-    A fresh Chromium process is bound to the public IP already approved by the
-    SW7 policy layer. Requests are constrained to the exact approved origin;
-    cross-origin subresources and redirect navigations fail closed. Mutations
-    remain unavailable until the durable zWorkforce approval adapter is wired.
-    """
+    """Playwright Chromium adapter for governed read-only browser actions."""
 
     enforces_pinned_destination = True
     disables_automatic_redirects = True
@@ -73,7 +67,8 @@ class PlaywrightReadOnlyTransport:
         if not hostname or hostname != tls_server_name.lower().rstrip("."):
             raise BrowserPolicyError("approved hostname and TLS server identity do not match")
         default_port = 443 if parsed.scheme == "https" else 80
-        expected_authority = hostname if approved_origin[2] == default_port else f"{hostname}:{approved_origin[2]}"
+        authority_host = f"[{hostname}]" if ":" in hostname else hostname
+        expected_authority = authority_host if approved_origin[2] == default_port else f"{authority_host}:{approved_origin[2]}"
         if host_header.lower() != expected_authority.lower():
             raise BrowserPolicyError("browser Host authority does not match the approved origin")
 
