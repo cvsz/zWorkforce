@@ -42,7 +42,18 @@ graph TD
 - **Files**:
   - `zworkforce/solana_notary.py`: Ledger notarization client.
 
----
+### Phase 3: Automated CVSS-Scored Vulnerability Triage (CodeQL SARIF)
+- **Objective**: Parse CodeQL SARIF output, score results by CVSS v3.1, auto-close `LOW`/`INFO` findings, and open GitHub issues for `HIGH`/`CRITICAL`.
+- **Files**:
+  - `scripts/sarif_triage.py`: SARIF JSON parser and CVSS auto-scorer.
+  - `tests/test_sarif_triage.py`: Mock SARIF fixture and severity bucketing tests.
+  - `.github/workflows/ci.yml`: Post-CodeQL step invoking `sarif_triage.py`.
+
+### Phase 4: Runtime Secret Canary & Heap Dump Redaction
+- **Objective**: Inject canary tokens into provider secret slots at startup; alert and halt if any canary appears in log output, API responses, or serialized task payloads.
+- **Files**:
+  - `zworkforce/secret_canary.py`: Canary token injection and runtime output scanner.
+  - `tests/test_secret_canary.py`: Canary-in-log detection and halt-on-leak tests.
 
 ## 4. Verification & Validation Protocol
 
