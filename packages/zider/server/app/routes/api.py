@@ -30,7 +30,7 @@ try:
     from app.services.vision_service import VisionService
     from app.services.prompt_library import PromptLibraryService
     from app.services.image_gen_service import ImageGenService
-    from app.services.zworkforce_bridge import ZWorkforceBridge
+    from app.services.zworkforce_bridge import ZWorkforceBridge, ZWorkforceBridgeError
 except ImportError:
     from server.app.models import (
         ChatRequest,
@@ -59,7 +59,7 @@ except ImportError:
     from server.app.services.vision_service import VisionService
     from server.app.services.prompt_library import PromptLibraryService
     from server.app.services.image_gen_service import ImageGenService
-    from server.app.services.zworkforce_bridge import ZWorkforceBridge
+    from server.app.services.zworkforce_bridge import ZWorkforceBridge, ZWorkforceBridgeError
 
 router = APIRouter(prefix="/api")
 
@@ -115,16 +115,23 @@ async def image_generate(req: ImageGenRequest):
 
 @router.get("/zworkforce/overview")
 async def zworkforce_overview():
-    return await ZWorkforceBridge.get_overview()
+    try:
+        return await ZWorkforceBridge.get_overview()
+    except ZWorkforceBridgeError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
 
 @router.post("/zworkforce/dispatch")
 async def zworkforce_dispatch(req: ZWorkforceTaskRequest):
-    return await ZWorkforceBridge.dispatch_task(
-        title=req.title,
-        prompt=req.prompt,
-        target_agent=req.target_agent
-    )
+    try:
+        return await ZWorkforceBridge.dispatch_task(
+            title=req.title,
+            prompt=req.prompt,
+            target_agent=req.target_agent,
+            idempotency_key=req.idempotency_key,
+        )
+    except ZWorkforceBridgeError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
 
 @router.get("/prompts")

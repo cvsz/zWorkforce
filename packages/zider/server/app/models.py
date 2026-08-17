@@ -88,3 +88,4 @@ class ZWorkforceTaskRequest(BaseModel):
     title: str
     prompt: str
     target_agent: str = "general"
+    idempotency_key: str = Field(..., min_length=1, max_length=128)
