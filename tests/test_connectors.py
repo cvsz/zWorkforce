@@ -1,5 +1,8 @@
 import unittest
-from common import stack
+try:
+    from common import stack
+except ImportError:
+    from tests.common import stack
 from zworkforce.connectors import (
     CONNECTOR_REGISTRY,
     SignatureVerifier,
