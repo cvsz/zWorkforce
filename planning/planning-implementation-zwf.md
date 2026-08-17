@@ -68,17 +68,13 @@ graph TD
 - [x] **Typed Agent Handoff & Guardrail Protocol (Phase 4)**:
   - Built `zworkforce/agent_handoff.py` with typed handoff contracts, self-delegation guards, and context token budgets.
   - Integrated into `zworkforce/engine.py` delegation loop.
+- [x] **Secure MCP Reverse Tunnel Client Gateway (Phase 1)**:
+  - Built `zworkforce/tunnel.py` with `McpTunnelManager` supporting client registration, encrypted tunnel heartbeats, and timeout fencing.
+  - Test suite in `tests/test_v3_tunnel.py`.
 
 ---
 
 ## 3. Active & Upcoming Implementation Workstreams
-
-### Phase 1: Secure MCP Reverse Tunnel Client Gateway
-- **Objective**: Allow localhost / private edge MCP servers to securely connect to cloud workforce without inbound ports.
-- **Files to Implement/Touch**:
-  - `zworkforce/tunnel.py`: Reverse-tunnel client using encrypted WebSockets and ephemeral ticket auth.
-  - `zworkforce/api.py`: Endpoint `POST /api/v1/mcp/tunnel/connect`.
-  - `tests/test_tunnel.py`: Unit test suite verifying tunnel handshake, heartbeat, and tool forwarding.
 
 ### Phase 2: Agent Client Protocol (ACP) Multi-IDE Integration
 - **Objective**: Expose full ACP JSON-RPC standard for Cursor, VS Code, and Zed editor companion integration.
