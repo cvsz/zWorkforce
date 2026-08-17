@@ -48,28 +48,22 @@ graph TD
 - [x] **Interactive Slash Command Menu & Doc Hints**: Real-time keyboard-driven autocomplete (`#slashMenu`, `#slashHint`) in frontend dashboard.
 - [x] **Session Snapshot & State Machine**: Full resilience against network drops and restart events without secret leakage.
 - [x] **Windows Client Contract Parity**: Multi-targeting build and tests for Windows Client compatibility.
+- [x] **Gemini Live API & OpenAI Realtime Voice Engine (Phase 1)**:
+  - Built `packages/zarvis/services/zarvis-orchestrator/src/live_voice.mjs` supporting Gemini Live (`gemini-2.0-flash-exp`) and OpenAI Realtime audio streaming sessions.
+  - Test suite in `packages/zarvis/services/zarvis-orchestrator/test/live_voice.test.mjs`.
+- [x] **VAD Sensitivity Tuning & Adaptive Barge-in (Phase 3)**:
+  - Built `packages/zarvis/services/voice-gateway/vad_config.mjs` with root-mean-square amplitude calculation, configurable energy thresholds, and silence duration bounds.
+  - Test suite in `packages/zarvis/services/voice-gateway/test/vad_config.test.mjs`.
 
 ---
 
 ## 3. Active & Upcoming Implementation Workstreams
-
-### Phase 1: Gemini Live API & OpenAI Realtime Multi-Provider Voice Engine
-- **Objective**: Bidirectional streaming WebSocket bridge supporting Gemini Live API and OpenAI Realtime audio.
-- **Files**:
-  - `packages/zarvis/services/zarvis-orchestrator/src/live_voice.ts`: Low-latency WebSocket handler.
-  - `zworkforce/api_zarvis.py`: Ephemeral session issuing endpoint.
 
 ### Phase 2: Native WinUI Assistant Deep Integration
 - **Objective**: WinUI 3 background audio capture, system global hotkey (`Win+Alt+Z`), and live transcription overlay.
 - **Files**:
   - `ZWorkforceClient/src/ZWorkforceClient.Core/Services/VoiceService.cs`: Native audio pipeline.
   - `ZWorkforceClient/tests/ZWorkforceClient.Core.Tests/VoiceServiceTests.cs`: Unit tests.
-
-### Phase 3: VAD Sensitivity Tuning & Adaptive Barge-in
-- **Objective**: Configurable server-side VAD threshold (`energy_threshold`, `silence_duration_ms`) with per-session override and fail-safe auto-restart on stream stall.
-- **Files**:
-  - `packages/zarvis/services/voice-gateway/src/vad_config.ts`: VAD parameter schema and validation.
-  - `packages/zarvis/services/voice-gateway/test/vad_config.test.mjs`: Boundary-value unit tests.
 
 ### Phase 4: Multi-Language Live Transcription Overlay
 - **Objective**: Browser-visible real-time captions synchronized with Gemini Live streaming responses with language code switching (`BCP-47`).
