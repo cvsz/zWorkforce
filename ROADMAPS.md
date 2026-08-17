@@ -226,10 +226,10 @@ This roadmap line translates the strongest public Skywork workspace-agent patter
 - [x] Durable projects, conversations, search, pin/archive and stable conversation IDs foundation.
 - [ ] Auto naming and richer history navigation UX.
 - [ ] Context gauge, explicit `/compact`, question anchors and context snapshot history.
-- [ ] Slash command registry: `/plan`, `/review`, `/compact`, `/goal`, `/status`, `/artifacts`, `/cost`, `/skill`, `/workflow`, `/feedback`.
-- [ ] Task summary sidecar with artifact manifest, review state, tool timeline and sanitized subagent hierarchy.
-- [ ] Operator-granted local workspace roots with path/symlink escape protection and bounded subprocesses.
-- [ ] Git branch/worktree adapter for isolated coding tasks; protected/default branches never mutated directly.
+- [x] Slash command registry: `/plan`, `/review`, `/compact`, `/undo`, `/goal`, `/status`, `/artifacts`, `/cost`, `/skill`, `/workflow`, `/feedback` with UI autocomplete and server-side resolution.
+- [x] Task summary sidecar with artifact manifest, review state, tool timeline and sanitized subagent hierarchy.
+- [x] Operator-granted local workspace roots with path/symlink escape protection and bounded subprocesses.
+- [x] Git branch/worktree adapter for isolated coding tasks; protected/default branches never mutated directly.
 - [ ] Zider browser-use tool classes with read-only default and approval-gated side effects.
 - [ ] Signed skill marketplace install, discovery scoring and repeated-workflow → draft skill/workflow candidate compiler.
 - [ ] Markdown source/rendered preview, safe HTML preview and artifact history resilient across restarts.
