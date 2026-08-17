@@ -78,6 +78,35 @@ class ZWorkforceBridgeTests(unittest.IsolatedAsyncioTestCase):
                 await ZWorkforceBridge.get_overview()
         self.assertEqual(ctx.exception.status_code, 503)
 
+    async def test_dispatch_forwards_bounded_idempotency_key(self):
+        client = FakeClient(post_result=FakeResponse(payload={"id": "task-1", "state": "queued"}))
+        with patch.object(bridge_module.httpx, "AsyncClient", return_value=client):
+            result = await ZWorkforceBridge.dispatch_task(
+                "title",
+                "prompt",
+                "general",
+                idempotency_key="zider-dispatch-42",
+            )
+        self.assertEqual(result["id"], "task-1")
+        headers = client.requests[0][2]["headers"]
+        self.assertEqual(headers["Idempotency-Key"], "zider-dispatch-42")
+        self.assertEqual(headers["Authorization"], "Bearer super-secret-token")
+
+    async def test_dispatch_rejects_missing_or_header_unsafe_idempotency_key_before_transport(self):
+        client = FakeClient(post_result=FakeResponse(payload={"id": "unexpected"}))
+        with patch.object(bridge_module.httpx, "AsyncClient", return_value=client):
+            for key in ("", "bad key", "bad\nkey", "x" * 129):
+                with self.subTest(key=repr(key)):
+                    with self.assertRaisesRegex(ZWorkforceBridgeError, "idempotency key") as ctx:
+                        await ZWorkforceBridge.dispatch_task(
+                            "title",
+                            "prompt",
+                            "general",
+                            idempotency_key=key,
+                        )
+                    self.assertEqual(ctx.exception.status_code, 400)
+        self.assertEqual(client.requests, [])
+
     async def test_dispatch_failure_does_not_fabricate_queued_task_or_reflect_body(self):
         client = FakeClient(
             post_result=FakeResponse(
@@ -87,7 +116,12 @@ class ZWorkforceBridgeTests(unittest.IsolatedAsyncioTestCase):
         )
         with patch.object(bridge_module.httpx, "AsyncClient", return_value=client):
             with self.assertRaises(ZWorkforceBridgeError) as ctx:
-                await ZWorkforceBridge.dispatch_task("title", "prompt", "general")
+                await ZWorkforceBridge.dispatch_task(
+                    "title",
+                    "prompt",
+                    "general",
+                    idempotency_key="failure-case-1",
+                )
         message = str(ctx.exception)
         self.assertEqual(ctx.exception.status_code, 502)
         self.assertIn("upstream status 500", message)
