@@ -6,11 +6,18 @@ ZIDER_ROOT = Path(__file__).resolve().parent.parent
 if str(ZIDER_ROOT) not in sys.path:
     sys.path.insert(0, str(ZIDER_ROOT))
 
-from app.services.agent_runner import BrowserAction, BrowserPolicyError
+from app.services.agent_runner import (
+    BrowserAction,
+    BrowserAutomationUnavailable,
+    BrowserPolicyError,
+)
 from app.services.browser_executor import PinnedBrowserExecutor
 
 
 class FakeTransport:
+    enforces_pinned_destination = True
+    disables_automatic_redirects = True
+
     def __init__(self, result=None):
         self.calls = []
         self.result = result or {"ok": True}
@@ -38,9 +45,32 @@ class BrowserExecutorTests(unittest.IsolatedAsyncioTestCase):
     async def test_executor_rejects_private_or_missing_pins(self):
         executor = PinnedBrowserExecutor(FakeTransport())
         with self.assertRaisesRegex(BrowserPolicyError, "must be public"):
-            await executor.execute(BrowserAction(kind="inspect", url="https://example.com", resolved_addresses=("127.0.0.1",)))
+            await executor.execute(
+                BrowserAction(
+                    kind="inspect",
+                    url="https://example.com",
+                    resolved_addresses=("127.0.0.1",),
+                )
+            )
         with self.assertRaisesRegex(BrowserPolicyError, "requires policy-validated"):
             await executor.execute(BrowserAction(kind="inspect", url="https://example.com"))
+
+    async def test_executor_requires_transport_to_enforce_pin_and_disable_redirects(self):
+        class UnpinnedTransport(FakeTransport):
+            enforces_pinned_destination = False
+
+        class RedirectFollowingTransport(FakeTransport):
+            disables_automatic_redirects = False
+
+        action = BrowserAction(
+            kind="inspect",
+            url="https://example.com",
+            resolved_addresses=("93.184.216.34",),
+        )
+        with self.assertRaisesRegex(BrowserAutomationUnavailable, "pinned destination"):
+            await PinnedBrowserExecutor(UnpinnedTransport()).execute(action)
+        with self.assertRaisesRegex(BrowserAutomationUnavailable, "automatic redirects"):
+            await PinnedBrowserExecutor(RedirectFollowingTransport()).execute(action)
 
     async def test_executor_never_follows_redirect_without_revalidation(self):
         transport = FakeTransport({"redirect_url": "https://other.example.com/next"})
