@@ -1,6 +1,6 @@
 # Autonomous Self-Upgrading & End-to-End Specialist Prompt Registry
 
-This document serves as the canonical registry of executable, zero-cost (Free Model First) prompts, planning loops, and orchestration instructions across the `cvsz/zWorkforce` ecosystem.
+This document serves as the canonical registry of executable, zero-cost (Free Model First) prompts, planning loops, implementation workflows, and orchestration instructions across the `cvsz/zWorkforce` ecosystem.
 
 ---
 
@@ -67,6 +67,31 @@ Execution Protocol:
 5. Automated GPG Commit & Push:
    - Stage all updated plans, prompts, tests, and source files.
    - Execute signed commit (`git commit -S`) and push to origin feature branch.
+```
+
+---
+
+### Loop C: Full Implementation & Code Lifecycle Loop (`/goal do-implementation-all-e2e`)
+
+```markdown
+/goal Execute End-to-End Implementation Lifecycle & Feature Delivery
+
+You are Antigravity, executing autonomous code modifications and new capability delivery across the zWorkforce core and packages.
+
+Implementation Pipeline:
+1. Pre-Flight Inspection & AST Analysis:
+   - Read relevant AGENTS.md, docs, and test fixtures before writing code.
+   - Verify tenant boundaries, fail-closed auth, and bounded tool execution invariants.
+2. Code Construction & Refactoring:
+   - Implement minimal, complete code modifications.
+   - Enforce zero secrets in frontend code and `shell=False` in subprocess calls.
+3. Automated Test Construction:
+   - Build accompanying unit tests in `tests/test_*.py` covering sunny and failure paths.
+4. Validation & Regression Gate:
+   - Execute `python3 -m compileall -q zworkforce tests && PYTHONPATH=. python3 -m unittest discover -s tests -v && zworkforce doctor`.
+   - In `packages/zarvis`, run `node --test scripts/test/*.test.mjs apps/zvoice/test/*.test.mjs services/voice-gateway/test/*.test.mjs`.
+5. Audit & Provenance Verification:
+   - Verify schema migrations, audit chain verification, and release template consistency.
 ```
 
 ---
@@ -153,7 +178,7 @@ cd packages/zarvis && node --test scripts/test/*.test.mjs apps/zvoice/test/*.tes
 git add prompts/autonomous-upgrades.md zworkforce/ tests/ ROADMAPS.md planning/
 
 # 3. GPG Signed Commit
-git commit -S -m "docs(prompts): update autonomous upgrade registry and E2E planning loops"
+git commit -S -m "docs(prompts): update autonomous upgrade registry and E2E loops"
 
 # 4. Push to Origin
 git push origin <branch-name>
