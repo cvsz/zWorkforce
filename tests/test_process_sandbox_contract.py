@@ -3,8 +3,10 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import unittest
 
-from tests.common import ROOT, stack
+from tests.common import stack
 from zworkforce.policy import PolicyEngine
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class ProcessSandboxContractTests(unittest.TestCase):
