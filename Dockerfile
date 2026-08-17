@@ -9,7 +9,10 @@ LABEL org.opencontainers.image.title="zWorkforce" \
       org.opencontainers.image.version="${VERSION}"
 COPY pyproject.toml README.md LICENSE ./
 COPY zworkforce ./zworkforce
-RUN python -m pip install --no-cache-dir . \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends bubblewrap util-linux \
+    && rm -rf /var/lib/apt/lists/* \
+    && python -m pip install --no-cache-dir . \
     && groupadd --system --gid 10001 zworkforce \
     && useradd --system --uid 10001 --gid zworkforce --home /nonexistent --shell /usr/sbin/nologin zworkforce \
     && mkdir -p /data /workspace /artifacts \
