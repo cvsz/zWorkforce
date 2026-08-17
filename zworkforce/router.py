@@ -126,6 +126,44 @@ class ModelRouter:
             out[mid] = ModelMetadata(id=mid, provider=spec["provider"], capabilities=caps)
         return out
 
+    @staticmethod
+    def parse_variant_slug(model_id: str) -> tuple[str, str | None]:
+        """Extract base model ID and optional variant slug like :free, :thinking, :exacto, :nitro, :online, :extended."""
+        if not model_id:
+            return "", None
+        clean = model_id.strip()
+        for variant in (":thinking", ":exacto", ":nitro", ":online", ":extended", ":free"):
+            if clean.endswith(variant):
+                return clean[:-len(variant)], variant[1:]
+        return clean, None
+
+    def resolve_smart_variant(self, model_id: str, *, variant: str | None = None) -> str:
+        """Resolve model ID combined with smart variant slug for optimized routing."""
+        base, explicit_variant = self.parse_variant_slug(model_id)
+        effective_variant = (variant or explicit_variant or "").lower()
+        if not effective_variant:
+            return base
+
+        if effective_variant == "free":
+            candidate = f"{base}:free" if not base.endswith(":free") else base
+            if candidate in self.catalog and self.catalog[candidate].capabilities.is_free:
+                return candidate
+            if base in self.catalog and self.catalog[base].capabilities.is_free:
+                return base
+            resolved = self.resolve_free_model()
+            return resolved or "openrouter/free"
+        elif effective_variant == "thinking":
+            return f"{base}:thinking" if not base.endswith(":thinking") else base
+        elif effective_variant == "nitro":
+            return f"{base}:nitro" if not base.endswith(":nitro") else base
+        elif effective_variant == "exacto":
+            return f"{base}:exacto" if not base.endswith(":exacto") else base
+        elif effective_variant == "online":
+            return f"{base}:online" if not base.endswith(":online") else base
+        elif effective_variant == "extended":
+            return f"{base}:extended" if not base.endswith(":extended") else base
+        return f"{base}:{effective_variant}"
+
     def resolve_free_model(
         self,
         required_tools: bool = False,

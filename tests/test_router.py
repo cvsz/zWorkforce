@@ -58,6 +58,43 @@ class ModelRouterTests(unittest.TestCase):
         caps = self.router.catalog[free_cand].capabilities
         self.assertTrue(caps.reasoning)
 
+    def test_parse_variant_slug(self):
+        base, variant = self.router.parse_variant_slug("deepseek/deepseek-r1:free")
+        self.assertEqual(base, "deepseek/deepseek-r1")
+        self.assertEqual(variant, "free")
+
+        base, variant = self.router.parse_variant_slug("anthropic/claude-3.7-sonnet:thinking")
+        self.assertEqual(base, "anthropic/claude-3.7-sonnet")
+        self.assertEqual(variant, "thinking")
+
+        base, variant = self.router.parse_variant_slug("openai/gpt-4o:nitro")
+        self.assertEqual(base, "openai/gpt-4o")
+        self.assertEqual(variant, "nitro")
+
+        base, variant = self.router.parse_variant_slug("meta-llama/llama-3.3-70b-instruct")
+        self.assertEqual(base, "meta-llama/llama-3.3-70b-instruct")
+        self.assertIsNone(variant)
+
+    def test_resolve_smart_variant(self):
+        # Explicit variant slug parameter
+        self.assertEqual(
+            self.router.resolve_smart_variant("anthropic/claude-3.7-sonnet", variant="thinking"),
+            "anthropic/claude-3.7-sonnet:thinking",
+        )
+        self.assertEqual(
+            self.router.resolve_smart_variant("google/gemini-2.0-flash", variant="online"),
+            "google/gemini-2.0-flash:online",
+        )
+        # Suffix in model_id string
+        self.assertEqual(
+            self.router.resolve_smart_variant("mistral/mistral-large:nitro"),
+            "mistral/mistral-large:nitro",
+        )
+        # :free resolution
+        free_resolved = self.router.resolve_smart_variant("deepseek/deepseek-r1:free")
+        self.assertEqual(free_resolved, "deepseek/deepseek-r1:free")
+
 
 if __name__ == "__main__":
     unittest.main()
+
