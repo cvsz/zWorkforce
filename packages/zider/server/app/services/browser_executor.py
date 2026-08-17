@@ -64,11 +64,25 @@ class PinnedBrowserExecutor:
             raise BrowserPolicyError("browser action requires policy-validated pinned addresses")
         return tuple(values)
 
-    async def execute(self, action: BrowserAction) -> Mapping[str, object]:
-        self._require_transport_contract()
-        host = urlsplit(action.url).hostname or ""
+    @staticmethod
+    def _origin_authority(action: BrowserAction) -> tuple[str, str]:
+        parsed = urlsplit(action.url)
+        host = parsed.hostname or ""
         if not host:
             raise BrowserPolicyError("browser action URL is missing a hostname")
+        try:
+            port = parsed.port
+        except ValueError as exc:
+            raise BrowserPolicyError("browser action URL contains an invalid port") from exc
+        default_port = 443 if parsed.scheme == "https" else 80
+        if port is None or port == default_port:
+            return host, host
+        host_header = f"[{host}]:{port}" if ":" in host else f"{host}:{port}"
+        return host_header, host
+
+    async def execute(self, action: BrowserAction) -> Mapping[str, object]:
+        self._require_transport_contract()
+        host_header, tls_server_name = self._origin_authority(action)
         last_error: Exception | None = None
         for connect_ip in self._addresses(action):
             try:
@@ -76,8 +90,8 @@ class PinnedBrowserExecutor:
                     self.transport.request(
                         action=action,
                         connect_ip=connect_ip,
-                        host_header=host,
-                        tls_server_name=host,
+                        host_header=host_header,
+                        tls_server_name=tls_server_name,
                         timeout_seconds=self.timeout_seconds,
                     ),
                     timeout=self.timeout_seconds,
