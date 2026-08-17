@@ -147,7 +147,7 @@ Refactor the voice runtime toward a typed registry while keeping the current ser
 - [x] OpenRouter Multi-Provider Failover: support automatic failover across 600+ hosted models (Anthropic, OpenAI, Google, DeepSeek, Groq, Meta, Mistral, Moonshot).
 - [x] Dynamic Provider & Privacy Routing: honor zero-data-retention (ZDR) flags, privacy toggles, data-training policies, and allowed provider routing constraints without breaking tenant isolation.
 - [x] Open WebUI Enterprise Control Center integration (`:3080`): interactive chat, dual model arena, interactive code artifacts, RAG knowledge, and OpenAPI tool/function dispatch.
-- [ ] Smart Model Variant Slugs & Specialized Routing:
+- [x] Smart Model Variant Slugs & Specialized Routing:
   - `:free` (Free Models Router primary tier with zero token cost);
   - `:thinking` / Extended Reasoning variant handling across free DeepSeek-R1, Claude, and OpenAI o-series;
   - `:exacto` & Auto-Exacto provider sorting for quality-optimized tool/function calling;
