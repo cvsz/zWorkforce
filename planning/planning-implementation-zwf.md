@@ -1,6 +1,6 @@
 # Planning & Implementation: zWorkforce Core Control Plane (`planning-implementation-zwf.md`)
 
-**Updated:** 2026-08-17  
+**Updated:** 2026-08-17T05:25Z (do-all-e2e + do-implementation-all-e2e cycle)
 **Module:** `zworkforce/` Python Control Plane, DB Repository, Distributed Task Queue, and Auth Gateway  
 **Parent Strategy:** [`exec-planning.master.md`](exec-planning.master.md) & [`exec-planning-zwf.md`](exec-planning-zwf.md)
 
@@ -59,6 +59,9 @@ graph TD
   - Implemented HMAC-SHA256 signature verification and fail-closed approval governance.
 - [x] **Slash Command Interactive Navigation (SW2/SW11)**:
   - Interactive popup autocomplete menu and contextual documentation hints in web static frontend (`index.html`, `app.js`, `styles.css`).
+- [x] **Standalone Test Runner Import Fix (PR #110)**:
+  - Added `try/except ImportError` fallback for `tests.common` import in `tests/test_connectors.py`.
+  - Enables canonical `PYTHONPATH=. python3 -m unittest tests/test_connectors.py -v` to pass per `AGENTS.md`.
 
 ---
 
@@ -76,6 +79,18 @@ graph TD
 - **Files to Implement/Touch**:
   - `zworkforce/acp.py`: Bidirectional ACP server with standard operations (`initialize`, `newSession`, `prompt`, `cancel`, `requestPermission`).
   - `tests/test_acp.py`: ACP compliance test suite.
+
+### Phase 3: OTLP Telemetry & Multi-Sink Trace Export
+- **Objective**: Programmatic trace export to OpenTelemetry Collector, Langfuse, Grafana Cloud, Arize AX.
+- **Files to Implement/Touch**:
+  - `zworkforce/telemetry.py`: OTLP span processor, token counter histogram, and provider attribution metadata.
+  - `tests/test_telemetry.py`: Unit tests verifying span structure and no-credential export invariants.
+
+### Phase 4: Typed Agent Handoff & Guardrail Protocol
+- **Objective**: Multi-agent routing with typed input/output validation, context compaction, and deterministic tool call evaluation on zero-cost free model tiers.
+- **Files to Implement/Touch**:
+  - `zworkforce/agent_handoff.py`: Typed handoff contracts, context window budgets, and escalation guards.
+  - `tests/test_agent_handoff.py`: Context isolation and cross-agent boundary tests.
 
 ---
 
