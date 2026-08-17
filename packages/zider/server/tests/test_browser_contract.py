@@ -16,12 +16,23 @@ from app.services.agent_runner import (
 
 
 class FakeExecutor:
+    enforces_resolved_addresses = True
+
     def __init__(self):
         self.actions = []
 
     async def execute(self, action):
         self.actions.append(action)
         return {"ok": True, "kind": action.kind}
+
+
+class UnpinnedExecutor:
+    def __init__(self):
+        self.actions = []
+
+    async def execute(self, action):
+        self.actions.append(action)
+        return {"ok": True}
 
 
 class BrowserContractTests(unittest.IsolatedAsyncioTestCase):
@@ -36,6 +47,21 @@ class BrowserContractTests(unittest.IsolatedAsyncioTestCase):
                 "test-model",
                 actions=[{"kind": "inspect", "url": "https://example.com/page"}],
             )
+
+    async def test_unpinned_executor_fails_closed_before_navigation(self):
+        executor = UnpinnedExecutor()
+        AgentRunner.configure(
+            executor=executor,
+            allowed_hosts=["example.com"],
+            resolver=lambda host: ["93.184.216.34"],
+        )
+        with self.assertRaisesRegex(BrowserAutomationUnavailable, "resolved addresses"):
+            await AgentRunner.run_claw_task(
+                "Inspect the page",
+                "test-model",
+                actions=[{"kind": "inspect", "url": "https://example.com/page"}],
+            )
+        self.assertEqual(executor.actions, [])
 
     async def test_read_only_action_executes_without_mutation_approval(self):
         executor = FakeExecutor()
@@ -53,6 +79,7 @@ class BrowserContractTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["steps"][0]["kind"], "inspect")
         self.assertFalse(result["steps"][0]["mutating"])
         self.assertEqual(len(executor.actions), 1)
+        self.assertEqual(executor.actions[0].resolved_addresses, ("93.184.216.34",))
 
     async def test_mutating_action_requires_control_plane_approval(self):
         executor = FakeExecutor()
