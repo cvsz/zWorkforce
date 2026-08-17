@@ -137,6 +137,15 @@ Refactor the voice runtime toward a typed registry while keeping the current ser
 - [x] Support operator-configured failover without silent provider substitution for pinned workloads.
 - [x] Keep cloud transmission disabled for protected data unless policy explicitly permits it.
 
+### R8.1 — OpenRouter & Enterprise Model Gateway Integration
+
+- [x] Unified OpenAI-Compatible Router Gateway (`http://api:9569/v1`) with server-side credentials and rate-limit safety.
+- [x] OpenRouter Multi-Provider Failover: support automatic failover across 600+ hosted models (Anthropic, OpenAI, Google, DeepSeek, Groq, Meta, Mistral, Moonshot).
+- [x] Dynamic Provider & Privacy Routing: honor zero-data-retention (ZDR) flags, privacy toggles, data-training policies, and allowed provider routing constraints without breaking tenant isolation.
+- [x] Open WebUI Enterprise Control Center integration (`:3080`): interactive chat, dual model arena, interactive code artifacts, RAG knowledge, and OpenAPI tool/function dispatch.
+- [ ] Automated Provider Key Health Probes: periodic verification of upstream provider keys (OpenRouter, Groq, DeepSeek, Google AI Studio) with auto-quarantine for revoked credentials.
+- [ ] Adaptive Fallback & Cost-Optimized Routing: latency and token cost aware routing across tier variants (Luna/Terra/Sol) with fallback to ultra-fast Groq endpoints on upstream 503/429.
+
 ### R9 — Observability and SLO hardening
 
 - [x] Voice session setup, STT, reasoning, TTS and end-to-end latency histograms.

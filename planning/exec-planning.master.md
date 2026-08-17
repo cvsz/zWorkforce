@@ -138,7 +138,16 @@ A capability or module is only marked complete when all criteria are satisfied:
   - Loop: `DISCOVER → TRIAGE → VALIDATE → ROOT-CAUSE → PATCH → TEST → REGRESSION TEST → SECURITY REVIEW → RE-SCAN`.
   - Boundaries: zero raw secret leakage, SSRF filtering, salted API tokens, bounded tool execution.
 
-### 3.7 Runtime Agent Platform: `Hermes Agent` & `Spawn`
+### 3.7 Multi-Model Router & Enterprise Gateway: `router`
+- **Canonical Reference**: [`exec-planning-router.md`](exec-planning-router.md)
+- **Status**: Active Gateway & Open WebUI Integration (`:3080` / `chat.zeaz.dev`)
+- **Key Modules**:
+  - Unified OpenAI Router: server-side provider key vault and rate limit protection (`/v1/chat/completions`).
+  - OpenRouter Multi-Provider Failover: dynamic routing across 600+ models with automatic failover to ultra-fast Groq endpoints.
+  - Privacy & ZDR Governance: data policy enforcement, Zero Data Retention header injection, and tenant-scoped routing allowlists.
+
+
+### 3.8 Runtime Agent Platform: `Hermes Agent` & `Spawn`
 - **Status**: Repository integration line; external host installation/runtime evidence is not implied by repository state.
 - **Key Components**:
   - Hermes agent runtime integration.
@@ -146,7 +155,7 @@ A capability or module is only marked complete when all criteria are satisfied:
   - master automation under `scripts/install/`.
   - provider credentials loaded dynamically from approved secret references.
 
-### 3.8 Workspace-Agent Upgrade
+### 3.9 Workspace-Agent Upgrade
 
 - **Canonical Reference**: [`exec-planning-skywork.md`](exec-planning-skywork.md)
 - **Research Map**: [`../docs/SKYWORK-CHANGELOG-REVERSE-ENGINEERING.md`](../docs/SKYWORK-CHANGELOG-REVERSE-ENGINEERING.md)
