@@ -226,11 +226,10 @@ class PostgresIntegrationTests(unittest.TestCase):
             branch="feat/a",
             start_ref="HEAD",
             expires_at=grant["expires_at"],
-            task_id="task-a",
         )
         self.assertEqual(record["status"], "active")
         self.assertEqual(record["grant_id"], grant["id"])
-        self.assertEqual(record["task_id"], "task-a")
+        self.assertIsNone(record["task_id"])
         self.assertEqual(len(self.db.list_workspace_worktrees(self.tenant_id)), 1)
 
         other_tenant = f"worktree-other-{uuid.uuid4().hex}"
