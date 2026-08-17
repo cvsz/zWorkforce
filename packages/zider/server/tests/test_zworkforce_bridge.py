@@ -116,6 +116,22 @@ class ZWorkforceBridgeTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaisesRegex(ZWorkforceBridgeError, "response shape"):
                 await ZWorkforceBridge.get_overview()
 
+    async def test_remote_http_control_plane_is_rejected_before_token_transport(self):
+        ZWorkforceBridge.ZWF_URL = "http://zwf.example.test"
+        client = FakeClient(get_result=FakeResponse(payload={"status": "healthy"}))
+        with patch.object(bridge_module.httpx, "AsyncClient", return_value=client):
+            with self.assertRaisesRegex(ZWorkforceBridgeError, "HTTPS outside loopback"):
+                await ZWorkforceBridge.get_overview()
+        self.assertEqual(client.requests, [])
+
+    async def test_loopback_http_remains_supported_for_local_development(self):
+        ZWorkforceBridge.ZWF_URL = "http://127.0.0.1:8000"
+        client = FakeClient(get_result=FakeResponse(payload={"status": "healthy"}))
+        with patch.object(bridge_module.httpx, "AsyncClient", return_value=client):
+            result = await ZWorkforceBridge.get_overview()
+        self.assertEqual(result["status"], "healthy")
+        self.assertEqual(client.requests[0][1], "http://127.0.0.1:8000/api/v1/overview")
+
 
 if __name__ == "__main__":
     unittest.main()
