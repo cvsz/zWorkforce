@@ -27,6 +27,12 @@ class WorktreeCommandResult:
     stderr: str
 
 
+@dataclass(frozen=True)
+class WorktreeCommitResult:
+    branch: str
+    commit_sha: str
+
+
 class GitWorktreeAdapter:
     """Grant-bounded Git worktree operations for approved local repositories.
 
@@ -37,6 +43,9 @@ class GitWorktreeAdapter:
 
     _BRANCH = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$")
     _CHECK_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
+    _EXTERNAL_HELPER_CONFIG = (
+        r"^(filter\..*\.(clean|smudge|process)|diff\..*\.(command|textconv))$"
+    )
 
     def __init__(
         self,
@@ -112,6 +121,13 @@ class GitWorktreeAdapter:
             raise WorktreeError("protected/default branch cannot be used as a task branch")
         return value
 
+    @staticmethod
+    def _validate_commit_message(message: str) -> str:
+        value = str(message or "").strip()
+        if not value or len(value) > 200 or "\n" in value or "\r" in value or "\x00" in value:
+            raise WorktreeError("commit message must be a single non-empty line of at most 200 characters")
+        return value
+
     def _run(self, argv: Sequence[str], *, cwd: Path) -> WorktreeCommandResult:
         self._require_git()
         try:
@@ -123,7 +139,13 @@ class GitWorktreeAdapter:
                 timeout=self.timeout_seconds,
                 shell=False,
                 stdin=subprocess.DEVNULL,
-                env={"PATH": "/usr/local/bin:/usr/bin:/bin", "LANG": "C.UTF-8"},
+                env={
+                    "PATH": "/usr/local/bin:/usr/bin:/bin",
+                    "LANG": "C.UTF-8",
+                    "GIT_CONFIG_NOSYSTEM": "1",
+                    "GIT_CONFIG_GLOBAL": "/dev/null",
+                    "GIT_ATTR_NOSYSTEM": "1",
+                },
             )
         except subprocess.TimeoutExpired as exc:
             raise WorktreeError(f"git command timed out after {self.timeout_seconds}s") from exc
@@ -134,6 +156,32 @@ class GitWorktreeAdapter:
             stdout=str(completed.stdout or "")[-self.max_output_bytes :],
             stderr=str(completed.stderr or "")[-self.max_output_bytes :],
         )
+
+    def _assert_no_external_git_helpers(self, repo: Path) -> None:
+        """Fail closed before Git operations that may consult repository attributes.
+
+        Git clean/smudge/process filters and custom diff/textconv drivers can
+        execute arbitrary repository-configured programs even when Python uses
+        ``shell=False``. System/global Git config and system attributes are also
+        excluded by ``_run`` so only repository-local configuration is relevant.
+        """
+        result = self._run(
+            [
+                self.git,
+                "-C",
+                str(repo),
+                "config",
+                "--includes",
+                "--local",
+                "--get-regexp",
+                self._EXTERNAL_HELPER_CONFIG,
+            ],
+            cwd=repo,
+        )
+        if result.exit_code not in (0, 1):
+            raise WorktreeError("unable to verify repository Git helper configuration")
+        if result.stdout.strip():
+            raise WorktreeError("repository-configured external Git helpers are not allowed")
 
     def repository_root(self, repo_relative: str = ".") -> Path:
         repo = self._resolve_existing(repo_relative)
@@ -156,12 +204,27 @@ class GitWorktreeAdapter:
         self._require_mutation()
         branch = self._validate_branch(branch)
         repo = self.repository_root(repo_relative)
+        self._assert_no_external_git_helpers(repo)
         destination = self._resolve_new_directory(destination_relative)
         start = str(start_ref or "HEAD").strip()
         if not start or start.startswith("-") or any(ch.isspace() for ch in start):
             raise WorktreeError("invalid start ref")
         result = self._run(
-            [self.git, "-C", str(repo), "worktree", "add", "-b", branch, str(destination), start],
+            [
+                self.git,
+                "-c",
+                "core.hooksPath=/dev/null",
+                "-c",
+                "core.fsmonitor=false",
+                "-C",
+                str(repo),
+                "worktree",
+                "add",
+                "-b",
+                branch,
+                str(destination),
+                start,
+            ],
             cwd=repo,
         )
         if result.exit_code != 0:
@@ -170,11 +233,21 @@ class GitWorktreeAdapter:
 
     def status(self, worktree_relative: str) -> WorktreeStatus:
         worktree = self.repository_root(worktree_relative)
+        self._assert_no_external_git_helpers(worktree)
         branch_result = self._run(
             [self.git, "-C", str(worktree), "branch", "--show-current"], cwd=worktree
         )
         status_result = self._run(
-            [self.git, "-C", str(worktree), "status", "--porcelain=v1", "--untracked-files=all"],
+            [
+                self.git,
+                "-c",
+                "core.fsmonitor=false",
+                "-C",
+                str(worktree),
+                "status",
+                "--porcelain=v1",
+                "--untracked-files=all",
+            ],
             cwd=worktree,
         )
         if branch_result.exit_code != 0 or status_result.exit_code != 0:
@@ -189,7 +262,16 @@ class GitWorktreeAdapter:
 
     def diff(self, worktree_relative: str, *, staged: bool = False) -> str:
         worktree = self.repository_root(worktree_relative)
-        argv = [self.git, "-C", str(worktree), "diff", "--no-ext-diff", "--no-color"]
+        self._assert_no_external_git_helpers(worktree)
+        argv = [
+            self.git,
+            "-C",
+            str(worktree),
+            "diff",
+            "--no-ext-diff",
+            "--no-textconv",
+            "--no-color",
+        ]
         if staged:
             argv.append("--cached")
         result = self._run(argv, cwd=worktree)
@@ -218,6 +300,74 @@ class GitWorktreeAdapter:
             raise WorktreeError("workspace grant does not authorize check executable")
         return self._run(requested, cwd=worktree)
 
+    def commit(self, worktree_relative: str, *, message: str, expected_branch: str) -> WorktreeCommitResult:
+        self._require_mutation()
+        worktree = self.repository_root(worktree_relative)
+        self._assert_no_external_git_helpers(worktree)
+        expected = self._validate_branch(expected_branch)
+        current = self.status(worktree_relative).branch
+        if not current or current != expected:
+            raise WorktreeError("worktree branch does not match its tracked task branch")
+        commit_message = self._validate_commit_message(message)
+        add_result = self._run(
+            [
+                self.git,
+                "-c",
+                "core.fsmonitor=false",
+                "-C",
+                str(worktree),
+                "add",
+                "--all",
+                "--",
+                ".",
+            ],
+            cwd=worktree,
+        )
+        if add_result.exit_code != 0:
+            raise WorktreeError("unable to stage worktree changes")
+        staged = self._run(
+            [
+                self.git,
+                "-C",
+                str(worktree),
+                "diff",
+                "--cached",
+                "--quiet",
+                "--exit-code",
+                "--no-ext-diff",
+                "--no-textconv",
+            ],
+            cwd=worktree,
+        )
+        if staged.exit_code == 0:
+            raise WorktreeError("worktree has no changes to commit")
+        if staged.exit_code != 1:
+            raise WorktreeError("unable to inspect staged worktree changes")
+        committed = self._run(
+            [
+                self.git,
+                "-c",
+                "core.hooksPath=/dev/null",
+                "-c",
+                "core.fsmonitor=false",
+                "-c",
+                "commit.gpgSign=false",
+                "-C",
+                str(worktree),
+                "commit",
+                "-m",
+                commit_message,
+            ],
+            cwd=worktree,
+        )
+        if committed.exit_code != 0:
+            raise WorktreeError((committed.stderr or committed.stdout or "git commit failed").strip()[:500])
+        head = self._run([self.git, "-C", str(worktree), "rev-parse", "HEAD"], cwd=worktree)
+        sha = head.stdout.strip()
+        if head.exit_code != 0 or not re.fullmatch(r"[0-9a-fA-F]{40,64}", sha):
+            raise WorktreeError("unable to resolve committed HEAD")
+        return WorktreeCommitResult(branch=current, commit_sha=sha.lower())
+
     def remove_worktree(self, *, repo_relative: str, worktree_relative: str) -> None:
         self._require_mutation()
         repo = self.repository_root(repo_relative)
@@ -225,7 +375,20 @@ class GitWorktreeAdapter:
         if worktree == repo:
             raise WorktreeError("cannot remove the primary repository worktree")
         result = self._run(
-            [self.git, "-C", str(repo), "worktree", "remove", "--", str(worktree)], cwd=repo
+            [
+                self.git,
+                "-c",
+                "core.hooksPath=/dev/null",
+                "-c",
+                "core.fsmonitor=false",
+                "-C",
+                str(repo),
+                "worktree",
+                "remove",
+                "--",
+                str(worktree),
+            ],
+            cwd=repo,
         )
         if result.exit_code != 0:
             raise WorktreeError((result.stderr or result.stdout or "git worktree remove failed").strip()[:500])
