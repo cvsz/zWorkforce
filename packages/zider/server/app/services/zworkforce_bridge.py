@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 from typing import Any, Dict
 from urllib.parse import urlsplit
 
@@ -29,6 +30,7 @@ class ZWorkforceBridge:
     ZWF_TOKEN = os.getenv("ZWORKFORCE_API_KEY", "")
     OVERVIEW_TIMEOUT_SECONDS = 5.0
     DISPATCH_TIMEOUT_SECONDS = 8.0
+    _IDEMPOTENCY_KEY = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 
     @classmethod
     def _headers(cls) -> Dict[str, str]:
@@ -50,6 +52,16 @@ class ZWorkforceBridge:
         if parsed.scheme != "https" and not loopback:
             raise ZWorkforceBridgeError("zWorkforce API URL must use HTTPS outside loopback")
         return value
+
+    @classmethod
+    def _validate_idempotency_key(cls, value: str) -> str:
+        key = str(value or "").strip()
+        if not cls._IDEMPOTENCY_KEY.fullmatch(key):
+            raise ZWorkforceBridgeError(
+                "zWorkforce task dispatch requires a bounded idempotency key",
+                status_code=400,
+            )
+        return key
 
     @staticmethod
     def _decode_json(resp: httpx.Response, operation: str) -> Dict[str, Any]:
@@ -101,20 +113,25 @@ class ZWorkforceBridge:
         title: str,
         prompt: str,
         target_agent: str = "general",
+        *,
+        idempotency_key: str,
     ) -> Dict[str, Any]:
         base_url = cls._base_url()
+        key = cls._validate_idempotency_key(idempotency_key)
         payload = {
             "title": title,
             "prompt": prompt,
             "agent": target_agent,
             "source": "zider_sidebar",
         }
+        headers = cls._headers()
+        headers["Idempotency-Key"] = key
         try:
             async with httpx.AsyncClient(timeout=cls.DISPATCH_TIMEOUT_SECONDS) as client:
                 resp = await client.post(
                     f"{base_url}/api/v1/tasks",
                     json=payload,
-                    headers=cls._headers(),
+                    headers=headers,
                 )
         except httpx.RequestError as exc:
             raise ZWorkforceBridgeError("zWorkforce control plane is unavailable") from exc
