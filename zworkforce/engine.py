@@ -7,6 +7,7 @@ import time
 import uuid
 from typing import Any
 
+from .agent_handoff import AgentHandoffProtocol, AgentHandoffError
 from .db import TERMINAL_STATUSES, utcnow
 from .evaluator import EvaluationError, evaluate
 from .providers import ProviderError
@@ -23,6 +24,7 @@ class Engine:
         self.provider = provider
         self.router = ModelRouter()
         self.tools = ToolExecutor(settings, db)
+        self.handoff = AgentHandoffProtocol()
         self._stop = threading.Event()
         self._threads: list[threading.Thread] = []
 
@@ -295,18 +297,28 @@ class Engine:
                         elif int(task["depth"]) >= self.settings.max_delegation_depth:
                             tool_result = {"error": "maximum delegation depth reached"}
                         else:
-                            delegated += 1
+                            child_target = str(call.arguments.get("agent_id", ""))
                             child_mutating = bool(call.arguments.get("mutating", False))
-                            child, _ = self.submit(
-                                tenant_id,
-                                str(call.arguments.get("agent_id", "")),
-                                str(call.arguments.get("prompt", "")),
-                                actor=f"agent:{task['agent_id']}",
-                                mutating=child_mutating,
-                                parent_task_id=task_id,
-                                depth=int(task["depth"]) + 1,
-                            )
-                            tool_result = {"task_id": child["id"], "status": child["status"], "requires_approval": bool(child.get("required_approvals"))}
+                            try:
+                                validated_args = self.handoff.validate_handoff(
+                                    source_agent_id=str(task["agent_id"]),
+                                    target_agent_id=child_target,
+                                    arguments=call.arguments,
+                                    is_mutating=child_mutating,
+                                )
+                                delegated += 1
+                                child, _ = self.submit(
+                                    tenant_id,
+                                    child_target,
+                                    str(validated_args.get("prompt", "")),
+                                    actor=f"agent:{task['agent_id']}",
+                                    mutating=child_mutating,
+                                    parent_task_id=task_id,
+                                    depth=int(task["depth"]) + 1,
+                                )
+                                tool_result = {"task_id": child["id"], "status": child["status"], "requires_approval": bool(child.get("required_approvals"))}
+                            except AgentHandoffError as hexc:
+                                tool_result = {"error": f"agent handoff rejected: {str(hexc)}"}
                     else:
                         mutating_tool = is_mutating_tool(call.name)
                         if mutating_tool and not bool(task.get("mutating")):
