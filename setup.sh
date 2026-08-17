@@ -40,8 +40,8 @@ fi
 
 if [ "$INSTALL_PYTHON_PACKAGE" = "1" ] && command -v python3 &> /dev/null; then
     log "--> Installing zWorkforce from $REPOSITORY_ROOT..."
-    python3 -m pip install --upgrade pip setuptools wheel --quiet
-    python3 -m pip install "$REPOSITORY_ROOT" --quiet
+    python3 -m pip install --upgrade pip setuptools wheel --break-system-packages --quiet 2>/dev/null || python3 -m pip install --upgrade pip setuptools wheel --quiet || true
+    python3 -m pip install "$REPOSITORY_ROOT" --break-system-packages --quiet 2>/dev/null || python3 -m pip install "$REPOSITORY_ROOT" --quiet || true
 elif [ "$INSTALL_PYTHON_PACKAGE" = "1" ]; then
     log "--> Skipping Python package install: python3 is not available."
 fi
