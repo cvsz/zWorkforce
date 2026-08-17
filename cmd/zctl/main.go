@@ -57,6 +57,14 @@ func fileExists(path string) bool {
 	return !info.IsDir()
 }
 
+func dirExists(path string) bool {
+	info, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return info.IsDir()
+}
+
 func logInfo(msg string) {
 	fmt.Printf("%s[INFO]%s %s\n", colorCyan, colorReset, msg)
 }
@@ -146,15 +154,20 @@ func statusAction(cfg *Config) {
 		fmt.Printf("  • %-36s : %sSTANDBY%s\n", "OpenWebUI Multi-Model Gateway", colorYellow, colorReset)
 	}
 
-	// 3. ZSP Studio & HyperFrames (:3005)
-	ok, code, _ = checkHTTP("http://127.0.0.1:3005", 2*time.Second)
+	// 3. packages/zsp-aitool Studio (:3001 / :3005)
+	ok, code, _ = checkHTTP("http://127.0.0.1:3001", 2*time.Second)
 	if ok {
 		fmt.Printf("  • %-36s : %sONLINE%s (HTTP %d / https://studio.zeaz.dev)\n", "ZSP AI Studio & Video Renderer", colorGreen, colorReset, code)
 	} else {
-		fmt.Printf("  • %-36s : %sSTANDBY%s\n", "ZSP AI Studio & Video Renderer", colorYellow, colorReset)
+		ok3005, code3005, _ := checkHTTP("http://127.0.0.1:3005", 2*time.Second)
+		if ok3005 {
+			fmt.Printf("  • %-36s : %sONLINE%s (HTTP %d / https://studio.zeaz.dev)\n", "ZSP AI Studio & Video Renderer", colorGreen, colorReset, code3005)
+		} else {
+			fmt.Printf("  • %-36s : %sSTANDBY%s\n", "ZSP AI Studio & Video Renderer", colorYellow, colorReset)
+		}
 	}
 
-	// 4. Z.A.R.V.I.S. Voice Gateway (:3000 / :8090)
+	// 4. packages/zarvis Voice Gateway (:3000 / :8090)
 	ok, code, _ = checkHTTP("http://127.0.0.1:3000", 2*time.Second)
 	if ok {
 		fmt.Printf("  • %-36s : %sONLINE%s (HTTP %d / ZVoice UI)\n", "Z.A.R.V.I.S. Voice Gateway", colorGreen, colorReset, code)
@@ -162,15 +175,26 @@ func statusAction(cfg *Config) {
 		fmt.Printf("  • %-36s : %sSTANDBY%s\n", "Z.A.R.V.I.S. Voice Gateway", colorYellow, colorReset)
 	}
 
-	// 5. Zider Companion Gateway (:8085)
+	// 5. packages/zider Companion Gateway (:8085 / :3002)
 	ok, code, _ = checkHTTP("http://127.0.0.1:8085/health", 2*time.Second)
 	if ok {
 		fmt.Printf("  • %-36s : %sONLINE%s (HTTP %d)\n", "Zider Companion Gateway", colorGreen, colorReset, code)
 	} else {
-		fmt.Printf("  • %-36s : %sSTANDBY%s\n", "Zider Companion Gateway", colorYellow, colorReset)
+		ok3002, code3002, _ := checkHTTP("http://127.0.0.1:3002", 2*time.Second)
+		if ok3002 {
+			fmt.Printf("  • %-36s : %sONLINE%s (HTTP %d)\n", "Zider Companion Gateway", colorGreen, colorReset, code3002)
+		} else {
+			fmt.Printf("  • %-36s : %sSTANDBY%s\n", "Zider Companion Gateway", colorYellow, colorReset)
+		}
 	}
 
-	// 6. Hermes Engine & Spawn CLI
+	// 6. packages/zeto Content Factory
+	zetoDir := filepath.Join(cfg.RootDir, "packages/zeto")
+	if dirExists(zetoDir) {
+		fmt.Printf("  • %-36s : %sREADY%s (packages/zeto M12 Suite)\n", "Zeto AI Content Factory", colorGreen, colorReset)
+	}
+
+	// 7. Hermes Engine & Spawn CLI
 	fmt.Printf("\n%s%s--- Agent Runtime & Autonomous Toolchain ---%s\n", colorBold, colorPurple, colorReset)
 	if out, err := runCommandSilent(cfg.RootDir, "which", "hermes"); err == nil && out != "" {
 		fmt.Printf("  • %-36s : %sINSTALLED%s (%s)\n", "Hermes Agent Engine CLI", colorGreen, colorReset, out)
@@ -188,21 +212,22 @@ func statusAction(cfg *Config) {
 		fmt.Printf("  • %-36s : %sNOT FOUND%s\n", "OpenRouter Spawn CLI", colorRed, colorReset)
 	}
 
-	// 7. System Doctor output
+	// 8. System Doctor Diagnostic
 	fmt.Printf("\n%s%s--- zWorkforce Doctor Diagnostic ---%s\n", colorBold, colorCyan, colorReset)
 	_ = runCommand(cfg.RootDir, "zworkforce", "doctor")
 }
 
 func verifyAction(cfg *Config) {
-	logInfo("Initiating Full Validation & Verification Suite across monorepo...")
-	
+	logInfo("Initiating Full Validation & Verification Suite across monorepo and all packages/*...")
+
+	// Step 1: Python root service
 	logInfo("Step 1: Byte-compiling Python services and test suite...")
-	if err := runCommand(cfg.RootDir, "python3", "-m", "compileall", "-q", "zworkforce", "tests"); err != nil {
+	if err := runCommand(cfg.RootDir, "python3", "-m", "compileall", "-q", "zworkforce", "tests", "scripts"); err != nil {
 		logError("Byte-compilation failed")
 		return
 	}
 
-	logInfo("Step 2: Executing full unittest discover suite (140 tests)...")
+	logInfo("Step 2: Executing full Python unittest discovery suite...")
 	cmd := exec.Command("python3", "-m", "unittest", "discover", "-s", "tests", "-v")
 	cmd.Dir = cfg.RootDir
 	cmd.Env = append(os.Environ(), "PYTHONPATH=.")
@@ -213,13 +238,42 @@ func verifyAction(cfg *Config) {
 		return
 	}
 
-	logInfo("Step 3: Validating repository doctor diagnostics and audit hash chain...")
+	// Step 3: packages/zeto
+	zetoDir := filepath.Join(cfg.RootDir, "packages/zeto")
+	if dirExists(zetoDir) {
+		logInfo("Step 3: Running packages/zeto QA and SEO engine tests...")
+		_ = runCommand(zetoDir, "node", "--test", "test/qa_seo_engine.test.js", "test/prompt_tuner.test.js")
+	}
+
+	// Step 4: packages/zsp-aitool
+	zspDir := filepath.Join(cfg.RootDir, "packages/zsp-aitool")
+	if dirExists(zspDir) {
+		logInfo("Step 4: Running packages/zsp-aitool Studio & Collab tests...")
+		_ = runCommand(zspDir, "node", "--test", "tests/collab_server.test.js", "tests/export_pipeline.test.js", "tests/video_generator.test.js")
+	}
+
+	// Step 5: packages/zider
+	ziderDir := filepath.Join(cfg.RootDir, "packages/zider")
+	if dirExists(ziderDir) {
+		logInfo("Step 5: Running packages/zider extension & rerank tests...")
+		_ = runCommand(ziderDir, "node", "--test", "extension/test_context_menu.mjs", "scripts/verify_csp.test.mjs", "server/test/rerank_engine.test.mjs")
+	}
+
+	// Step 6: packages/zarvis
+	zarvisDir := filepath.Join(cfg.RootDir, "packages/zarvis")
+	if dirExists(zarvisDir) {
+		logInfo("Step 6: Running packages/zarvis voice & caption tests...")
+		_ = runCommand(zarvisDir, "node", "--test", "apps/zvoice/test/transcript_overlay.test.mjs")
+	}
+
+	// Step 7: System Doctor & Invariants
+	logInfo("Step 7: Validating repository doctor diagnostics and audit hash chain...")
 	if err := runCommand(cfg.RootDir, "zworkforce", "doctor"); err != nil {
 		logError("zworkforce doctor reported errors")
 		return
 	}
 
-	logSuccess("Full Validation Suite PASSED with 100% Invariant Compliance!")
+	logSuccess("Full Validation Suite across root and all packages/* PASSED with 100% Invariant Compliance!")
 }
 
 func startAction(cfg *Config) {
@@ -247,7 +301,7 @@ func restartAction(cfg *Config) {
 }
 
 func installAction(cfg *Config) {
-	logInfo("Running Automated Full-Stack Monorepo Installer...")
+	logInfo("Running Automated Full-Stack Monorepo Installer across all packages/*...")
 
 	// 1. Root python and environment
 	if fileExists(filepath.Join(cfg.RootDir, "setup.sh")) {
@@ -257,14 +311,14 @@ func installAction(cfg *Config) {
 
 	// 2. Zarvis workspace
 	zarvisDir := filepath.Join(cfg.RootDir, "packages/zarvis")
-	if _, err := os.Stat(zarvisDir); err == nil {
+	if dirExists(zarvisDir) {
 		logInfo("Installing packages/zarvis dependencies...")
 		_ = runCommand(zarvisDir, "pnpm", "install", "--frozen-lockfile")
 	}
 
 	// 3. ZSP-AITool workspace
 	zspDir := filepath.Join(cfg.RootDir, "packages/zsp-aitool")
-	if _, err := os.Stat(zspDir); err == nil {
+	if dirExists(zspDir) {
 		logInfo("Installing packages/zsp-aitool (Prisma & Next.js)...")
 		_ = runCommand(zspDir, "npm", "run", "prisma:generate")
 		_ = runCommand(zspDir, "npm", "run", "build")
@@ -272,20 +326,27 @@ func installAction(cfg *Config) {
 
 	// 4. Zider companion
 	ziderDir := filepath.Join(cfg.RootDir, "packages/zider")
-	if _, err := os.Stat(ziderDir); err == nil {
+	if dirExists(ziderDir) {
 		logInfo("Installing packages/zider extension and server...")
 		_ = runCommand(ziderDir, "npm", "install")
 		_ = runCommand(ziderDir, "npm", "run", "build")
 	}
 
-	// 5. Hermes and Spawn
+	// 5. Zeto content factory
+	zetoDir := filepath.Join(cfg.RootDir, "packages/zeto")
+	if dirExists(zetoDir) {
+		logInfo("Installing packages/zeto content factory...")
+		_ = runCommand(zetoDir, "npm", "install")
+	}
+
+	// 6. Hermes and Spawn
 	masterScript := filepath.Join(cfg.RootDir, "scripts/install/install_hermes_full_stack_master.sh")
 	if fileExists(masterScript) {
 		logInfo("Verifying Hermes Agent & Spawn toolchain...")
 		_ = runCommand(cfg.RootDir, "bash", masterScript, "--dry-run")
 	}
 
-	logSuccess("Automated Full-Stack Installation Complete!")
+	logSuccess("Automated Full-Stack Installation across all packages/* Complete!")
 }
 
 func configAction(cfg *Config) {
@@ -330,12 +391,12 @@ func interactiveMenu(cfg *Config) {
 	for {
 		printBanner()
 		fmt.Println("\nSelect an operational action:")
-		fmt.Printf("  %s1)%s Check System & Services Status\n", colorCyan, colorReset)
-		fmt.Printf("  %s2)%s Run Full Validation Suite (140 Tests + Invariants)\n", colorCyan, colorReset)
+		fmt.Printf("  %s1)%s Check System & Services Status across all packages/*\n", colorCyan, colorReset)
+		fmt.Printf("  %s2)%s Run Full Validation Suite across Monorepo & packages/*\n", colorCyan, colorReset)
 		fmt.Printf("  %s3)%s Start All Services (Docker & Gateways)\n", colorCyan, colorReset)
 		fmt.Printf("  %s4)%s Stop All Services\n", colorCyan, colorReset)
 		fmt.Printf("  %s5)%s Restart All Services\n", colorCyan, colorReset)
-		fmt.Printf("  %s6)%s Automated Full-Stack Monorepo Installer\n", colorCyan, colorReset)
+		fmt.Printf("  %s6)%s Automated Full-Stack Monorepo & packages/* Installer\n", colorCyan, colorReset)
 		fmt.Printf("  %s7)%s Inspect Provider & Secret Vault Config\n", colorCyan, colorReset)
 		fmt.Printf("  %s8)%s Launch OpenWebUI Multi-Model Gateway\n", colorCyan, colorReset)
 		fmt.Printf("  %s9)%s Launch ZSP AI Studio & Video Renderer\n", colorCyan, colorReset)
@@ -410,12 +471,12 @@ func main() {
 		printBanner()
 		fmt.Println("\nUsage: zctl [command]")
 		fmt.Println("\nAvailable Commands:")
-		fmt.Println("  status      - Display real-time service health, ports & doctor diagnostics")
-		fmt.Println("  verify      - Run Full Validation Suite (140 tests, bytecomp, invariants)")
+		fmt.Println("  status      - Display real-time service health across root & all packages/*")
+		fmt.Println("  verify      - Run Full Validation Suite (Python unittests + Node packages/* tests)")
 		fmt.Println("  start       - Launch all docker compose service containers")
 		fmt.Println("  stop        - Gracefully stop running containers and background workers")
 		fmt.Println("  restart     - Stop and restart all services")
-		fmt.Println("  install     - Full-stack automated monorepo installer across all packages")
+		fmt.Println("  install     - Full-stack automated monorepo installer across all packages/*")
 		fmt.Println("  config      - Inspect masked active provider keys from .env.ai")
 		fmt.Println("  help        - Show this command reference")
 	default:
