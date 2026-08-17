@@ -188,6 +188,11 @@ Refactor the voice runtime toward a typed registry while keeping the current ser
 - [ ] Enterprise Observability & OpenTelemetry Broadcast:
   - OpenRouter Broadcast integration forwarding full generation traces directly to OpenTelemetry Collector, Langfuse, Grafana Cloud, Arize AX, Datadog, Comet Opik, Braintrust, and S3 sinks;
   - Analytics API integration for programmatic cost breakdown, token velocity, and activity exports.
+- [x] Social Media & Provider Shop Connectors:
+  - Social Media Connectors: Facebook Pages, Instagram Graph, TikTok Content/Creator, YouTube Data API, X (Twitter) v2, and LinkedIn Marketing;
+  - E-Commerce / Provider Shop Connectors: Shopee Open Platform v2, TikTok Shop Seller API, and Facebook Commerce / Catalog Manager;
+  - Platform HMAC signature verifiers (Shopee partner key, TikTok Shop sign, Meta AppSecret Proof);
+  - Fail-closed approval governance for all mutating post publishing, inventory syncing, and pricing adjustments.
 - [ ] Security Guardrails & Sovereign AI Compliance:
   - Regex and heuristic Prompt Injection detection with customizable phrase allowlists;
   - Sensitive Info Guardrails (automated PII masking/redaction before model egress);

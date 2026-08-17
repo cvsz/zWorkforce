@@ -61,6 +61,14 @@ TOOL_DEFINITIONS: dict[str, dict[str, Any]] = {
         "mutating": True,
         "schema": {"type": "function", "function": {"name": "media_generate", "description": "Generate rich media assets including Images (SVG, PNG/BMP raster), Video content (motion storyboard, video composition manifests, subtitle tracks), Audio (speech synthesis WAV), and Marketing/Social Content (HTML/Markdown/JSON documents) stored as durable tenant artifacts. Requires an approved mutating task.", "parameters": {"type": "object", "properties": {"media_type": {"type": "string", "enum": ["image", "video", "content", "svg", "chart", "speech", "document", "html"], "description": "Category of media to generate: 'image' (raster/vector visual), 'video' (motion storyboard/manifest/subtitles), 'content' (copywriting/social post/article), 'speech' (synthesized audio), 'chart' (infographics), 'document' (PDF/Markdown)"}, "name": {"type": "string", "description": "Target filename for the media artifact (e.g. hero_banner.png, product_demo.json, blog_post.md)"}, "content": {"type": "string", "description": "Primary content, script, visual prompt, or payload for the media asset"}, "options": {"type": "object", "description": "Customizable options such as width, height, format, style, duration, fps, channels, or platform metadata"}}, "required": ["media_type", "name", "content"]}}},
     },
+    "social_connector": {
+        "mutating": True,
+        "schema": {"type": "function", "function": {"name": "social_connector", "description": "Execute social media operations across Facebook Pages, Instagram, TikTok Content, YouTube, X (Twitter), and LinkedIn (publishing posts, reels, video uploads, metrics ingestion, and comment management). Mutating publishing actions require task approval.", "parameters": {"type": "object", "properties": {"platform": {"type": "string", "enum": ["facebook", "instagram", "tiktok_content", "youtube", "x_twitter", "linkedin"]}, "action": {"type": "string", "description": "Platform capability (e.g. facebook_publish_post, instagram_publish_media, tiktok_publish_video, youtube_upload_video, x_publish_post, linkedin_publish_ugc, facebook_get_insights)"}, "params": {"type": "object", "description": "Action parameters such as caption, media_url, tags, title, privacy"}}, "required": ["platform", "action"]}}},
+    },
+    "shop_connector": {
+        "mutating": True,
+        "schema": {"type": "function", "function": {"name": "shop_connector", "description": "Execute e-commerce provider shop operations across Shopee Open Platform v2, TikTok Shop Seller API, and Facebook Commerce / Catalog Manager (order fetching, SKU stock updates, price updates, and catalog synchronization). Price, stock, and listing mutations require task approval.", "parameters": {"type": "object", "properties": {"provider": {"type": "string", "enum": ["shopee_seller", "tiktok_shop", "facebook_commerce"]}, "action": {"type": "string", "description": "Shop capability (e.g. shopee_get_order_list, shopee_update_stock, shopee_update_price, shopee_add_item, tiktok_shop_get_orders, tiktok_shop_update_inventory, tiktok_shop_update_price, facebook_commerce_sync_catalog, facebook_commerce_get_orders)"}, "params": {"type": "object", "description": "Operation payload including item_id, sku_id, price, stock, order_status, logistics, catalog_id"}}, "required": ["provider", "action"]}}},
+    },
     "agent_delegate": {
         "mutating": False,
         "schema": {"type": "function", "function": {"name": "agent_delegate", "description": "Delegate a bounded subtask to another agent.", "parameters": {"type": "object", "properties": {"agent_id": {"type": "string"}, "prompt": {"type": "string"}, "mutating": {"type": "boolean"}}, "required": ["agent_id", "prompt"]}}},
@@ -112,6 +120,28 @@ class ToolExecutor:
         except SafetyHookError as exc:
             raise ToolError(str(exc)) from exc
 
+        if name == "social_connector":
+            from .connectors import SocialShopConnectorExecutor
+            executor = SocialShopConnectorExecutor(self.settings, self.db)
+            return executor.execute_action(
+                connector_kind=str(args.get("platform", "facebook")),
+                action=str(args.get("action", "")),
+                params=dict(args.get("params") or {}),
+                tenant_id=tenant_id,
+                actor=actor,
+                mutating_approved=is_mutating,
+            )
+        if name == "shop_connector":
+            from .connectors import SocialShopConnectorExecutor
+            executor = SocialShopConnectorExecutor(self.settings, self.db)
+            return executor.execute_action(
+                connector_kind=str(args.get("provider", "shopee_seller")),
+                action=str(args.get("action", "")),
+                params=dict(args.get("params") or {}),
+                tenant_id=tenant_id,
+                actor=actor,
+                mutating_approved=is_mutating,
+            )
         if name == "calculator":
             return self._calc(str(args.get("expression", "")))
         if name == "workspace_list":

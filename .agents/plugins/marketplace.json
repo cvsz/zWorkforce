@@ -1,0 +1,20 @@
+{
+  "name": "zworkforce-marketplace",
+  "interface": {
+    "displayName": "zWorkforce Official Plugins"
+  },
+  "plugins": [
+    {
+      "name": "zworkforce-omnichannel-suite",
+      "source": {
+        "source": "local",
+        "path": "./plugins/zworkforce-omnichannel-suite"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "E-Commerce & Marketing"
+    }
+  ]
+}

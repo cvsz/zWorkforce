@@ -1,0 +1,40 @@
+{
+  "name": "zworkforce-omnichannel-suite",
+  "version": "1.0.0",
+  "description": "Universal Social Media & E-Commerce Connector Plugin with MCP Tools, Skills, and MCP Apps UI for ChatGPT and Codex",
+  "author": {
+    "name": "zWorkforce Core Platform",
+    "url": "https://github.com/cvsz/zworkforce"
+  },
+  "repository": "https://github.com/cvsz/zworkforce",
+  "license": "Apache-2.0",
+  "keywords": [
+    "social-media",
+    "ecommerce",
+    "shopee",
+    "tiktok-seller",
+    "facebook-shop",
+    "instagram",
+    "youtube",
+    "mcp"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Omnichannel Social & Shop Studio",
+    "shortDescription": "Publish social content, manage Shopee & TikTok Seller stores, and sync Meta Catalog products",
+    "longDescription": "Enterprise omnichannel operations studio. Connects to Facebook, Instagram, TikTok Content, YouTube, X, LinkedIn, Shopee Open Platform v2, TikTok Shop Seller API, and Facebook Commerce.",
+    "developerName": "zWorkforce Platform",
+    "category": "E-Commerce & Marketing",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "brandColor": "#0ea5e9",
+    "defaultPrompt": [
+      "Audit Shopee and TikTok Shop pending orders and low-stock alerts",
+      "Draft, QA, and schedule an Instagram & Facebook multi-asset product launch campaign",
+      "Synchronize latest product variant pricing across Shopee and TikTok Seller"
+    ]
+  }
+}
