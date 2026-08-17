@@ -126,11 +126,16 @@ class GitWorktreeAdapterTests(unittest.TestCase):
         self.assertEqual(status.branch, "feat/example")
         add_call = next(call for call in runner.calls if "worktree" in call[0] and "add" in call[0])
         argv, kwargs = add_call
-        self.assertEqual(argv[:4], ["/usr/bin/git", "-C", str(self.repo), "worktree"])
+        self.assertEqual(argv[0], "/usr/bin/git")
+        self.assertIn("core.hooksPath=/dev/null", argv)
+        self.assertIn("core.fsmonitor=false", argv)
         self.assertIn("-b", argv)
         self.assertEqual(kwargs["shell"], False)
         self.assertEqual(kwargs["stdin"], subprocess.DEVNULL)
         self.assertNotIn("HOME", kwargs["env"])
+        self.assertEqual(kwargs["env"]["GIT_CONFIG_NOSYSTEM"], "1")
+        self.assertEqual(kwargs["env"]["GIT_CONFIG_GLOBAL"], "/dev/null")
+        self.assertEqual(kwargs["env"]["GIT_ATTR_NOSYSTEM"], "1")
 
     def test_status_and_diff_are_read_only(self):
         adapter, runner = self.adapter(grant_write=False)
@@ -140,7 +145,9 @@ class GitWorktreeAdapterTests(unittest.TestCase):
         self.assertEqual(adapter.diff("repo"), "")
         commands = [call[0] for call in runner.calls]
         self.assertTrue(any("status" in argv for argv in commands))
-        self.assertTrue(any("diff" in argv for argv in commands))
+        diff_call = next(argv for argv in commands if "diff" in argv)
+        self.assertIn("--no-ext-diff", diff_call)
+        self.assertIn("--no-textconv", diff_call)
 
     def test_check_requires_exact_operator_allowlist_and_grant_command(self):
         adapter, runner = self.adapter()
@@ -160,6 +167,25 @@ class GitWorktreeAdapterTests(unittest.TestCase):
                 argv=("python", "-c", "print('not allowlisted')"),
                 allowlisted_checks={"unit": ("python", "-m", "unittest", "tests.test_workspace")},
             )
+
+    def test_external_git_helper_config_fails_closed_before_staging(self):
+        calls = []
+
+        def malicious_config_runner(argv, **kwargs):
+            calls.append((list(argv), dict(kwargs)))
+            if "rev-parse" in argv:
+                return Completed(stdout=str(self.repo) + "\n")
+            if "config" in argv and "--get-regexp" in argv:
+                return Completed(stdout="filter.evil.clean /tmp/evil-filter\n")
+            return Completed()
+
+        adapter, _ = self.adapter(runner=malicious_config_runner)
+        with self.assertRaisesRegex(WorktreeError, "external Git helpers"):
+            adapter.commit("repo", message="feat: guarded", expected_branch="feat/example")
+        commands = [argv for argv, _ in calls]
+        self.assertTrue(any("config" in argv and "--includes" in argv for argv in commands))
+        self.assertFalse(any("add" in argv for argv in commands))
+        self.assertFalse(any("commit" in argv for argv in commands))
 
     def test_commit_stages_all_uses_tracked_branch_and_returns_sha(self):
         calls = []
@@ -188,6 +214,8 @@ class GitWorktreeAdapterTests(unittest.TestCase):
         commit_call = next(call for call in calls if "commit" in call[0])
         self.assertIn("feat: bounded commit", commit_call[0])
         self.assertIn("core.hooksPath=/dev/null", commit_call[0])
+        self.assertIn("core.fsmonitor=false", commit_call[0])
+        self.assertIn("commit.gpgSign=false", commit_call[0])
         self.assertEqual(commit_call[1]["shell"], False)
         self.assertNotIn("HOME", commit_call[1]["env"])
 
@@ -223,6 +251,7 @@ class GitWorktreeAdapterTests(unittest.TestCase):
         adapter.remove_worktree(repo_relative="repo", worktree_relative="child")
         remove_call = next(call for call in runner.calls if "remove" in call[0])
         self.assertIn("--", remove_call[0])
+        self.assertIn("core.hooksPath=/dev/null", remove_call[0])
         self.assertEqual(remove_call[1]["shell"], False)
 
 
