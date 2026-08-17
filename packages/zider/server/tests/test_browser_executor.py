@@ -44,6 +44,18 @@ class BrowserExecutorTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(transport.calls[0]["host_header"], "docs.example.com")
         self.assertEqual(transport.calls[0]["tls_server_name"], "docs.example.com")
 
+    async def test_executor_preserves_explicit_origin_port_in_host_header(self):
+        transport = FakeTransport()
+        executor = PinnedBrowserExecutor(transport)
+        action = BrowserAction(
+            kind="inspect",
+            url="https://docs.example.com:8443/page",
+            resolved_addresses=("93.184.216.34",),
+        )
+        await executor.execute(action)
+        self.assertEqual(transport.calls[0]["host_header"], "docs.example.com:8443")
+        self.assertEqual(transport.calls[0]["tls_server_name"], "docs.example.com")
+
     async def test_executor_rejects_private_or_missing_pins(self):
         executor = PinnedBrowserExecutor(FakeTransport())
         with self.assertRaisesRegex(BrowserPolicyError, "must be public"):
