@@ -191,11 +191,18 @@ class WorkspaceProcessSandboxTests(unittest.TestCase):
         self.assertNotIn("prompt", by_name["zworkforce_code_agent"]["args"])
 
     def test_development_without_workspace_id_keeps_legacy_process_path(self):
-        self.assertEqual(self.settings.env, "development")
-        self.assertIsNotNone(self.dev_engine.tools)
-        # The compatibility invariant is dispatch-level: omission of workspace_id delegates to the pre-existing executor.
-        original = self.dev_engine.tools
-        self.assertNotEqual(type(original).__name__, "WorkspaceGrantedToolExecutor")
+        settings = replace(self.settings, shell_enabled=True, embedded_workers=0)
+        engine = PolicyEngine(settings, self.db, self.provider)
+        self.engines.append(engine)
+        result = engine.tools.execute(
+            "shell_exec",
+            {"command": "python", "args": ["-c", "print('legacy-process-ok')"]},
+            tenant_id="default",
+            agent_id="software-engineer",
+            actor="test",
+        )
+        self.assertEqual(result["exit_code"], 0)
+        self.assertIn("legacy-process-ok", result["stdout"])
 
 
 if __name__ == "__main__":
