@@ -5,7 +5,13 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
 from .workspace_grants import WorkspaceGrantService
-from .worktree import GitWorktreeAdapter, WorktreeCommandResult, WorktreeError, WorktreeStatus
+from .worktree import (
+    GitWorktreeAdapter,
+    WorktreeCommandResult,
+    WorktreeCommitResult,
+    WorktreeError,
+    WorktreeStatus,
+)
 
 
 MutationAuthorizer = Callable[[str, str, str, str], None]
@@ -191,6 +197,48 @@ class WorkspaceWorktreeService:
             raise
         self._audit(tenant_id, actor, "workspace.worktree.check", grant_id,
                     success=result.exit_code == 0, details={**details, "exit_code": result.exit_code})
+        return result
+
+    def commit_worktree(
+        self,
+        tenant_id: str,
+        actor: str,
+        grant_id: str,
+        *,
+        repo_relative: str,
+        worktree_relative: str,
+        message: str,
+    ) -> WorktreeCommitResult:
+        self._authorize_mutation(tenant_id, actor, "workspace.worktree.commit", grant_id)
+        record = self.db.get_active_workspace_worktree_by_path(tenant_id, grant_id, worktree_relative)
+        if not record:
+            raise WorktreeError("worktree is not tracked as an active tenant lifecycle record")
+        if str(record["repo_relative"]) != str(repo_relative):
+            raise WorktreeError("tracked worktree repository does not match commit request")
+        adapter = self._adapter(tenant_id, grant_id, write=True)
+        details = {
+            "repo_relative": repo_relative,
+            "worktree_relative": worktree_relative,
+            "worktree_id": record["id"],
+            "branch": record["branch"],
+        }
+        try:
+            result = adapter.commit(
+                worktree_relative,
+                message=message,
+                expected_branch=str(record["branch"]),
+            )
+        except Exception as exc:
+            self._audit(tenant_id, actor, "workspace.worktree.commit", grant_id, success=False, details=details, error=str(exc))
+            raise
+        self._audit(
+            tenant_id,
+            actor,
+            "workspace.worktree.commit",
+            grant_id,
+            success=True,
+            details={**details, "commit_sha": result.commit_sha},
+        )
         return result
 
     def remove_worktree(
