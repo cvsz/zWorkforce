@@ -23,6 +23,8 @@ class RecordingRunner:
     def __call__(self, argv, **kwargs):
         self.calls.append((list(argv), dict(kwargs)))
         if "rev-parse" in argv:
+            if "HEAD" in argv:
+                return Completed(stdout="a" * 40 + "\n")
             return Completed(stdout=str(self.root) + "\n")
         if "branch" in argv and "--show-current" in argv:
             return Completed(stdout="feat/example\n")
@@ -253,6 +255,12 @@ class GitWorktreeAdapterTests(unittest.TestCase):
         self.assertIn("--", remove_call[0])
         self.assertIn("core.hooksPath=/dev/null", remove_call[0])
         self.assertEqual(remove_call[1]["shell"], False)
+
+
+    def test_get_head_sha_resolves_clean_sha(self):
+        adapter, _ = self.adapter()
+        sha = adapter.get_head_sha("repo")
+        self.assertEqual(sha, "a" * 40)
 
 
 if __name__ == "__main__":
