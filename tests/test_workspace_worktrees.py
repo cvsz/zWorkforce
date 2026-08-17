@@ -1,3 +1,4 @@
+import json
 import unittest
 from datetime import datetime, timedelta, timezone
 
@@ -70,6 +71,10 @@ class WorkspaceWorktreeServiceTests(unittest.TestCase):
         self.engine.shutdown()
         self.temp.cleanup()
 
+    @staticmethod
+    def _audit_details_text(rows):
+        return "\n".join(json.dumps(row.get("details", {}), sort_keys=True) for row in rows)
+
     def test_read_operations_resolve_tenant_grant_and_audit_metadata_only(self):
         status = self.service.status("default", "alice", self.grant["id"], "repo")
         self.assertEqual(status.branch, "feat/test")
@@ -81,7 +86,7 @@ class WorkspaceWorktreeServiceTests(unittest.TestCase):
         self.assertIn("git", adapter.kwargs["grant_commands"])
 
         audit = self.db.list_audit("default", limit=10)
-        joined = "\n".join(row["details_json"] for row in audit)
+        joined = self._audit_details_text(audit)
         self.assertNotIn("secret-ish diff body", joined)
         self.assertIn("output_bytes", joined)
 
@@ -138,9 +143,9 @@ class WorkspaceWorktreeServiceTests(unittest.TestCase):
             allowlisted_checks={"unit": ("python", "-m", "unittest")},
         )
         self.assertEqual(result.exit_code, 0)
-        joined = "\n".join(row["details_json"] for row in self.db.list_audit("default", limit=10))
+        joined = self._audit_details_text(self.db.list_audit("default", limit=10))
         self.assertNotIn("private output", joined)
-        self.assertIn('"exit_code":0', joined)
+        self.assertIn('"exit_code": 0', joined)
 
 
 if __name__ == "__main__":
