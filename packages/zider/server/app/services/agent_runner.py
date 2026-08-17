@@ -35,9 +35,12 @@ class BrowserAction:
     value: str = ""
     artifact_id: str = ""
     idempotency_key: str = ""
+    resolved_addresses: tuple[str, ...] = ()
 
 
 class BrowserExecutor(Protocol):
+    enforces_resolved_addresses: bool
+
     async def execute(self, action: BrowserAction) -> Mapping[str, Any]: ...
 
 
@@ -66,8 +69,10 @@ class AgentRunner:
     """Policy boundary for Zider browser automation.
 
     The BFF does not ship a privileged browser driver by default. A production
-    executor must be injected explicitly. Until then the endpoint fails closed
-    rather than returning a fabricated success response.
+    executor must be injected explicitly and must enforce the public addresses
+    resolved during policy validation so DNS rebinding cannot redirect a
+    validated hostname to a private destination. Until then the endpoint fails
+    closed rather than returning a fabricated success response.
     """
 
     _executor: BrowserExecutor | None = None
@@ -114,7 +119,7 @@ class AgentRunner:
         return any(host == allowed or host.endswith("." + allowed) for allowed in cls._allowed_hosts)
 
     @classmethod
-    def _validate_url(cls, raw_url: str) -> str:
+    def _validate_url(cls, raw_url: str) -> tuple[str, tuple[str, ...]]:
         value = str(raw_url or "").strip()
         try:
             parsed = urlsplit(value)
@@ -128,26 +133,30 @@ class AgentRunner:
         if not cls._allowed_hosts or not cls._host_allowed(hostname):
             raise BrowserPolicyError("browser action host is not allowlisted")
         try:
-            addresses = tuple(cls._resolver(hostname))
+            raw_addresses = tuple(cls._resolver(hostname))
         except OSError as exc:
             raise BrowserPolicyError("browser action host could not be resolved") from exc
-        if not addresses:
+        if not raw_addresses:
             raise BrowserPolicyError("browser action host did not resolve")
-        for raw_address in addresses:
+        addresses: list[str] = []
+        for raw_address in raw_addresses:
             try:
                 address = ipaddress.ip_address(raw_address)
             except ValueError as exc:
                 raise BrowserPolicyError("browser action host resolved to an invalid address") from exc
             if not address.is_global:
                 raise BrowserPolicyError("browser action host resolves to a non-public address")
-        return value
+            canonical = address.compressed
+            if canonical not in addresses:
+                addresses.append(canonical)
+        return value, tuple(sorted(addresses))
 
     @classmethod
     def _validate_action(cls, item: Mapping[str, Any]) -> BrowserAction:
         kind = str(item.get("kind") or "").strip().lower()
         if kind not in ALL_ACTIONS:
             raise BrowserPolicyError("unknown browser action")
-        url = cls._validate_url(str(item.get("url") or ""))
+        url, resolved_addresses = cls._validate_url(str(item.get("url") or ""))
         selector = str(item.get("selector") or "").strip()
         value = str(item.get("value") or "")
         artifact_id = str(item.get("artifact_id") or "").strip()
@@ -168,6 +177,7 @@ class AgentRunner:
             value=value,
             artifact_id=artifact_id,
             idempotency_key=idempotency_key,
+            resolved_addresses=resolved_addresses,
         )
 
     @classmethod
@@ -179,6 +189,17 @@ class AgentRunner:
             decision = await decision
         if decision is not True:
             raise BrowserApprovalRequired("mutating browser action approval was denied")
+
+    @classmethod
+    def _require_pinned_executor(cls) -> BrowserExecutor:
+        executor = cls._executor
+        if executor is None:
+            raise BrowserAutomationUnavailable("browser automation executor is not configured")
+        if getattr(executor, "enforces_resolved_addresses", False) is not True:
+            raise BrowserAutomationUnavailable(
+                "browser executor must enforce policy-validated resolved addresses"
+            )
+        return executor
 
     @classmethod
     async def run_claw_task(
@@ -197,8 +218,7 @@ class AgentRunner:
             raise BrowserPolicyError("browser task requires explicit structured actions")
         if len(requested) > cls._max_actions:
             raise BrowserPolicyError("browser task exceeds the maximum action count")
-        if cls._executor is None:
-            raise BrowserAutomationUnavailable("browser automation executor is not configured")
+        executor = cls._require_pinned_executor()
 
         validated = tuple(cls._validate_action(item) for item in requested)
         steps: list[dict[str, Any]] = []
@@ -207,7 +227,7 @@ class AgentRunner:
                 await cls._authorize_mutation(action, approval_token)
             try:
                 result = await asyncio.wait_for(
-                    cls._executor.execute(action),
+                    executor.execute(action),
                     timeout=cls._timeout_seconds,
                 )
             except asyncio.TimeoutError as exc:
