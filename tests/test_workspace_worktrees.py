@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from tests.common import stack
 from zworkforce.workspace_grants import WorkspaceGrantService
 from zworkforce.workspace_worktrees import WorkspaceWorktreeService
-from zworkforce.worktree import WorktreeCommandResult, WorktreeError, WorktreeStatus
+from zworkforce.worktree import WorktreeCommandResult, WorktreeCommitResult, WorktreeError, WorktreeStatus
 
 
 class FakeAdapter:
@@ -31,6 +31,10 @@ class FakeAdapter:
     def run_check(self, repo_relative, *, name, argv, allowlisted_checks):
         self.calls.append(("check", repo_relative, name, tuple(argv)))
         return WorktreeCommandResult(exit_code=0, stdout="private output", stderr="")
+
+    def commit(self, worktree_relative, *, message, expected_branch):
+        self.calls.append(("commit", worktree_relative, message, expected_branch))
+        return WorktreeCommitResult(branch=expected_branch, commit_sha="a" * 40)
 
     def remove_worktree(self, **kwargs):
         self.calls.append(("remove", kwargs))
@@ -141,6 +145,43 @@ class WorkspaceWorktreeServiceTests(unittest.TestCase):
         audit_actions = [row["action"] for row in self.db.list_audit("default", limit=20)]
         self.assertIn("workspace.worktree.create", audit_actions)
         self.assertIn("workspace.worktree.remove", audit_actions)
+
+    def test_authorized_commit_requires_tracked_worktree_and_audits_no_message(self):
+        self.service.create_feature_worktree(
+            "default",
+            "alice",
+            self.grant["id"],
+            repo_relative="repo",
+            destination_relative="tree-commit",
+            branch="feat/commit",
+        )
+        result = self.service.commit_worktree(
+            "default",
+            "alice",
+            self.grant["id"],
+            repo_relative="repo",
+            worktree_relative="tree-commit",
+            message="private commit message",
+        )
+        self.assertEqual(result.branch, "feat/commit")
+        self.assertEqual(result.commit_sha, "a" * 40)
+        self.assertIn(
+            ("default", "alice", "workspace.worktree.commit", self.grant["id"]),
+            self.authorized,
+        )
+        joined = self._audit_details_text(self.db.list_audit("default", limit=20))
+        self.assertNotIn("private commit message", joined)
+        self.assertIn('"commit_sha": "' + ("a" * 40) + '"', joined)
+
+        with self.assertRaisesRegex(WorktreeError, "not tracked"):
+            self.service.commit_worktree(
+                "default",
+                "alice",
+                self.grant["id"],
+                repo_relative="repo",
+                worktree_relative="missing-tree",
+                message="feat: missing",
+            )
 
     def test_task_linkage_must_resolve_inside_tenant(self):
         with self.assertRaisesRegex(ValueError, "task not found"):
