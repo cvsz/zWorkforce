@@ -15,6 +15,8 @@ from app.services.agent_runner import (
 
 
 class FakeExecutor:
+    enforces_resolved_addresses = True
+
     def __init__(self):
         self.actions = []
 
