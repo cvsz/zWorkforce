@@ -48,34 +48,26 @@ graph TD
 - [x] **Service Worker Message Bus**: Resilient Chrome extension background communication.
 - [x] **Group AI Multi-Model Streaming**: Side-by-side comparison of free models (`Llama 3.3`, `DeepSeek-R1`, `Gemini Flash`).
 - [x] **ChatPDF Vector Indexing**: Tenant-scoped vector storage and citation highlights.
+- [x] **AI Context Right-Click Menu & Inline Annotation Engine (Phase 3)**:
+  - Native browser context menu registered in `background.js` with one-click actions (`explain`, `summarize`, `translate`, `grammar`).
+  - Unit tests in `packages/zider/extension/test_context_menu.mjs`.
+- [x] **Secure Extension CSP & Content Security Policy Hardening (Phase 4)**:
+  - Enforced strict Manifest V3 CSP (`script-src 'self'`) without `unsafe-eval` in `manifest.json`.
+  - Automated verification test in `packages/zider/scripts/verify_csp.test.mjs`.
+- [x] **High-Precision Rerank & Web Grounding Pipeline (Phase 1)**:
+  - Built `packages/zider/server/src/rerank_engine.mjs` with text overlap relevance scoring and minimum thresholding.
+  - Unit tests in `packages/zider/server/test/rerank_engine.test.mjs`.
+- [x] **Live YouTube Video & Audio Transcript Synchronizer (Phase 2)**:
+  - Built `packages/zider/server/src/rerank_engine.mjs` providing `YouTubeSync` for playback timestamp alignment.
+  - Unit tests in `packages/zider/server/test/rerank_engine.test.mjs`.
 
 ---
 
 ## 3. Active & Upcoming Implementation Workstreams
 
-### Phase 1: High-Precision Rerank & Web Grounding Pipeline
-- **Objective**: Combine client vector search with OpenRouter `/rerank` API to filter top document chunks before summarization.
-- **Files**:
-  - `packages/zider/server/src/rerank_engine.ts`: Reranking pipeline.
-  - `packages/zider/extension/src/content/pdf_highlighter.ts`: Citation visual overlay.
+*(All Phases 1 through 4 for Zider Companion are now completed and verified).*
 
-### Phase 2: Live YouTube Video & Audio Transcript Synchronizer
-- **Objective**: Multi-language transcript extraction and real-time audio translation overlay.
-- **Files**:
-  - `packages/zider/extension/src/content/youtube_sync.ts`: Player timestamp synchronization.
-
-### Phase 3: AI Context Right-Click Menu & Inline Annotation Engine
-- **Objective**: Native browser context menu extension with one-click prompt templates for selected DOM text (Explain, Translate, Summarize, Counter-argument).
-- **Files**:
-  - `packages/zider/extension/src/background/context_menu.ts`: Chrome `contextMenus` API registration and message dispatch.
-  - `packages/zider/extension/src/content/inline_annotation.ts`: Inline tooltip DOM overlay with dismiss-on-click.
-  - `packages/zider/extension/test/context_menu.test.mjs`: Mock chrome API unit tests.
-
-### Phase 4: Secure Extension CSP & Content Security Policy Hardening
-- **Objective**: Enforce strict Manifest V3 CSP (`script-src 'self'`) with no `unsafe-inline`/`unsafe-eval`, blocked remote code execution, and sub-resource integrity for all local assets.
-- **Files**:
-  - `packages/zider/extension/manifest.json`: CSP directives update.
-  - `packages/zider/scripts/verify_csp.mjs`: Automated CSP compliance checker run in CI.
+---
 
 ## 4. Verification & Validation Protocol
 

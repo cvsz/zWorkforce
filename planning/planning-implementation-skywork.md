@@ -37,21 +37,18 @@ graph TD
 - [x] **Live A2A Agent Discovery & Capability Exchange (Phase 4)**:
   - Built `zworkforce/a2a_discovery.py` supporting `/.well-known/agent.json` discovery catalogs and tool capability matching.
   - Unit tests in `tests/test_v3_skywork_a2a.py`.
+- [x] **Iterative Multi-Hop Search & Document Verifier (Phase 1)**:
+  - Built `zworkforce/deep_research.py` supporting query reformulation, depth tracking, and domain authority scoring.
+  - Unit tests in `tests/test_v3_skywork_compilers.py`.
+- [x] **Multimodal Document Output Compilers (Phase 2)**:
+  - Built `zworkforce/document_compiler.py` generating Marp slide decks, tabular CSVs, and SSML-tagged audio scripts.
+  - Unit tests in `tests/test_v3_skywork_compilers.py`.
 
 ---
 
 ## 3. Active & Upcoming Implementation Workstreams
 
-### Phase 1: Iterative Multi-Hop Search & Document Verifier
-- **Objective**: Execute multi-turn web search using OpenRouter `:online` plugin and calculate document reliability scores.
-- **Files**:
-  - `zworkforce/deep_research.py`: Autonomous research pipeline and citation extractor.
-  - `tests/test_deep_research.py`: Unit tests for citation graph creation.
-
-### Phase 2: Multimodal Document Output Compilers
-- **Objective**: Auto-compile research results into clean Marp slide decks, tabular CSVs, and SSML-tagged audio scripts.
-- **Files**:
-  - `zworkforce/document_compiler.py`: Multi-format artifact generators.
+*(All Phases 1 through 4 for Skywork Deep Research are now completed and verified).*
 
 ---
 

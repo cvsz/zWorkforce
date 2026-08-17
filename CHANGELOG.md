@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Autonomous Control Plane & Subsystems
+- **MCP Reverse Tunnel Gateway** (`zworkforce/tunnel.py`): Encrypted localhost-to-cloud reverse tunnel with heartbeat fencing and tenant isolation (PR #117).
+- **Zeto QA & SEO Engines** (`packages/zeto/`): 12-point QA evaluation loop with automated $<90$ remediation and multi-platform hashtag/keyword density analysis (PR #117).
+- **Zarvis Live Realtime Audio & VAD** (`packages/zarvis/`): Bidirectional Gemini Live PCM16 streaming gateway and adaptive energy VAD tuning (PR #116).
+- **OTLP Telemetry & Typed Handoff** (`zworkforce/`): Multi-sink OTLP exporter with secret scrubbing and typed cross-agent delegation contracts (PR #115).
+- **Skywork Citation Validator & A2A Manifest** (`zworkforce/`): Deep research citation scoring ($\ge 0.65$) and `/.well-known/agent.json` discovery registry (PR #119).
+- **ZSP Collab & ZWF ACP Server** (`packages/zsp-aitool/`, `zworkforce/`): Yjs CRDT real-time multi-user timeline collaboration and complete Agent Client Protocol (ACP) JSON-RPC standard (PR #120).
+- **Zider Context Menu & CSP Hardening** (`packages/zider/`): Native browser selection actions and strict Manifest V3 Content Security Policy (PR #118).
+- **Zarvis Caption Overlay & zRed Canary** (`packages/zarvis/`, `zworkforce/`): BCP-47 live transcript overlay, CodeQL SARIF CVSS triage, and runtime secret canary leak halting (PR #121).
+- **Autonomous Quad-Loop Engine** (`scripts/auto-quad-loop.sh`): Installed cron automation for continuous test, doctor, plan sync, and delivery (PR #114).
+
 ### Free-model coding CLI
 - Added `zktcoder`: a zero-dependency, stdin-driven coding CLI for the zWorkforce OpenAI-compatible gateway (Claude Fable 5 / DeepSeek V4 and friends) with a model selector, `--list-models`, `--cwd`, and no telemetry.
 - Registered the `zktcoder` console script and pointed the `ZworkforceLocalEndpoint` and `zworkforce_code_agent` tool at it (falling back to the legacy `zwf-coder` binary).
