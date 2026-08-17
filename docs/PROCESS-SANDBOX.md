@@ -39,6 +39,12 @@ For `network_policy=deny`, the command uses:
 
 The outer `prlimit` launcher applies hard CPU, address-space, process-count, open-file, and file-size ceilings before Bubblewrap starts. The normal zWorkforce wall-clock timeout and output-byte limits also remain in force.
 
+## Credential boundary
+
+The sandbox does not inherit the host process environment. In particular it does not forward provider API keys, GitHub tokens, service credentials, the operator's host `HOME`, or arbitrary environment variables.
+
+A coding engine that needs external authenticated services must use an explicitly designed server-side broker/provider boundary or another scoped credential mechanism; credentials are not injected into the sandbox merely to preserve legacy behavior. Under the currently supported `network_policy=deny`, the sandbox also has no normal external network path.
+
 ## Network policy
 
 Only `network_policy=deny` is currently executable. A grant declaring `network_policy=allowlisted` fails closed.
