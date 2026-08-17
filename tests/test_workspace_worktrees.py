@@ -117,14 +117,13 @@ class WorkspaceWorktreeServiceTests(unittest.TestCase):
             repo_relative="repo",
             destination_relative="tree-a",
             branch="feat/a",
-            task_id="task-123",
         )
         self.assertEqual(created.branch, "feat/a")
         rows = self.db.list_workspace_worktrees("default")
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["status"], "active")
         self.assertEqual(rows[0]["branch"], "feat/a")
-        self.assertEqual(rows[0]["task_id"], "task-123")
+        self.assertIsNone(rows[0]["task_id"])
         self.assertEqual(rows[0]["expires_at"], self.grant["expires_at"])
 
         self.service.remove_worktree(
@@ -142,6 +141,20 @@ class WorkspaceWorktreeServiceTests(unittest.TestCase):
         audit_actions = [row["action"] for row in self.db.list_audit("default", limit=20)]
         self.assertIn("workspace.worktree.create", audit_actions)
         self.assertIn("workspace.worktree.remove", audit_actions)
+
+    def test_task_linkage_must_resolve_inside_tenant(self):
+        with self.assertRaisesRegex(ValueError, "task not found"):
+            self.db.create_workspace_worktree_record(
+                "default",
+                self.grant["id"],
+                "alice",
+                repo_relative="repo",
+                worktree_relative="tree-task",
+                branch="feat/task",
+                start_ref="HEAD",
+                expires_at=self.grant["expires_at"],
+                task_id="missing-task",
+            )
 
     def test_remove_rejects_untracked_or_mismatched_worktree(self):
         with self.assertRaisesRegex(WorktreeError, "not tracked"):
