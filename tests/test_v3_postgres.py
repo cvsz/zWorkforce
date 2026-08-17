@@ -93,13 +93,14 @@ class PostgresIntegrationTests(unittest.TestCase):
             self.assertEqual(failures, [], [str(exc) for exc in failures])
             with psycopg.connect(self.url, autocommit=True) as connection:
                 relations = connection.execute(
-                    "SELECT to_regclass(%s), to_regclass(%s), to_regclass(%s), to_regclass(%s), to_regclass(%s)",
+                    "SELECT to_regclass(%s), to_regclass(%s), to_regclass(%s), to_regclass(%s), to_regclass(%s), to_regclass(%s)",
                     (
                         f"{schema}.tenants",
                         f"{schema}.tasks2",
                         f"{schema}.event_rules3",
                         f"{schema}.workspace_conversations5",
                         f"{schema}.workspace_grants6",
+                        f"{schema}.workspace_worktrees7",
                     ),
                 ).fetchone()
                 schema_version = connection.execute(
@@ -114,6 +115,7 @@ class PostgresIntegrationTests(unittest.TestCase):
                     f"{schema}.event_rules3",
                     f"{schema}.workspace_conversations5",
                     f"{schema}.workspace_grants6",
+                    f"{schema}.workspace_worktrees7",
                 ),
             )
             self.assertEqual(schema_version, str(SCHEMA_VERSION))
@@ -199,6 +201,42 @@ class PostgresIntegrationTests(unittest.TestCase):
         other_tenant = f"grant-other-{uuid.uuid4().hex}"
         self.db.ensure_tenant(other_tenant, "Grant Other")
         self.assertIsNone(self.db.get_workspace_grant(other_tenant, grant["id"]))
+
+    def test_workspace_worktrees_v7_round_trip_and_tenant_isolation(self):
+        grant = self.db.upsert_workspace_grant(
+            self.tenant_id,
+            {
+                "name": "Worktree grant",
+                "root_rel": "repo",
+                "read": True,
+                "write": True,
+                "commands": ["git"],
+                "network_policy": "deny",
+                "enabled": True,
+                "expires_at": "2099-01-01T00:00:00+00:00",
+            },
+            self.tenant_id,
+        )
+        record = self.db.create_workspace_worktree_record(
+            self.tenant_id,
+            grant["id"],
+            self.tenant_id,
+            repo_relative="repo",
+            worktree_relative="worktrees/feature-a",
+            branch="feat/a",
+            start_ref="HEAD",
+            expires_at=grant["expires_at"],
+            task_id="task-a",
+        )
+        self.assertEqual(record["status"], "active")
+        self.assertEqual(record["grant_id"], grant["id"])
+        self.assertEqual(record["task_id"], "task-a")
+        self.assertEqual(len(self.db.list_workspace_worktrees(self.tenant_id)), 1)
+
+        other_tenant = f"worktree-other-{uuid.uuid4().hex}"
+        self.db.ensure_tenant(other_tenant, "Worktree Other")
+        self.assertIsNone(self.db.get_workspace_worktree_record(other_tenant, record["id"]))
+        self.assertEqual(self.db.list_workspace_worktrees(other_tenant), [])
 
 
 if __name__ == "__main__": unittest.main()
