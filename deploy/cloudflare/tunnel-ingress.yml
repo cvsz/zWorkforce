@@ -1,0 +1,58 @@
+# ==============================================================================
+# Cloudflare Tunnel Ingress Architecture & Master Manifest
+# Tunnel ID: 45667e7e-7383-4265-b53e-6a9e770a8554
+# Account ID: 9afd03fff02846b4ca89caeff350ce56
+# ==============================================================================
+
+tunnel: 45667e7e-7383-4265-b53e-6a9e770a8554
+credentials-file: /etc/cloudflared/45667e7e-7383-4265-b53e-6a9e770a8554.json
+
+ingress:
+  # 1. zWorkforce Control Plane API & Tasks
+  - hostname: zwf.zeaz.dev
+    service: http://127.0.0.1:9570
+
+  # 2. Z.A.R.V.I.S. Voice & Hotkey Gateway
+  - hostname: zarvis.zeaz.dev
+    service: http://127.0.0.1:8080
+
+  # 3. OpenWebUI Multi-Model AI Interface
+  - hostname: chat.zeaz.dev
+    service: http://127.0.0.1:8080
+
+  # 4. ZSP AI Studio & Video Renderer
+  - hostname: studio.zeaz.dev
+    service: http://127.0.0.1:8080
+
+  # 5. Autonomous Agent & Assistant Services
+  - hostname: arin.zeaz.dev
+    service: http://127.0.0.1:8080
+  - hostname: nextchat.zeaz.dev
+    service: http://127.0.0.1:8080
+  - hostname: qwen.zeaz.dev
+    service: http://127.0.0.1:8091
+  - hostname: zai.zeaz.dev
+    service: http://127.0.0.1:8765
+
+  # 6. Enterprise ERP & Dashboards
+  - hostname: zerp.zeaz.dev
+    service: http://127.0.0.1:80
+  - hostname: zdash.zeaz.dev
+    service: http://127.0.0.1:18080
+  - hostname: piewdash.zeaz.dev
+    service: http://127.0.0.1:80
+  - hostname: moopiew.zeaz.dev
+    service: http://127.0.0.1:8080
+  - hostname: zttshop.zeaz.dev
+    service: http://127.0.0.1:8080
+  - hostname: cme.zeaz.dev
+    service: http://127.0.0.1:8001
+  - hostname: autoc.zeaz.dev
+    service: http://127.0.0.1:8001
+  - hostname: auth.zeaz.dev
+    service: http://127.0.0.1:8080
+  - hostname: laps.zeaz.dev
+    service: http://127.0.0.1:8080
+
+  # Catch-all terminal rule
+  - service: http_status:404

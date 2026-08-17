@@ -1,0 +1,222 @@
+{
+	admin 127.0.0.1:2019
+	auto_https off
+}
+
+http://zarvis.zeaz.dev:8080, http://zarvis.zeaz.dev:80 {
+	bind 127.0.0.1
+	reverse_proxy 127.0.0.1:9570 {
+		header_up Host {http.request.host}
+		header_up X-Forwarded-Proto https
+		header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+		header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+	}
+}
+
+http://chat.zeaz.dev:8080, http://chat.zeaz.dev:80 {
+	bind 127.0.0.1
+	reverse_proxy 127.0.0.1:3080 {
+		header_up Host {http.request.host}
+		header_up X-Forwarded-Proto https
+		header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+		header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+		flush_interval -1
+	}
+}
+
+http://nextchat.zeaz.dev:8080, http://nextchat.zeaz.dev:80 {
+	bind 127.0.0.1
+	reverse_proxy 127.0.0.1:3000 {
+		header_up Host {http.request.host}
+		header_up X-Forwarded-Proto https
+		header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+		header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+	}
+}
+
+http://studio.zeaz.dev:8080, http://studio.zeaz.dev:80 {
+	bind 127.0.0.1
+	reverse_proxy 127.0.0.1:3001 {
+		header_up Host {http.request.host}
+		header_up X-Forwarded-Proto https
+		header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+		header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+	}
+}
+
+http://piewdash.zeaz.dev:80 {
+	bind 127.0.0.1
+
+	basicauth {
+		{$PIEWDASH_BASIC_AUTH_USER} {$PIEWDASH_BASIC_AUTH_HASH}
+	}
+
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+	}
+
+	reverse_proxy 127.0.0.1:8082
+}
+
+http://arin.zeaz.dev:8080 {
+	bind 127.0.0.1
+
+	encode zstd gzip
+
+	root * /home/cvsz/zeaz/deploy/arin
+
+	header -Server
+
+	@arin_dynamic path /api/* /preview/* /app/*
+	handle @arin_dynamic {
+		reverse_proxy 127.0.0.1:8787
+	}
+
+	handle {
+		header {
+			-Server
+			X-Content-Type-Options "nosniff"
+			X-Frame-Options "DENY"
+			Referrer-Policy "strict-origin-when-cross-origin"
+			Permissions-Policy "camera=(), microphone=(), geolocation=()"
+			Content-Security-Policy "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		}
+
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+http://zerp.zeaz.dev:80 {
+	bind 127.0.0.1
+
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+	}
+
+	reverse_proxy 127.0.0.1:3001
+}
+
+http://laps.zeaz.dev:8080 {
+	bind 127.0.0.1
+
+	encode zstd gzip
+
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; connect-src 'self' wss:; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+	}
+
+	reverse_proxy 127.0.0.1:9999 {
+		header_up Host {http.request.host}
+		header_up X-Forwarded-Proto https
+		header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+		header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+	}
+}
+
+:8080 {
+	bind 127.0.0.1
+
+	encode zstd gzip
+
+	request_body {
+		max_size 100KB
+	}
+
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(self)"
+		Content-Security-Policy "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+	}
+
+	reverse_proxy 127.0.0.1:8000 {
+		header_up Host {http.request.host}
+		header_up X-Forwarded-Proto https
+		header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+		header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+	}
+}
+
+http://cme.zeaz.dev:80 {
+	bind 127.0.0.1
+
+	encode zstd gzip
+
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(self)"
+		Content-Security-Policy "default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+	}
+
+	reverse_proxy 127.0.0.1:8000 {
+		header_up Host {http.request.host}
+		header_up X-Forwarded-Proto https
+		header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+		header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+	}
+}
+
+
+http://ggtmoni.zeaz.dev:80 {
+	bind 127.0.0.1
+
+	encode zstd gzip
+
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "no-referrer"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; base-uri 'self'; frame-ancestors 'self'"
+	}
+
+	reverse_proxy 127.0.0.1:8002 {
+		header_up Host {http.request.host}
+		header_up X-Forwarded-Proto https
+		header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+		header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+	}
+}
+
+http://laps.zeaz.dev:80 {
+	bind 127.0.0.1
+
+	encode zstd gzip
+
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; connect-src 'self' wss:; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+	}
+
+	reverse_proxy 127.0.0.1:9999 {
+		header_up Host {http.request.host}
+		header_up X-Forwarded-Proto https
+		header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+		header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+	}
+}
+
