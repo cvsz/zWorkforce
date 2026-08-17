@@ -127,7 +127,8 @@ async def zworkforce_dispatch(req: ZWorkforceTaskRequest):
         return await ZWorkforceBridge.dispatch_task(
             title=req.title,
             prompt=req.prompt,
-            target_agent=req.target_agent
+            target_agent=req.target_agent,
+            idempotency_key=req.idempotency_key,
         )
     except ZWorkforceBridgeError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
