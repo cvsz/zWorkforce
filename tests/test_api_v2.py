@@ -74,9 +74,37 @@ class ApiV2Tests(unittest.TestCase):
         with self.assertRaises(urllib.error.HTTPError) as ctx:
             urllib.request.urlopen(req,timeout=5)
         self.assertEqual(ctx.exception.code,403)
-    def test_missing_auth_is_401(self):
-        req=urllib.request.Request(self.base+"/api/v1/overview")
-        with self.assertRaises(urllib.error.HTTPError) as ctx: urllib.request.urlopen(req,timeout=5)
-        self.assertEqual(ctx.exception.code,401)
+    def test_static_assets_contain_slash_command_autocomplete(self):
+        req_html = urllib.request.Request(self.base + "/")
+        with urllib.request.urlopen(req_html, timeout=5) as r:
+            html = r.read().decode("utf-8")
+            self.assertIn('id="slashMenu"', html)
+            self.assertIn('class="slash-menu hidden"', html)
+            self.assertIn('id="slashHint"', html)
 
-if __name__=="__main__": unittest.main()
+        req_js = urllib.request.Request(self.base + "/app.js")
+        with urllib.request.urlopen(req_js, timeout=5) as r:
+            js = r.read().decode("utf-8")
+            self.assertIn('/api/v1/workspaces/commands', js)
+            self.assertIn('updateSlashMenu', js)
+            self.assertIn('selectSlashCommand', js)
+            self.assertIn('/api/v1/workspaces/commands/resolve', js)
+
+        req_css = urllib.request.Request(self.base + "/styles.css")
+        with urllib.request.urlopen(req_css, timeout=5) as r:
+            css = r.read().decode("utf-8")
+            self.assertIn('.slash-menu', css)
+            self.assertIn('.slash-item', css)
+            self.assertIn('.slash-hint', css)
+
+    def test_missing_auth_is_401(self):
+        req = urllib.request.Request(self.base + "/api/v1/overview")
+        with self.assertRaises(urllib.error.HTTPError) as ctx:
+            urllib.request.urlopen(req, timeout=5)
+        self.assertEqual(ctx.exception.code, 401)
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+
