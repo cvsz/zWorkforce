@@ -64,8 +64,8 @@ class WorkspaceGrantTests(unittest.TestCase):
         body.update(overrides)
         return body
 
-    def test_schema_v6_and_grant_api_round_trip(self):
-        self.assertEqual(SCHEMA_VERSION, 6)
+    def test_schema_v7_and_grant_api_round_trip(self):
+        self.assertEqual(SCHEMA_VERSION, 7)
         status, grant = self.req("/api/v1/workspaces/grants", "POST", self.grant_body())
         self.assertEqual(status, 201)
         self.assertEqual(grant["root_rel"], "project-a")
