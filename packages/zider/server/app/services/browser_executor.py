@@ -75,10 +75,10 @@ class PinnedBrowserExecutor:
         except ValueError as exc:
             raise BrowserPolicyError("browser action URL contains an invalid port") from exc
         default_port = 443 if parsed.scheme == "https" else 80
+        bracketed = f"[{host}]" if ":" in host else host
         if port is None or port == default_port:
-            return host, host
-        host_header = f"[{host}]:{port}" if ":" in host else f"{host}:{port}"
-        return host_header, host
+            return bracketed, host
+        return f"{bracketed}:{port}", host
 
     async def execute(self, action: BrowserAction) -> Mapping[str, object]:
         self._require_transport_contract()
