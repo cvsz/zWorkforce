@@ -33,6 +33,17 @@ class WorktreeCommitResult:
     commit_sha: str
 
 
+@dataclass(frozen=True)
+class WorktreePullRequestResult:
+    branch: str
+    base_branch: str
+    commit_sha: str
+    title: str
+    pr_number: int | None
+    pr_url: str | None
+    draft: bool
+
+
 class GitWorktreeAdapter:
     """Grant-bounded Git worktree operations for approved local repositories.
 
@@ -367,6 +378,15 @@ class GitWorktreeAdapter:
         if head.exit_code != 0 or not re.fullmatch(r"[0-9a-fA-F]{40,64}", sha):
             raise WorktreeError("unable to resolve committed HEAD")
         return WorktreeCommitResult(branch=current, commit_sha=sha.lower())
+
+    def get_head_sha(self, worktree_relative: str) -> str:
+        worktree = self.repository_root(worktree_relative)
+        self._assert_no_external_git_helpers(worktree)
+        head = self._run([self.git, "-C", str(worktree), "rev-parse", "HEAD"], cwd=worktree)
+        sha = head.stdout.strip()
+        if head.exit_code != 0 or not re.fullmatch(r"[0-9a-fA-F]{40,64}", sha):
+            raise WorktreeError("unable to resolve worktree HEAD commit")
+        return sha.lower()
 
     def remove_worktree(self, *, repo_relative: str, worktree_relative: str) -> None:
         self._require_mutation()

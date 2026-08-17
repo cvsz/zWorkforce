@@ -10,11 +10,13 @@ from .worktree import (
     WorktreeCommandResult,
     WorktreeCommitResult,
     WorktreeError,
+    WorktreePullRequestResult,
     WorktreeStatus,
 )
 
 
 MutationAuthorizer = Callable[[str, str, str, str], None]
+GitHubPRClient = Callable[[str, str, str, str, str, bool], dict[str, Any]]
 
 
 class WorkspaceWorktreeService:
@@ -32,12 +34,14 @@ class WorkspaceWorktreeService:
         *,
         mutation_authorizer: MutationAuthorizer | None = None,
         adapter_factory: Callable[..., GitWorktreeAdapter] = GitWorktreeAdapter,
+        github_pr_client: GitHubPRClient | None = None,
     ):
         self.settings = settings
         self.db = db
         self.grants = WorkspaceGrantService(settings, db)
         self.mutation_authorizer = mutation_authorizer
         self.adapter_factory = adapter_factory
+        self.github_pr_client = github_pr_client
 
     def _resolved_adapter(
         self, tenant_id: str, grant_id: str, *, write: bool = False
@@ -238,6 +242,102 @@ class WorkspaceWorktreeService:
             grant_id,
             success=True,
             details={**details, "commit_sha": result.commit_sha},
+        )
+        return result
+
+    def create_pull_request(
+        self,
+        tenant_id: str,
+        actor: str,
+        grant_id: str,
+        *,
+        repo_relative: str,
+        worktree_relative: str,
+        title: str,
+        body: str = "",
+        base_branch: str = "main",
+        draft: bool = False,
+    ) -> WorktreePullRequestResult:
+        """Create or reference an authorized pull request from a tracked worktree commit.
+
+        Enforces:
+        - Mutation authorization (workspace.worktree.pr)
+        - Tenant-scoped active worktree lookup
+        - Protected base-branch invariant (base branch cannot equal the worktree branch)
+        - Single-line title and bounded body
+        - Verified committed HEAD SHA
+        - Audit trail with sanitized metadata
+        """
+        self._authorize_mutation(tenant_id, actor, "workspace.worktree.pr", grant_id)
+        record = self.db.get_active_workspace_worktree_by_path(tenant_id, grant_id, worktree_relative)
+        if not record:
+            raise WorktreeError("worktree is not tracked as an active tenant lifecycle record")
+        if str(record["repo_relative"]) != str(repo_relative):
+            raise WorktreeError("tracked worktree repository does not match PR request")
+
+        title = str(title or "").strip()
+        if not title or len(title) > 256 or any(ch in "\r\n" for ch in title):
+            raise WorktreeError("PR title must be a non-empty single line up to 256 characters")
+        body = str(body or "").strip()
+        if len(body) > 16384:
+            raise WorktreeError("PR body exceeds maximum allowed size (16384 characters)")
+
+        base = str(base_branch or "main").strip()
+        head_branch = str(record["branch"])
+        if not base or base == head_branch:
+            raise WorktreeError("PR base branch cannot be empty or equal to the worktree head branch")
+
+        adapter = self._adapter(tenant_id, grant_id, write=False)
+        commit_sha = adapter.get_head_sha(worktree_relative)
+
+        details = {
+            "repo_relative": repo_relative,
+            "worktree_relative": worktree_relative,
+            "worktree_id": record["id"],
+            "head_branch": head_branch,
+            "base_branch": base,
+            "commit_sha": commit_sha,
+            "title": title,
+            "draft": bool(draft),
+        }
+
+        if self.github_pr_client:
+            try:
+                client_res = self.github_pr_client(
+                    repo_relative,
+                    head_branch,
+                    base,
+                    title,
+                    body,
+                    bool(draft),
+                )
+                pr_number = int(client_res["number"]) if client_res.get("number") is not None else None
+                pr_url = str(client_res.get("html_url") or client_res.get("url") or "")
+            except Exception as exc:
+                self._audit(tenant_id, actor, "workspace.worktree.pr", grant_id, success=False, details=details, error=str(exc))
+                raise WorktreeError(f"GitHub PR creation failed: {exc}") from exc
+        else:
+            # Default / headless mock contract
+            pr_number = None
+            pr_url = None
+
+        result = WorktreePullRequestResult(
+            branch=head_branch,
+            base_branch=base,
+            commit_sha=commit_sha,
+            title=title,
+            pr_number=pr_number,
+            pr_url=pr_url,
+            draft=bool(draft),
+        )
+
+        self._audit(
+            tenant_id,
+            actor,
+            "workspace.worktree.pr",
+            grant_id,
+            success=True,
+            details={**details, "pr_number": pr_number, "pr_url": pr_url},
         )
         return result
 
