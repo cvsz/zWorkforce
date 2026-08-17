@@ -11,6 +11,7 @@ from .agent_runner import BrowserAction, BrowserAutomationUnavailable, BrowserPo
 class BrowserTransport(Protocol):
     enforces_pinned_destination: bool
     disables_automatic_redirects: bool
+    verifies_tls_server_identity: bool
 
     async def request(
         self,
@@ -18,6 +19,7 @@ class BrowserTransport(Protocol):
         action: BrowserAction,
         connect_ip: str,
         host_header: str,
+        tls_server_name: str,
         timeout_seconds: int,
     ) -> Mapping[str, object]: ...
 
@@ -39,6 +41,10 @@ class PinnedBrowserExecutor:
         if getattr(self.transport, "disables_automatic_redirects", False) is not True:
             raise BrowserAutomationUnavailable(
                 "browser transport must disable automatic redirects"
+            )
+        if getattr(self.transport, "verifies_tls_server_identity", False) is not True:
+            raise BrowserAutomationUnavailable(
+                "browser transport must verify TLS against the original hostname"
             )
 
     @staticmethod
@@ -71,6 +77,7 @@ class PinnedBrowserExecutor:
                         action=action,
                         connect_ip=connect_ip,
                         host_header=host,
+                        tls_server_name=host,
                         timeout_seconds=self.timeout_seconds,
                     ),
                     timeout=self.timeout_seconds,
