@@ -1,6 +1,6 @@
 # Autonomous Self-Upgrading & End-to-End Specialist Prompt Registry
 
-This document serves as the canonical registry of executable, zero-cost (Free Model First) prompts, planning loops, implementation workflows, and orchestration instructions across the `cvsz/zWorkforce` ecosystem.
+This document serves as the canonical registry of executable, zero-cost (Free Model First) prompts, planning loops, implementation workflows, next-iteration triggers, and orchestration instructions across the `cvsz/zWorkforce` ecosystem.
 
 ---
 
@@ -96,6 +96,22 @@ Implementation Pipeline:
 
 ---
 
+### Loop D: Continuous Self-Upgrading Tri-Loop Trigger (`/goal do-next-tri-loop-e2e`)
+
+```markdown
+/goal do-all-e2e and do-implementation-all-e2e and do-planning-all-e2e after done update autonomous-upgrades.md for next to do-all-e2e and do-implementation-all-e2e and do-planning-all-e2e and gpg commit and push
+
+Autonomous Self-Sustaining Directives:
+1. Trigger full verification across Slices A through F.
+2. Trigger planning validation and contract consistency across core and monorepo packages.
+3. Verify zero-secret exposure, tenant isolation, and deterministic AST safety hooks.
+4. Update `prompts/autonomous-upgrades.md` with latest iteration state and forward triggers.
+5. Perform clean compilation, unit tests, doctor check, and Node package suites.
+6. Create GPG-signed commit and push to remote origin.
+```
+
+---
+
 ## 2. Specialist Agent Prompts (Zero-Cost / Free Model First)
 
 ### Prompt 1: Autonomous Code Reviewer (`opencode-code-reviewer`)
@@ -178,7 +194,7 @@ cd packages/zarvis && node --test scripts/test/*.test.mjs apps/zvoice/test/*.tes
 git add prompts/autonomous-upgrades.md zworkforce/ tests/ ROADMAPS.md planning/
 
 # 3. GPG Signed Commit
-git commit -S -m "docs(prompts): update autonomous upgrade registry and E2E loops"
+git commit -S -m "docs(prompts): update autonomous upgrade registry with continuous tri-loop triggers"
 
 # 4. Push to Origin
 git push origin <branch-name>
