@@ -1,6 +1,5 @@
 import unittest
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 
 from tests.common import stack
 from zworkforce.workspace_grants import WorkspaceGrantService
@@ -54,7 +53,7 @@ class WorkspaceWorktreeServiceTests(unittest.TestCase):
                 "expires_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(timespec="seconds"),
             }
         )
-        self.grant = self.db.create_workspace_grant("default", "tester", **grant)
+        self.grant = self.db.upsert_workspace_grant("default", grant, "tester")
         self.authorized = []
 
         def authorize(tenant_id, actor, action, grant_id):
