@@ -78,7 +78,7 @@ class ZWorkforceBridgeTests(unittest.IsolatedAsyncioTestCase):
                 await ZWorkforceBridge.get_overview()
         self.assertEqual(ctx.exception.status_code, 503)
 
-    async def test_dispatch_forwards_bounded_idempotency_key(self):
+    async def test_dispatch_forwards_control_plane_contract_and_idempotency_key(self):
         client = FakeClient(post_result=FakeResponse(payload={"id": "task-1", "state": "queued"}))
         with patch.object(bridge_module.httpx, "AsyncClient", return_value=client):
             result = await ZWorkforceBridge.dispatch_task(
@@ -88,7 +88,11 @@ class ZWorkforceBridgeTests(unittest.IsolatedAsyncioTestCase):
                 idempotency_key="zider-dispatch-42",
             )
         self.assertEqual(result["id"], "task-1")
-        headers = client.requests[0][2]["headers"]
+        method, url, request = client.requests[0]
+        self.assertEqual(method, "POST")
+        self.assertEqual(url, "https://zwf.example.test/api/v1/tasks")
+        self.assertEqual(request["json"], {"agent_id": "general", "prompt": "prompt"})
+        headers = request["headers"]
         self.assertEqual(headers["Idempotency-Key"], "zider-dispatch-42")
         self.assertEqual(headers["Authorization"], "Bearer super-secret-token")
 
