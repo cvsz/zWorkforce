@@ -119,10 +119,8 @@ class ZWorkforceBridge:
         base_url = cls._base_url()
         key = cls._validate_idempotency_key(idempotency_key)
         payload = {
-            "title": title,
+            "agent_id": target_agent,
             "prompt": prompt,
-            "agent": target_agent,
-            "source": "zider_sidebar",
         }
         headers = cls._headers()
         headers["Idempotency-Key"] = key
