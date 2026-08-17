@@ -1,10 +1,12 @@
 # Autonomous Self-Upgrading & End-to-End Specialist Prompt Registry
 
-This document serves as the canonical registry of executable, zero-cost (Free Model First) prompts and orchestration instructions across the `cvsz/zWorkforce` ecosystem.
+This document serves as the canonical registry of executable, zero-cost (Free Model First) prompts, planning loops, and orchestration instructions across the `cvsz/zWorkforce` ecosystem.
 
 ---
 
-## 1. End-to-End Orchestrator Loop Prompt (`/goal do-all-e2e`)
+## 1. End-to-End Execution Loops
+
+### Loop A: Full Verification & Upgrading (`/goal do-all-e2e`)
 
 ```markdown
 /goal Execute End-to-End Autonomous Platform Verification & Upgrade
@@ -38,6 +40,33 @@ Execute and verify the full platform pipeline across all platform boundaries:
    - Run Python test discovery: `PYTHONPATH=. python3 -m unittest discover -s tests -v`
    - Run Doctor diagnostics: `zworkforce doctor`
    - Output structured PASS/FAIL matrix and evidence logs.
+```
+
+---
+
+### Loop B: Master Architectural Planning & Cross-System Sync (`/goal do-planning-all-e2e`)
+
+```markdown
+/goal Execute Master Architectural Planning & Cross-System Synchronization
+
+You are Antigravity, leading the architectural synchronization and forward execution planning across the entire cvsz/zWorkforce ecosystem (`zwf`, `zarvis`, `zeto`, `zider`, `zsp-aitool`).
+
+Execution Protocol:
+1. Synchronize Master Roadmap & Sub-Plans:
+   - Align `planning/exec-planning.master.md` with active releases (`v3.0.3`) and forward milestones.
+   - Audit cross-system execution contracts across `exec-planning-router.md`, `exec-planning-zarvis.md`, `exec-planning-skywork.md`, and `exec-planning-zato.md`.
+2. Verify Skill Matrix & Capability Mappings:
+   - Ensure all 23+ skills in Section 5 of `exec-planning.master.md` map to concrete implementations.
+   - Verify server-side secret isolation, tenant boundaries, and fail-closed tool guards.
+3. Validate Package Release Constraints:
+   - Ensure `packages/zarvis` adheres to the loopback topology, signed session tickets, and zero client credential disclosure.
+   - Validate all 5 release templates and 6 schemas in `packages/zarvis/scripts/validate-release-templates.mjs`.
+4. Run Complete Verification Suite:
+   - Python Core: `python3 -m compileall -q zworkforce tests && PYTHONPATH=. python3 -m unittest discover -s tests -v && zworkforce doctor`
+   - Node Packages: `cd packages/zarvis && node --test scripts/test/*.test.mjs apps/zvoice/test/*.test.mjs services/voice-gateway/test/*.test.mjs && node scripts/validate-release-templates.mjs`
+5. Automated GPG Commit & Push:
+   - Stage all updated plans, prompts, tests, and source files.
+   - Execute signed commit (`git commit -S`) and push to origin feature branch.
 ```
 
 ---
@@ -107,4 +136,25 @@ Focus Areas:
 2. Structured output validation with JSON schemas.
 3. Multimodal audio/video token efficiency and context compaction.
 4. Low-latency edge inference on zero-cost tiers.
+```
+
+---
+
+## 3. Automated Post-Execution Commit & GPG Push Playbook
+
+```bash
+# 1. Full E2E Verification Gate
+python3 -m compileall -q zworkforce tests
+PYTHONPATH=. python3 -m unittest discover -s tests -v
+zworkforce doctor
+cd packages/zarvis && node --test scripts/test/*.test.mjs apps/zvoice/test/*.test.mjs services/voice-gateway/test/*.test.mjs && node scripts/validate-release-templates.mjs
+
+# 2. Stage Changes
+git add prompts/autonomous-upgrades.md zworkforce/ tests/ ROADMAPS.md planning/
+
+# 3. GPG Signed Commit
+git commit -S -m "docs(prompts): update autonomous upgrade registry and E2E planning loops"
+
+# 4. Push to Origin
+git push origin <branch-name>
 ```
