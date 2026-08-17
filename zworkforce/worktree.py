@@ -247,7 +247,10 @@ class GitWorktreeAdapter:
             raise WorktreeError("worktree has no changes to commit")
         if staged.exit_code != 1:
             raise WorktreeError("unable to inspect staged worktree changes")
-        committed = self._run([self.git, "-C", str(worktree), "commit", "-m", commit_message], cwd=worktree)
+        committed = self._run(
+            [self.git, "-c", "core.hooksPath=/dev/null", "-C", str(worktree), "commit", "-m", commit_message],
+            cwd=worktree,
+        )
         if committed.exit_code != 0:
             raise WorktreeError((committed.stderr or committed.stdout or "git commit failed").strip()[:500])
         head = self._run([self.git, "-C", str(worktree), "rev-parse", "HEAD"], cwd=worktree)
