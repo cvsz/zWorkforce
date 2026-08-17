@@ -207,6 +207,29 @@ Pipeline:
 
 ---
 
+### Loop F: Full Quad-Loop Autonomous Execution (`/goal do-all-e2e and do-plugins-e2e and do-implementation-all-e2e and do-planning-all-e2e`)
+
+> **Last executed:** 2026-08-17T05:25Z  
+> **Outcome:** 241/241 Python tests PASS · 36/36 zarvis Node tests PASS · 7/7 connector tests PASS · Doctor HEALTHY · PR #109 + PR #110 merged (15/15 checks each)
+
+```markdown
+/goal do-all-e2e and do-plugins-e2e and do-implementation-all-e2e and do-planning-all-e2e after done update autonomous-upgrades.md for next to do-all-e2e and do-plugins-e2e and do-implementation-all-e2e and do-planning-all-e2e and gpg commit and push
+
+Autonomous Self-Sustaining Quad-Loop Directives:
+1. Loop A (do-all-e2e): Full platform verification — Slices A–F, Free Model First routing matrix, Doom-loop detection, MCP/ACP endpoints, compileall + unittest + doctor.
+2. Loop B (do-planning-all-e2e): Architectural sync — align exec-planning.master.md, audit exec-planning-*.md contracts, validate zarvis release templates and schemas.
+3. Loop C (do-implementation-all-e2e): Code construction — implement next phases from planning-implementation-*.md, build tests, enforce shell=False + fail-closed invariants.
+4. Loop E (do-plugins-e2e): Plugin + connector E2E — verify Shopee/TikTok/Meta HMAC, manifest schemas, skill YAML frontmatter, connector 7/7 tests, doctor probe.
+5. After all loops complete:
+   - Timestamp and update prompts/autonomous-upgrades.md with next iteration state.
+   - Update all planning/planning-implementation-*.md with latest completed/upcoming phases.
+   - Stage all changes: git add prompts/ planning/ tests/ zworkforce/ plugins/ .agents/
+   - GPG-sign commit: git commit -S -m "chore(auto): quad-loop e2e cycle $(date -u +%Y-%m-%dT%H:%MZ)"
+   - Push: git push origin <branch>, open PR, watch 15 checks, squash-merge, pull main.
+```
+
+---
+
 ## 3. Automated Post-Execution Commit & GPG Push Playbook
 
 ```bash

@@ -1,6 +1,6 @@
 # Planning & Implementation: Zeto AI Content Factory (`planning-implementation-zato.md`)
 
-**Updated:** 2026-08-17  
+**Updated:** 2026-08-17T05:25Z (do-all-e2e + do-implementation-all-e2e cycle)
 **Module:** `packages/zeto/` Content Lifecycle Engine (`IDEATE → GENERATE → WRITE → APPROVE → PUBLISH → MONITOR → LEARN`)  
 **Parent Strategy:** [`exec-planning.master.md`](exec-planning.master.md) & [`exec-planning-zato.md`](exec-planning-zato.md)
 
@@ -47,6 +47,19 @@ graph LR
 - **Objective**: Ingest social engagement metrics (views, shares, retention rate) and automatically recalibrate ProMeta prompt weights.
 - **Files**:
   - `packages/zeto/src/feedback_optimizer.ts`: Retention curve analytics and prompt re-weighting.
+
+### Phase 3: SEO & Platform Algorithm Keyword Injection
+- **Objective**: Per-platform keyword density and hashtag policy enforcement for Shopee, TikTok, and Meta with A/B scoring.
+- **Files**:
+  - `packages/zeto/src/seo_engine.ts`: Platform-specific keyword density scoring and auto-inject.
+  - `packages/zeto/tests/seo_engine.test.ts`: Scoring boundary tests and injection idempotency checks.
+
+### Phase 4: Approval Gate & Human-in-Loop Escalation
+- **Objective**: Wiring the 12-point QA scorecard into the zWorkforce approval gate (`approval_requests` table) with auto-escalation for scores below 90.
+- **Files**:
+  - `packages/zeto/src/approval_gateway.ts`: Approval request creation and webhook trigger.
+  - `zworkforce/api.py`: `POST /api/v1/approval/decide` endpoint for approve/reject.
+  - `tests/test_approval.py`: Approval lifecycle and cross-tenant isolation tests.
 
 ---
 

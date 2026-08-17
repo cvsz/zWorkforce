@@ -1,6 +1,6 @@
 # Planning & Implementation: Z.A.R.V.I.S. Voice & Assistant Gateway (`planning-implementation-zarvis.md`)
 
-**Updated:** 2026-08-17  
+**Updated:** 2026-08-17T05:25Z (do-all-e2e + do-implementation-all-e2e cycle)
 **Module:** `packages/zarvis/` Voice UI, Realtime Audio Streaming, Session Orchestrator, and WinUI Integration  
 **Parent Strategy:** [`exec-planning.master.md`](exec-planning.master.md) & [`exec-planning-zarvis.md`](exec-planning-zarvis.md)
 
@@ -64,6 +64,18 @@ graph TD
 - **Files**:
   - `ZWorkforceClient/src/ZWorkforceClient.Core/Services/VoiceService.cs`: Native audio pipeline.
   - `ZWorkforceClient/tests/ZWorkforceClient.Core.Tests/VoiceServiceTests.cs`: Unit tests.
+
+### Phase 3: VAD Sensitivity Tuning & Adaptive Barge-in
+- **Objective**: Configurable server-side VAD threshold (`energy_threshold`, `silence_duration_ms`) with per-session override and fail-safe auto-restart on stream stall.
+- **Files**:
+  - `packages/zarvis/services/voice-gateway/src/vad_config.ts`: VAD parameter schema and validation.
+  - `packages/zarvis/services/voice-gateway/test/vad_config.test.mjs`: Boundary-value unit tests.
+
+### Phase 4: Multi-Language Live Transcription Overlay
+- **Objective**: Browser-visible real-time captions synchronized with Gemini Live streaming responses with language code switching (`BCP-47`).
+- **Files**:
+  - `packages/zarvis/apps/zvoice/src/transcript_overlay.ts`: DOM injection and fade-out animation.
+  - `packages/zarvis/apps/zvoice/test/transcript_overlay.test.mjs`: Overlay rendering and cleanup tests.
 
 ---
 
