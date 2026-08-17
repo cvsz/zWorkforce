@@ -71,16 +71,15 @@ graph TD
 - [x] **Secure MCP Reverse Tunnel Client Gateway (Phase 1)**:
   - Built `zworkforce/tunnel.py` with `McpTunnelManager` supporting client registration, encrypted tunnel heartbeats, and timeout fencing.
   - Test suite in `tests/test_v3_tunnel.py`.
+- [x] **Agent Client Protocol (ACP) Multi-IDE Integration (Phase 2)**:
+  - Implemented `zworkforce/acp.py` handling JSON-RPC operations (`initialize`, `authenticate`, `newSession`, `loadSession`, `prompt`, `cancel`, `requestPermission`).
+  - Unit tests in `tests/test_acp.py`.
 
 ---
 
 ## 3. Active & Upcoming Implementation Workstreams
 
-### Phase 2: Agent Client Protocol (ACP) Multi-IDE Integration
-- **Objective**: Expose full ACP JSON-RPC standard for Cursor, VS Code, and Zed editor companion integration.
-- **Files to Implement/Touch**:
-  - `zworkforce/acp.py`: Bidirectional ACP server with standard operations (`initialize`, `newSession`, `prompt`, `cancel`, `requestPermission`).
-  - `tests/test_acp.py`: ACP compliance test suite.
+*(All Phases 1 through 4 for ZWF Control Plane Core are now implemented and verified).*
 
 ---
 

@@ -45,6 +45,12 @@ graph TD
 - [x] **HyperFrames Video Studio Foundation**: Multi-scene scene breakdown, prompt compiler, and render queue models.
 - [x] **Shopee API Product Ingestion & Vision OCR**: Automated product metadata extraction and image OCR text processing.
 - [x] **Prisma Multi-Tenant Data Layer**: Full schema with tenant boundaries and audit trail.
+- [x] **Batch Export Pipeline & S3 Delivery (Phase 3)**:
+  - Built `packages/zsp-aitool/src/services/export_pipeline.ts` with async job queuing and HMAC-signed delivery receipts (`rcpt-*`).
+  - Unit tests in `packages/zsp-aitool/tests/export_pipeline.test.js`.
+- [x] **Studio Real-Time Collaboration (Phase 4)**:
+  - Built `packages/zsp-aitool/src/server/collab_server.js` providing `CollabServer` and `CollabRoom` for multi-user timeline editing with tenant isolation and presence cursor sync.
+  - Unit tests in `packages/zsp-aitool/tests/collab_server.test.js`.
 
 ---
 
@@ -60,19 +66,6 @@ graph TD
 - **Objective**: Multi-layer timeline canvas with real-time waveform audio alignment and text animation overlays.
 - **Files**:
   - `packages/zsp-aitool/src/components/studio/TimelineCanvas.tsx`: WebGL/HTML5 canvas timeline.
-
-### Phase 3: Batch Export Pipeline & S3 Delivery
-- **Objective**: Async batch render-to-export pipeline writing finalized video assets to tenant-scoped S3/R2 bucket with HMAC-signed delivery receipts and signed webhook notifications.
-- **Files**:
-  - `packages/zsp-aitool/src/services/export_pipeline.ts`: Render job orchestrator and progress SSE stream.
-  - `packages/zsp-aitool/src/app/api/webhooks/export/route.ts`: HMAC-verified export-done webhook.
-  - `packages/zsp-aitool/tests/export_pipeline.test.ts`: Job lifecycle and tenant boundary tests.
-
-### Phase 4: Studio Real-Time Collaboration (WebSocket Concurrent Edit)
-- **Objective**: Multi-user collaborative scene editing via tenant-scoped WebSocket rooms using Yjs CRDT conflict resolution.
-- **Files**:
-  - `packages/zsp-aitool/src/server/collab_server.ts`: Yjs WebSocket provider with tenant room isolation.
-  - `packages/zsp-aitool/src/components/studio/CollabPresence.tsx`: Cursor overlay and user avatar indicators.
 
 ## 4. Verification & Validation Protocol
 
