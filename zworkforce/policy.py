@@ -80,9 +80,10 @@ def _matches(when: dict[str, Any], context: dict[str, Any]) -> bool:
 
 
 class PolicyEngine(Engine):
-    """Engine with tenant policy-as-code checks and grant-aware workspace file tools."""
+    """Engine with tenant policy checks and grant-aware workspace/process tools."""
 
     _WORKSPACE_FILE_TOOLS = {"workspace_list", "workspace_read", "workspace_write"}
+    _WORKSPACE_PROCESS_TOOLS = {"shell_exec", "zworkforce_code_agent"}
 
     def __init__(self, settings, db, provider):
         super().__init__(settings, db, provider)
@@ -127,7 +128,22 @@ class PolicyEngine(Engine):
             event_args["content_bytes"] = len(str(args.get("content", "")).encode("utf-8"))
         return event_args
 
-    def _execute_workspace_file_tool(self, task: dict[str, Any], name: str, args: dict[str, Any]) -> Any:
+    @staticmethod
+    def _process_event_args(name: str, args: dict[str, Any]) -> dict[str, Any]:
+        if name == "shell_exec":
+            raw_args = args.get("args") or []
+            return {
+                "workspace_id": str(args.get("workspace_id") or ""),
+                "command": str(args.get("command") or "")[:128],
+                "argument_count": len(raw_args) if isinstance(raw_args, list) else "invalid",
+            }
+        return {
+            "workspace_id": str(args.get("workspace_id") or ""),
+            "cwd": str(args.get("cwd") or ".")[:4096],
+            "prompt_bytes": len(str(args.get("prompt") or "").encode("utf-8")),
+        }
+
+    def _execute_sensitive_tool(self, task: dict[str, Any], name: str, args: dict[str, Any], event_args: dict[str, Any]) -> Any:
         started = time.monotonic()
         success = False
         error = ""
@@ -153,7 +169,7 @@ class PolicyEngine(Engine):
                 is_mutating_tool(name),
                 success,
                 (time.monotonic() - started) * 1000,
-                self._workspace_event_args(name, args),
+                event_args,
                 error,
             )
 
@@ -173,5 +189,7 @@ class PolicyEngine(Engine):
                 self.db.audit(task["tenant_id"], "runtime", "policy.deny", "task", task["id"], {"action": f"tool.{name}", **decision})
             return {"error": f"tool {name!r} denied by tenant policy"}
         if name in self._WORKSPACE_FILE_TOOLS:
-            return self._execute_workspace_file_tool(task, name, args)
+            return self._execute_sensitive_tool(task, name, args, self._workspace_event_args(name, args))
+        if name in self._WORKSPACE_PROCESS_TOOLS:
+            return self._execute_sensitive_tool(task, name, args, self._process_event_args(name, args))
         return super()._execute_tool(task, name, args)
