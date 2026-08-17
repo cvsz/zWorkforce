@@ -18,7 +18,9 @@ _WORKSPACE_TOOLS = _FILE_TOOLS | _PROCESS_TOOLS
 def _install_workspace_id_schema() -> None:
     for name in _WORKSPACE_TOOLS:
         parameters = TOOL_DEFINITIONS[name]["schema"]["function"]["parameters"]
-        properties = parameters.setdefault("properties", {})
+        properties = parameters.setdefault(
+            "properties", {}
+        )
         properties.setdefault(
             "workspace_id",
             {
@@ -100,7 +102,10 @@ class WorkspaceGrantedToolExecutor(ToolExecutor):
             return super().execute(name, args, tenant_id=tenant_id, agent_id=agent_id, actor=actor)
         grant, root = resolved
         if name == "shell_exec":
-            return self._sandboxed_shell(grant, root, str(args.get("command", "")), [str(item) for item in args.get("args", [])])
+            raw_args = args.get("args", [])
+            if not isinstance(raw_args, list) or any(not isinstance(item, (str, int, float, bool)) for item in raw_args):
+                raise ToolError("shell args must be an array of scalar values")
+            return self._sandboxed_shell(grant, root, str(args.get("command", "")), [str(item) for item in raw_args])
         return self._sandboxed_coder(grant, root, str(args.get("prompt", "")), str(args.get("cwd", ".")))
 
     def _sandboxed_shell(self, grant: dict[str, Any], root: Path, command: str, args: list[str]) -> dict[str, Any]:
