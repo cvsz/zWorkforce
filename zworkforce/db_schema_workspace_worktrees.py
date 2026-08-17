@@ -26,4 +26,7 @@ CREATE INDEX IF NOT EXISTS idx_workspace_worktrees7_active
     ON workspace_worktrees7(tenant_id,status,expires_at,id);
 CREATE INDEX IF NOT EXISTS idx_workspace_worktrees7_grant
     ON workspace_worktrees7(tenant_id,grant_id,updated_at DESC,id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_workspace_worktrees7_active_path
+    ON workspace_worktrees7(tenant_id,grant_id,worktree_relative)
+    WHERE status IN ('active','removing');
 '''
