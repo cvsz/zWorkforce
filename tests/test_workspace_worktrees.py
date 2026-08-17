@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from tests.common import stack
 from zworkforce.workspace_grants import WorkspaceGrantService
 from zworkforce.workspace_worktrees import WorkspaceWorktreeService
-from zworkforce.worktree import WorktreeCommandResult, WorktreeError, WorktreeStatus
+from zworkforce.worktree import WorktreeCommandResult, WorktreeCommitResult, WorktreeError, WorktreeStatus
 
 
 class FakeAdapter:
@@ -31,6 +31,14 @@ class FakeAdapter:
     def run_check(self, repo_relative, *, name, argv, allowlisted_checks):
         self.calls.append(("check", repo_relative, name, tuple(argv)))
         return WorktreeCommandResult(exit_code=0, stdout="private output", stderr="")
+
+    def commit(self, worktree_relative, *, message, expected_branch):
+        self.calls.append(("commit", worktree_relative, message, expected_branch))
+        return WorktreeCommitResult(branch=expected_branch, commit_sha="a" * 40)
+
+    def get_head_sha(self, worktree_relative):
+        self.calls.append(("get_head_sha", worktree_relative))
+        return "a" * 40
 
     def remove_worktree(self, **kwargs):
         self.calls.append(("remove", kwargs))
@@ -142,6 +150,43 @@ class WorkspaceWorktreeServiceTests(unittest.TestCase):
         self.assertIn("workspace.worktree.create", audit_actions)
         self.assertIn("workspace.worktree.remove", audit_actions)
 
+    def test_authorized_commit_requires_tracked_worktree_and_audits_no_message(self):
+        self.service.create_feature_worktree(
+            "default",
+            "alice",
+            self.grant["id"],
+            repo_relative="repo",
+            destination_relative="tree-commit",
+            branch="feat/commit",
+        )
+        result = self.service.commit_worktree(
+            "default",
+            "alice",
+            self.grant["id"],
+            repo_relative="repo",
+            worktree_relative="tree-commit",
+            message="private commit message",
+        )
+        self.assertEqual(result.branch, "feat/commit")
+        self.assertEqual(result.commit_sha, "a" * 40)
+        self.assertIn(
+            ("default", "alice", "workspace.worktree.commit", self.grant["id"]),
+            self.authorized,
+        )
+        joined = self._audit_details_text(self.db.list_audit("default", limit=20))
+        self.assertNotIn("private commit message", joined)
+        self.assertIn('"commit_sha": "' + ("a" * 40) + '"', joined)
+
+        with self.assertRaisesRegex(WorktreeError, "not tracked"):
+            self.service.commit_worktree(
+                "default",
+                "alice",
+                self.grant["id"],
+                repo_relative="repo",
+                worktree_relative="missing-tree",
+                message="feat: missing",
+            )
+
     def test_task_linkage_must_resolve_inside_tenant(self):
         with self.assertRaisesRegex(ValueError, "task not found"):
             self.db.create_workspace_worktree_record(
@@ -228,6 +273,113 @@ class WorkspaceWorktreeServiceTests(unittest.TestCase):
         joined = self._audit_details_text(self.db.list_audit("default", limit=10))
         self.assertNotIn("private output", joined)
         self.assertIn('"exit_code": 0', joined)
+
+    def test_create_pull_request_requires_mutation_and_active_record(self):
+        self.service.create_feature_worktree(
+            "default",
+            "alice",
+            self.grant["id"],
+            repo_relative="repo",
+            destination_relative="tree-pr",
+            branch="feat/pr-branch",
+        )
+        res = self.service.create_pull_request(
+            "default",
+            "alice",
+            self.grant["id"],
+            repo_relative="repo",
+            worktree_relative="tree-pr",
+            title="feat: add new feature",
+            body="PR description body",
+            base_branch="main",
+        )
+        self.assertEqual(res.branch, "feat/pr-branch")
+        self.assertEqual(res.base_branch, "main")
+        self.assertEqual(res.commit_sha, "a" * 40)
+        self.assertEqual(res.title, "feat: add new feature")
+        self.assertIn(
+            ("default", "alice", "workspace.worktree.pr", self.grant["id"]),
+            self.authorized,
+        )
+
+    def test_create_pull_request_rejects_matching_base_and_head_branch(self):
+        self.service.create_feature_worktree(
+            "default",
+            "alice",
+            self.grant["id"],
+            repo_relative="repo",
+            destination_relative="tree-same",
+            branch="main",
+        )
+        with self.assertRaises(WorktreeError) as ctx:
+            self.service.create_pull_request(
+                "default",
+                "alice",
+                self.grant["id"],
+                repo_relative="repo",
+                worktree_relative="tree-same",
+                title="feat: should fail",
+                base_branch="main",
+            )
+        self.assertIn("cannot be empty or equal", str(ctx.exception))
+
+    def test_create_pull_request_rejects_multiline_title(self):
+        self.service.create_feature_worktree(
+            "default",
+            "alice",
+            self.grant["id"],
+            repo_relative="repo",
+            destination_relative="tree-title",
+            branch="feat/title",
+        )
+        with self.assertRaises(WorktreeError) as ctx:
+            self.service.create_pull_request(
+                "default",
+                "alice",
+                self.grant["id"],
+                repo_relative="repo",
+                worktree_relative="tree-title",
+                title="feat: line1\nline2",
+            )
+        self.assertIn("single line", str(ctx.exception))
+
+    def test_create_pull_request_invokes_github_client(self):
+        client_calls = []
+
+        def fake_github_client(repo, head, base, title, body, draft):
+            client_calls.append((repo, head, base, title, body, draft))
+            return {"number": 42, "html_url": "https://github.com/cvsz/zworkforce/pull/42"}
+
+        service = WorkspaceWorktreeService(
+            self.settings,
+            self.db,
+            mutation_authorizer=lambda t, a, act, g: self.authorized.append((t, a, act, g)),
+            adapter_factory=FakeAdapter,
+            github_pr_client=fake_github_client,
+        )
+        service.create_feature_worktree(
+            "default",
+            "alice",
+            self.grant["id"],
+            repo_relative="repo",
+            destination_relative="tree-gh",
+            branch="feat/gh",
+        )
+        res = service.create_pull_request(
+            "default",
+            "alice",
+            self.grant["id"],
+            repo_relative="repo",
+            worktree_relative="tree-gh",
+            title="feat: submit PR",
+            body="Detailed review notes",
+            base_branch="main",
+            draft=True,
+        )
+        self.assertEqual(res.pr_number, 42)
+        self.assertEqual(res.pr_url, "https://github.com/cvsz/zworkforce/pull/42")
+        self.assertEqual(len(client_calls), 1)
+        self.assertEqual(client_calls[0], ("repo", "feat/gh", "main", "feat: submit PR", "Detailed review notes", True))
 
 
 if __name__ == "__main__":

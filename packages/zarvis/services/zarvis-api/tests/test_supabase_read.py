@@ -7,6 +7,9 @@ from pathlib import Path
 import httpx
 import pytest
 from fastapi import HTTPException
+import warnings
+warnings.filterwarnings("ignore", message=".*starlette.testclient.*")
+
 from fastapi.testclient import TestClient
 from prometheus_client import REGISTRY
 
