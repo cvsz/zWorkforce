@@ -17,6 +17,7 @@ from app.services.browser_executor import PinnedBrowserExecutor
 class FakeTransport:
     enforces_pinned_destination = True
     disables_automatic_redirects = True
+    verifies_tls_server_identity = True
 
     def __init__(self, result=None):
         self.calls = []
@@ -41,6 +42,7 @@ class BrowserExecutorTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(transport.calls), 1)
         self.assertEqual(transport.calls[0]["connect_ip"], "93.184.216.34")
         self.assertEqual(transport.calls[0]["host_header"], "docs.example.com")
+        self.assertEqual(transport.calls[0]["tls_server_name"], "docs.example.com")
 
     async def test_executor_rejects_private_or_missing_pins(self):
         executor = PinnedBrowserExecutor(FakeTransport())
@@ -55,12 +57,15 @@ class BrowserExecutorTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaisesRegex(BrowserPolicyError, "requires policy-validated"):
             await executor.execute(BrowserAction(kind="inspect", url="https://example.com"))
 
-    async def test_executor_requires_transport_to_enforce_pin_and_disable_redirects(self):
+    async def test_executor_requires_transport_security_contract(self):
         class UnpinnedTransport(FakeTransport):
             enforces_pinned_destination = False
 
         class RedirectFollowingTransport(FakeTransport):
             disables_automatic_redirects = False
+
+        class UnverifiedTlsTransport(FakeTransport):
+            verifies_tls_server_identity = False
 
         action = BrowserAction(
             kind="inspect",
@@ -71,6 +76,8 @@ class BrowserExecutorTests(unittest.IsolatedAsyncioTestCase):
             await PinnedBrowserExecutor(UnpinnedTransport()).execute(action)
         with self.assertRaisesRegex(BrowserAutomationUnavailable, "automatic redirects"):
             await PinnedBrowserExecutor(RedirectFollowingTransport()).execute(action)
+        with self.assertRaisesRegex(BrowserAutomationUnavailable, "TLS against the original hostname"):
+            await PinnedBrowserExecutor(UnverifiedTlsTransport()).execute(action)
 
     async def test_executor_never_follows_redirect_without_revalidation(self):
         transport = FakeTransport({"redirect_url": "https://other.example.com/next"})
