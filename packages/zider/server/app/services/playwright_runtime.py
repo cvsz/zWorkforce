@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import base64
 from typing import Mapping
 from urllib.parse import urlsplit
 
 from .agent_runner import BrowserAction, BrowserAutomationUnavailable, BrowserPolicyError, READ_ONLY_ACTIONS
+
+
+MAX_SCREENSHOT_BYTES = 4 * 1024 * 1024
 
 
 def _effective_port(parsed) -> int:
@@ -21,6 +25,22 @@ def _origin(parsed) -> tuple[str, str, int]:
         (parsed.hostname or "").lower().rstrip("."),
         _effective_port(parsed),
     )
+
+
+def _encode_screenshot(data: bytes) -> dict[str, object]:
+    if not isinstance(data, (bytes, bytearray)):
+        raise BrowserAutomationUnavailable("Playwright screenshot returned invalid data")
+    raw = bytes(data)
+    if not raw:
+        raise BrowserAutomationUnavailable("Playwright screenshot returned empty data")
+    if len(raw) > MAX_SCREENSHOT_BYTES:
+        raise BrowserAutomationUnavailable("Playwright screenshot exceeds the configured response bound")
+    return {
+        "ok": True,
+        "mime_type": "image/png",
+        "bytes": len(raw),
+        "image_base64": base64.b64encode(raw).decode("ascii"),
+    }
 
 
 class PlaywrightReadOnlyTransport:
@@ -106,6 +126,9 @@ class PlaywrightReadOnlyTransport:
                         return {"redirect_url": page.url}
                     if action.kind == "navigate":
                         return {"ok": True, "status": response.status if response else 0, "title": (await page.title())[:500]}
+                    if action.kind == "screenshot":
+                        screenshot = await page.screenshot(type="png", full_page=True, timeout=timeout_ms)
+                        return {**_encode_screenshot(screenshot), "title": (await page.title())[:500]}
                     selector = action.selector or "body"
                     text = await page.locator(selector).first.inner_text(timeout=timeout_ms)
                     return {"ok": True, "title": (await page.title())[:500], "text": text[:20000], "truncated": len(text) > 20000}
