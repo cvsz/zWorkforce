@@ -64,7 +64,18 @@ graph TD
 - **Files**:
   - `packages/zider/extension/src/content/youtube_sync.ts`: Player timestamp synchronization.
 
----
+### Phase 3: AI Context Right-Click Menu & Inline Annotation Engine
+- **Objective**: Native browser context menu extension with one-click prompt templates for selected DOM text (Explain, Translate, Summarize, Counter-argument).
+- **Files**:
+  - `packages/zider/extension/src/background/context_menu.ts`: Chrome `contextMenus` API registration and message dispatch.
+  - `packages/zider/extension/src/content/inline_annotation.ts`: Inline tooltip DOM overlay with dismiss-on-click.
+  - `packages/zider/extension/test/context_menu.test.mjs`: Mock chrome API unit tests.
+
+### Phase 4: Secure Extension CSP & Content Security Policy Hardening
+- **Objective**: Enforce strict Manifest V3 CSP (`script-src 'self'`) with no `unsafe-inline`/`unsafe-eval`, blocked remote code execution, and sub-resource integrity for all local assets.
+- **Files**:
+  - `packages/zider/extension/manifest.json`: CSP directives update.
+  - `packages/zider/scripts/verify_csp.mjs`: Automated CSP compliance checker run in CI.
 
 ## 4. Verification & Validation Protocol
 
