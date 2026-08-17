@@ -27,6 +27,12 @@ class WorktreeCommandResult:
     stderr: str
 
 
+@dataclass(frozen=True)
+class WorktreeCommitResult:
+    branch: str
+    commit_sha: str
+
+
 class GitWorktreeAdapter:
     """Grant-bounded Git worktree operations for approved local repositories.
 
@@ -110,6 +116,13 @@ class GitWorktreeAdapter:
             raise WorktreeError("invalid git branch name")
         if value in self.protected_branches and not allow_protected:
             raise WorktreeError("protected/default branch cannot be used as a task branch")
+        return value
+
+    @staticmethod
+    def _validate_commit_message(message: str) -> str:
+        value = str(message or "").strip()
+        if not value or len(value) > 200 or "\n" in value or "\r" in value or "\x00" in value:
+            raise WorktreeError("commit message must be a single non-empty line of at most 200 characters")
         return value
 
     def _run(self, argv: Sequence[str], *, cwd: Path) -> WorktreeCommandResult:
@@ -217,6 +230,31 @@ class GitWorktreeAdapter:
         if executable not in self.grant_commands:
             raise WorktreeError("workspace grant does not authorize check executable")
         return self._run(requested, cwd=worktree)
+
+    def commit(self, worktree_relative: str, *, message: str, expected_branch: str) -> WorktreeCommitResult:
+        self._require_mutation()
+        worktree = self.repository_root(worktree_relative)
+        expected = self._validate_branch(expected_branch)
+        current = self.status(worktree_relative).branch
+        if not current or current != expected:
+            raise WorktreeError("worktree branch does not match its tracked task branch")
+        commit_message = self._validate_commit_message(message)
+        add_result = self._run([self.git, "-C", str(worktree), "add", "--all", "--", "."], cwd=worktree)
+        if add_result.exit_code != 0:
+            raise WorktreeError("unable to stage worktree changes")
+        staged = self._run([self.git, "-C", str(worktree), "diff", "--cached", "--quiet", "--exit-code"], cwd=worktree)
+        if staged.exit_code == 0:
+            raise WorktreeError("worktree has no changes to commit")
+        if staged.exit_code != 1:
+            raise WorktreeError("unable to inspect staged worktree changes")
+        committed = self._run([self.git, "-C", str(worktree), "commit", "-m", commit_message], cwd=worktree)
+        if committed.exit_code != 0:
+            raise WorktreeError((committed.stderr or committed.stdout or "git commit failed").strip()[:500])
+        head = self._run([self.git, "-C", str(worktree), "rev-parse", "HEAD"], cwd=worktree)
+        sha = head.stdout.strip()
+        if head.exit_code != 0 or not re.fullmatch(r"[0-9a-fA-F]{40,64}", sha):
+            raise WorktreeError("unable to resolve committed HEAD")
+        return WorktreeCommitResult(branch=current, commit_sha=sha.lower())
 
     def remove_worktree(self, *, repo_relative: str, worktree_relative: str) -> None:
         self._require_mutation()
