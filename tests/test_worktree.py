@@ -187,6 +187,7 @@ class GitWorktreeAdapterTests(unittest.TestCase):
         self.assertTrue(any("add" in argv and "--all" in argv and "--" in argv for argv in commands))
         commit_call = next(call for call in calls if "commit" in call[0])
         self.assertIn("feat: bounded commit", commit_call[0])
+        self.assertIn("core.hooksPath=/dev/null", commit_call[0])
         self.assertEqual(commit_call[1]["shell"], False)
         self.assertNotIn("HOME", commit_call[1]["env"])
 
