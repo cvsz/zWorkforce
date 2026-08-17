@@ -7,7 +7,7 @@ import ipaddress
 import os
 import socket
 from typing import Any, Awaitable, Callable, Dict, Iterable, Mapping, Protocol, Sequence
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit
 
 
 class BrowserPolicyError(ValueError):
@@ -55,6 +55,11 @@ def _default_resolver(hostname: str) -> Iterable[str]:
 def _configured_hosts() -> tuple[str, ...]:
     raw = os.getenv("ZIDER_BROWSER_ALLOWED_HOSTS", "")
     return tuple(part.strip().lower().rstrip(".") for part in raw.split(",") if part.strip())
+
+
+def _safe_url_metadata(raw_url: str) -> str:
+    parsed = urlsplit(raw_url)
+    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, "", ""))
 
 
 class AgentRunner:
@@ -209,11 +214,13 @@ class AgentRunner:
                 raise BrowserAutomationUnavailable(
                     f"browser action timed out after {cls._timeout_seconds}s"
                 ) from exc
+            if not isinstance(result, Mapping):
+                raise BrowserAutomationUnavailable("browser executor returned an invalid result")
             steps.append(
                 {
                     "index": index,
                     "kind": action.kind,
-                    "url": action.url,
+                    "url": _safe_url_metadata(action.url),
                     "mutating": action.kind in MUTATING_ACTIONS,
                     "result": dict(result),
                 }
