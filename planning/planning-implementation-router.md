@@ -87,28 +87,21 @@ The router dynamically maps requests across the authoritative provider matrix in
   - `:nitro`: Sub-second ultra-low latency routing (Groq, Cerebras).
 - [x] **Universal Plugin Packaging**: Packaged as `zworkforce-omnichannel-suite` with `.codex-plugin/plugin.json` and `.agents/plugins/marketplace.json`.
 - [x] **Omnichannel Social & Shop Connectors**: Integrated Shopee OpenAPI v2, TikTok Shop, Meta Commerce, and Social Media tools.
+- [x] **OpenRouter Broadcast Tracing & Multi-Sink Telemetry (Phase 1)**:
+  - Built `zworkforce/router_tracing.py` providing `RouterTelemetryCollector` capturing per-model tokens, costs, and latencies.
+  - Unit tests in `tests/test_v3_zred_router_tunnel.py`.
+- [x] **Autonomous Agent Handoff & Guardrail Protocols (Phase 2)**:
+  - Integrated with `zworkforce/agent_handoff.py` and `zworkforce/safety_hooks.py`.
+  - Unit tests in `tests/test_v3_zred_router_tunnel.py`.
+- [x] **Secure Local MCP Reverse Tunnel Client (Phase 3)**:
+  - Built `zworkforce/tunnel_client.py` with `McpTunnelClient` providing heartbeat ping loops and auto-reconnect logic.
+  - Unit tests in `tests/test_v3_zred_router_tunnel.py`.
 
 ---
 
 ## 4. Active & Upcoming Implementation Workstreams
 
-### Phase 1: OpenRouter Broadcast Tracing & Multi-Sink Telemetry
-- **Objective**: Programmatic trace export to OpenTelemetry Collector, Langfuse, Grafana Cloud, Arize AX, and S3 sinks.
-- **Files**:
-  - `zworkforce/telemetry.py`: OTLP / OpenRouter Broadcast trace processor.
-  - `tests/test_telemetry.py`: Verification of metric histograms and token counters.
-
-### Phase 2: Autonomous Agent Handoff & Guardrail Protocols
-- **Objective**: Multi-agent routing with typed input/output validation, context compaction, and deterministic tool call evaluation on zero-cost free model tiers (`openai-agents-python` / `claude-agent-sdk` parity).
-- **Files**:
-  - `zworkforce/agent_handoff.py`: Typed handoff contracts and context window budgets.
-  - `tests/test_agent_handoff.py`: Context isolation tests.
-
-### Phase 3: Secure Local MCP Reverse Tunnel Client (`tunnel_client`)
-- **Objective**: Reverse-tunnel client using encrypted WebSockets and ephemeral ticket auth to connect localhost tools without inbound ports.
-- **Files**:
-  - `zworkforce/tunnel.py`: Reverse-tunnel client implementation.
-  - `tests/test_tunnel.py`: Tunnel handshake unit tests.
+*(All Phases 1 through 3 for OpenRouter Gateway are now completed and verified).*
 
 ---
 
