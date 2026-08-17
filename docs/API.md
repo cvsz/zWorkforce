@@ -167,6 +167,58 @@ and the summary SHA-256 digest, but not the raw summary text. This endpoint does
 not grant provider/model authority by itself; provider-backed automatic
 summarization remains subject to normal model policy and budget controls.
 
+## Workspace commands
+
+Server-authorized slash-command discovery and resolution for workspace
+surfaces. Both endpoints require `workspace:read` and at least the `viewer`
+role; the resolved payload reports whether the authenticated principal also
+passes the command's own role/scope requirement:
+
+```text
+GET  /api/v1/workspaces/commands
+POST /api/v1/workspaces/commands/resolve
+```
+
+`POST /commands/resolve` accepts `{"text": "<command>[ <argument>]"}` and
+returns the matched command, its argument (when present), `available`,
+`tenant_id` and `resolved: true`. An unrecognized command, or a command whose
+role/scope requirement the principal does not satisfy, is rejected with 400/403
+rather than executed. Command definitions live server-side; clients never
+submit an executable body.
+
+## Workspace grants
+
+Operator-managed local filesystem grants bound worktree/tool execution to an
+approved host root. Grant endpoints require `workspace:grant` and the `admin`
+role:
+
+```text
+GET  /api/v1/workspaces/grants
+POST /api/v1/workspaces/grants
+POST /api/v1/workspaces/grants/{id}/disable
+```
+
+`POST /grants` accepts a grant definition (`root`, `read`, `write`, `commands`,
+`network_policy`, `expires_at`); the server normalizes and validates the root
+before persisting, and every upsert/disable is audited. `disable` refuses to
+mutate an unknown grant (404) and is a durable, audited state transition. Grant
+roots are canonicalized at grant time and revalidated at every worktree/tool
+operation, so a later reconfiguration cannot widen an approved root.
+
+## Task evidence sidecar
+
+Read-only durable evidence projection for a completed task, used by
+workspace/review surfaces. Requires `workforce:read` and at least the `viewer`
+role:
+
+```text
+GET /api/v1/tasks/{id}/sidecar
+```
+
+Returns the tenant-scoped evidence bundle or `404 task_not_found`. The
+projection is derived from the durable task record; it does not accept client
+input and never exposes provider or storage credentials.
+
 ## Evaluation
 
 ```text

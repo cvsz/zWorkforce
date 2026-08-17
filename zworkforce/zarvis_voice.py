@@ -153,6 +153,9 @@ class ZarvisVoiceService:
         ticket = payload.get("ticket")
         expires_at = payload.get("expires_at")
         websocket_url = payload.get("websocket_url")
+        if self.config.service_token and self.config.service_token in json.dumps(payload):
+            raise ZarvisVoiceError("voice gateway echoed the service token", code="voice_gateway_invalid_response")
+
         if not isinstance(ticket, str) or not ticket or len(ticket) > 4096:
             raise ZarvisVoiceError("voice gateway returned an invalid ticket", code="voice_gateway_invalid_response")
         if not isinstance(expires_at, str) or not expires_at or len(expires_at) > 128:

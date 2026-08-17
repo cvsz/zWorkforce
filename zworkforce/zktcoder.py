@@ -15,7 +15,9 @@ Environment variables (all optional):
 
 - ``ZKTCODER_BASE_URL`` / ``ZWORKFORCE_PROVIDER_BASE_URL`` — gateway base URL,
   default ``http://127.0.0.1:9569/v1``.
-- ``ZKTCODER_API_KEY`` / ``ZWORKFORCE_PROVIDER_API_KEY`` — bearer token.
+- ``ZKTCODER_API_KEY`` / ``ZWORKFORCE_PROVIDER_API_KEY`` — bearer token. The
+  API key is never accepted as a CLI flag: it is read from the environment so
+  it cannot leak through ``ps aux``/``/proc/<pid>/cmdline``.
 - ``ZKTCODER_MODEL`` — default model id.
 - ``ZKTCODER_TIMEOUT_SECONDS`` — request timeout, default 90.
 """
@@ -211,7 +213,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--model", default="", help="Gateway model id (default: ZKTCODER_MODEL or deepseek/deepseek-v4-flash)")
     parser.add_argument("--cwd", default=".", help="Directory to change into before running (default: current directory)")
     parser.add_argument("--base-url", default="", help="OpenAI-compatible gateway base URL (default: ZKTCODER_BASE_URL or http://127.0.0.1:9569/v1)")
-    parser.add_argument("--api-key", default="", help="Gateway bearer token (default: ZKTCODER_API_KEY)")
     parser.add_argument("--timeout", type=int, default=0, help=f"Request timeout in seconds (default: {DEFAULT_TIMEOUT_SECONDS})")
     parser.add_argument("--list-models", action="store_true", help="List gateway models and exit")
     parser.add_argument("--quiet", action="store_true", help="Suppress the banner and progress output")
@@ -222,7 +223,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     base_url = args.base_url or _default_base_url()
-    api_key = args.api_key or _default_api_key()
+    api_key = _default_api_key()
     timeout = args.timeout or int(os.getenv("ZKTCODER_TIMEOUT_SECONDS", DEFAULT_TIMEOUT_SECONDS))
 
     if args.list_models:

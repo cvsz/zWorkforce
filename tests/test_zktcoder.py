@@ -142,6 +142,25 @@ class ZktCoderCliTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(run_mock.call_args[0][0], "Write tests")
 
+    def test_main_never_accepts_api_key_as_cli_flag(self):
+        from zworkforce.zktcoder import build_parser
+
+        with self.assertRaises(SystemExit) as ctx:
+            build_parser().parse_args(["--api-key", "leaked-key"])
+        self.assertNotEqual(ctx.exception.code, 0)
+        parser = build_parser()
+        self.assertIsNone(parser._option_string_actions.get("--api-key"))
+
+    def test_main_reads_api_key_from_environment_only(self):
+        with patch("zworkforce.zktcoder.run", return_value=0) as run_mock, patch(
+            "sys.stdin", io.StringIO("Write tests")
+        ), patch.dict("os.environ", {"ZKTCODER_API_KEY": "env-key"}, clear=False):
+            main(["--quiet"])
+
+        kwargs = run_mock.call_args.kwargs
+        self.assertEqual(kwargs["api_key"], "env-key")
+        self.assertNotIn("args.api_key", run_mock.call_args[0])
+
 
 if __name__ == "__main__":
     unittest.main()
