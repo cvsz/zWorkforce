@@ -47,7 +47,17 @@ graph TD
 - **Files**:
   - `zworkforce/document_compiler.py`: Multi-format artifact generators.
 
----
+### Phase 3: Structured Citation Schema Validation & Source Scoring
+- **Objective**: Enforce citation schema (`url`, `title`, `published_date`, `reliability_score`, `excerpt`) with JSON Schema validation; filter sources below 0.65 reliability threshold.
+- **Files**:
+  - `zworkforce/citation_validator.py`: Schema enforcer and reliability scorer.
+  - `tests/test_citation_validator.py`: Missing-field and low-score rejection tests.
+
+### Phase 4: Live A2A Agent Discovery & Capability Exchange
+- **Objective**: Implement `GET /.well-known/agent.json` capability manifest endpoint and A2A context bus consumer so Skywork can dynamically delegate sub-tasks to specialized agents (Zeto, Zarvis, Zider).
+- **Files**:
+  - `zworkforce/a2a_discovery.py`: Well-known manifest server and A2A bus client.
+  - `tests/test_a2a_discovery.py`: Cross-agent delegation and tenant boundary tests.
 
 ## 4. Verification & Validation Protocol
 

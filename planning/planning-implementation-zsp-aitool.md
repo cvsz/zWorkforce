@@ -61,7 +61,18 @@ graph TD
 - **Files**:
   - `packages/zsp-aitool/src/components/studio/TimelineCanvas.tsx`: WebGL/HTML5 canvas timeline.
 
----
+### Phase 3: Batch Export Pipeline & S3 Delivery
+- **Objective**: Async batch render-to-export pipeline writing finalized video assets to tenant-scoped S3/R2 bucket with HMAC-signed delivery receipts and signed webhook notifications.
+- **Files**:
+  - `packages/zsp-aitool/src/services/export_pipeline.ts`: Render job orchestrator and progress SSE stream.
+  - `packages/zsp-aitool/src/app/api/webhooks/export/route.ts`: HMAC-verified export-done webhook.
+  - `packages/zsp-aitool/tests/export_pipeline.test.ts`: Job lifecycle and tenant boundary tests.
+
+### Phase 4: Studio Real-Time Collaboration (WebSocket Concurrent Edit)
+- **Objective**: Multi-user collaborative scene editing via tenant-scoped WebSocket rooms using Yjs CRDT conflict resolution.
+- **Files**:
+  - `packages/zsp-aitool/src/server/collab_server.ts`: Yjs WebSocket provider with tenant room isolation.
+  - `packages/zsp-aitool/src/components/studio/CollabPresence.tsx`: Cursor overlay and user avatar indicators.
 
 ## 4. Verification & Validation Protocol
 
