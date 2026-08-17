@@ -60,7 +60,7 @@ class WorkspaceCommandApiTests(unittest.TestCase):
         self.assertEqual(status, 200)
         commands = {item["name"]: item for item in payload["items"]}
         self.assertEqual(set(commands), {
-            "plan", "review", "compact", "goal", "status", "artifacts", "cost", "skill", "workflow", "feedback"
+            "plan", "review", "compact", "undo", "goal", "status", "artifacts", "cost", "skill", "workflow", "feedback"
         })
         self.assertFalse(commands["compact"]["available"])
         self.assertFalse(commands["skill"]["available"])

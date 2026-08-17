@@ -145,12 +145,14 @@ Tests:
 - SQLite and PostgreSQL round trips;
 - API scope enforcement and audit evidence.
 
-### Phase SW2 — Context budget and compaction
+### Phase SW2 — Context budget, compaction and dynamic prompt caching
 
-Add explicit context accounting per conversation:
+Add explicit context accounting and prompt caching per conversation:
 
 - estimated/actual token budget;
 - model-specific context ceiling;
+- OpenRouter dynamic prompt cache blocks (`cache_control`) for static instructions, tool definitions, and long documents;
+- dynamic parameter injection (`nextTurnParams`) for context-aware skill loading;
 - included message/artifact/memory references;
 - compaction threshold and reason;
 - compaction artifact hash/version.
@@ -161,11 +163,12 @@ Tests:
 
 - deterministic snapshot membership;
 - no cross-tenant memory inclusion;
+- prompt cache hit-rate verification;
 - compaction rollback/read-old-context;
 - oversized attachment handling;
 - sensitive-data redaction hooks.
 
-### Phase SW3 — Slash command and task-composer registry
+### Phase SW3 — Slash command, ACP and task-composer registry
 
 Commands:
 
@@ -173,6 +176,7 @@ Commands:
 /plan
 /review
 /compact
+/undo
 /goal
 /status
 /artifacts
@@ -186,23 +190,29 @@ Implementation rules:
 
 - parser is presentation-independent;
 - server resolves command authorization and capabilities;
+- `/undo` invokes the pre-mutation file snapshot rollback engine with visual diff preview;
+- bidirectional Agent Client Protocol (ACP) JSON-RPC bridge enabled for IDE/CLI sessions;
 - commands cannot bypass normal API/RBAC/policy checks;
 - attachment references are artifact IDs, not arbitrary host paths;
 - unknown commands fail safely with discoverable help.
 
-### Phase SW4 — Task summary, artifact manifest and execution sidecar
+### Phase SW4 — Task summary, artifact manifest, doom-loop detection, safety hooks and execution sidecar (Free Model First)
 
 For every task/workflow run expose:
 
-- summary;
-- artifacts created/changed;
-- review state;
-- tool calls with sanitized parameters;
-- delegated subagents and parent/child relationships;
-- retries/failures/cancellations;
-- approvals requested/resolved;
-- cost/latency/model route;
-- recommended next actions.
+- summary and intent classification;
+- Free Model First priority (`openrouter/free`, `qwen-2.5-coder-32b:free`, `deepseek-r1:free`);
+- pre-mutation file snapshot checksums and rollback points;
+- Doom-Loop detection: automated detection and mitigation of repeated identical tool arguments or cyclical errors;
+- deterministic safety hooks (`branch-guard`, `secret-guard`, `destructive-guard`, `auto-approve-readonly`);
+- LLM wiki pattern for compounding project memory and pre-mortem execution reviews;
+- Advisor/Subagent tool integration: compact uncertainty validation and delegate task spawning;
+- artifact manifest and changed files;
+- tool execution timeline with sanitized parameters;
+- subagent lineage and active execution mode;
+- approval state (HITL gates) and execution ceilings;
+- cost/latency/model route telemetry;
+- next recommended actions.
 
 The UI can render main chat + review + file preview + side discussion without duplicating authoritative execution state.
 

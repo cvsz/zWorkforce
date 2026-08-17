@@ -32,7 +32,8 @@ graph TD
     subgraph ControlPlane["zWorkforce Control Plane & Providers"]
         zWF_Core["zWorkforce API & Auth Vault"]
         zWF_RAG["Tenant Memory & Qdrant Vector Backend"]
-        OpenRouter["OpenRouter / Spawn Hermes Free Models (:free)"]
+        OpenRouter_Rerank["OpenRouter /rerank & Multimodal Gateway"]
+        OpenRouter["OpenRouter Smart Routers (:online, :thinking, :free)"]
         DirectProviders["OpenAI / Anthropic / Google / DeepSeek / NVIDIA"]
     end
 
@@ -50,6 +51,7 @@ graph TD
     LLMRouter --> OpenRouter
     LLMRouter --> DirectProviders
     DocEngine --> zWF_RAG
+    DocEngine --> OpenRouter_Rerank
     AuthMiddle --> zWF_Core
 ```
 
@@ -59,9 +61,11 @@ graph TD
 
 1. **Zero Secret Exposure**: The browser extension, content scripts, and web UI never receive provider API keys (`OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, etc.). All calls proxy through the authenticated `zider` BFF (`:8085`) and `zWorkforce` control plane.
 2. **Manifest V3 Strict Compliance**: Uses background service workers, isolated content scripts, and secure Shadow DOM injection to prevent CSS/DOM pollution on host pages.
-3. **Multi-Model Orchestration**: Supports single chat, Group AI Chat (parallel multi-model compare), SSE streaming, and automated fallback to zero-cost OpenRouter/Hermes Free models.
-4. **Bounded Agent Tool Execution**: Autonomous browser tool runners require explicit user authorization for state-mutating actions (clicks, form submission, file uploads).
-5. **Tenant Isolation**: ChatPDF document embeddings, vector chunks, and session memories are tagged with tenant identifiers.
+3. **Multi-Model Orchestration & Smart Variants**: Supports single chat, Group AI Chat (parallel multi-model compare), SSE streaming, and OpenRouter smart variant slugs (`:thinking`, `:exacto`, `:nitro`, `:online`, `:free`, Pareto router).
+4. **High-Precision RAG with Embeddings & Rerank API**: ChatPDF pairs vector embeddings with OpenRouter's `/rerank` API to filter the highest-relevance document chunks before context generation.
+5. **Multimodal PDF & Image Intelligence**: Native support for PDF documents and image screenshots with server-side base64 / URL handling and OCR cross-referencing.
+6. **Bounded Agent Tool Execution**: Autonomous browser tool runners require explicit user authorization for state-mutating actions (clicks, form submission, file uploads).
+7. **Tenant Isolation**: ChatPDF document embeddings, vector chunks, and session memories are tagged with tenant identifiers.
 
 ---
 

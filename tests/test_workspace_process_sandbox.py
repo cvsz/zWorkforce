@@ -2,6 +2,7 @@ from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
+import shutil
 import unittest
 from unittest.mock import patch
 
@@ -194,9 +195,10 @@ class WorkspaceProcessSandboxTests(unittest.TestCase):
         settings = replace(self.settings, shell_enabled=True, embedded_workers=0)
         engine = PolicyEngine(settings, self.db, self.provider)
         self.engines.append(engine)
+        py_cmd = "python3" if shutil.which("python3") else "python"
         result = engine.tools.execute(
             "shell_exec",
-            {"command": "python", "args": ["-c", "print('legacy-process-ok')"]},
+            {"command": py_cmd, "args": ["-c", "print('legacy-process-ok')"]},
             tenant_id="default",
             agent_id="software-engineer",
             actor="test",

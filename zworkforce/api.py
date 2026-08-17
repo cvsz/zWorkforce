@@ -17,6 +17,7 @@ from .economics import capacity_forecast, chargeback_report, slo_status
 from .evaluation_suite import EvaluationRunner
 from .metrics import prometheus
 from .mcp import MCP_PROTOCOL_VERSION, handle_mcp
+from .acp import ACP_PROTOCOL_VERSION, handle_acp
 from .policy import PolicyError, validate_policy
 from .prometa import install_prometa_catalog
 from .rag import build_semantic_memory
@@ -327,6 +328,14 @@ class App:
                         if not isinstance(body, dict): raise ValueError("MCP request must be a JSON object")
                         result = handle_mcp(app, principal, tenant_id, body, self.headers.get("Mcp-Method", ""), self.headers.get("Mcp-Name", ""))
                         return self._json(200, result, {"MCP-Protocol-Version": MCP_PROTOCOL_VERSION})
+                    if path == "/acp":
+                        ctx, response = self._principal("viewer", "workforce:read")
+                        if response: return response
+                        principal, tenant_id = ctx
+                        body = self._body()
+                        if not isinstance(body, dict): raise ValueError("ACP request must be a JSON object")
+                        result = handle_acp(app, principal, tenant_id, body)
+                        return self._json(200, result, {"ACP-Protocol-Version": ACP_PROTOCOL_VERSION})
                     if path == "/api/v1/zarvis/voice/session":
                         ctx, response = self._principal("viewer", "voice:use")
                         if response: return response

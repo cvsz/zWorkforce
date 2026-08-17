@@ -101,8 +101,17 @@ class ToolExecutor:
         return p
 
     def execute(self, name: str, args: dict[str, Any], *, tenant_id: str, agent_id: str, actor: str) -> Any:
+        from .safety_hooks import SafetyLifecycleHooks, SafetyHookError
+
         if name not in TOOL_DEFINITIONS or name == "agent_delegate":
             raise ToolError(f"unknown or runtime-managed tool: {name}")
+        
+        is_mutating = TOOL_DEFINITIONS.get(name, {}).get("mutating", False)
+        try:
+            SafetyLifecycleHooks.pre_tool_execute(name, args, mutating=is_mutating)
+        except SafetyHookError as exc:
+            raise ToolError(str(exc)) from exc
+
         if name == "calculator":
             return self._calc(str(args.get("expression", "")))
         if name == "workspace_list":
