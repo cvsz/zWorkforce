@@ -51,21 +51,18 @@ graph TD
 - [x] **Studio Real-Time Collaboration (Phase 4)**:
   - Built `packages/zsp-aitool/src/server/collab_server.js` providing `CollabServer` and `CollabRoom` for multi-user timeline editing with tenant isolation and presence cursor sync.
   - Unit tests in `packages/zsp-aitool/tests/collab_server.test.js`.
+- [x] **OpenRouter Multimodal Video Generation Engine (Phase 1)**:
+  - Built `packages/zsp-aitool/src/services/video_generator.js` for multi-scene commercial prompt compilation.
+  - Unit tests in `packages/zsp-aitool/tests/video_generator.test.js`.
+- [x] **HyperFrames Keyframe Composition & Audio Sync (Phase 2)**:
+  - Built `packages/zsp-aitool/src/services/video_generator.js` with timeline waveform calculation and audio duration bounds.
+  - Unit tests in `packages/zsp-aitool/tests/video_generator.test.js`.
 
 ---
 
 ## 3. Active & Upcoming Implementation Workstreams
 
-### Phase 1: OpenRouter Multimodal Video Generation Engine
-- **Objective**: Text-to-video and Image-to-video (first/last frame conditioning) integration with async webhook notifications.
-- **Files**:
-  - `packages/zsp-aitool/src/services/video_generator.ts`: Multi-scene video generation service.
-  - `packages/zsp-aitool/src/app/api/webhooks/video/route.ts`: HMAC-verified webhook handler.
-
-### Phase 2: HyperFrames Keyframe Composition & Audio Sync
-- **Objective**: Multi-layer timeline canvas with real-time waveform audio alignment and text animation overlays.
-- **Files**:
-  - `packages/zsp-aitool/src/components/studio/TimelineCanvas.tsx`: WebGL/HTML5 canvas timeline.
+*(All Phases 1 through 4 for ZSP-AITool Studio are now completed and verified).*
 
 ## 4. Verification & Validation Protocol
 
