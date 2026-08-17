@@ -6,12 +6,30 @@ from urllib.parse import urlsplit
 from .agent_runner import BrowserAction, BrowserAutomationUnavailable, BrowserPolicyError, READ_ONLY_ACTIONS
 
 
+def _effective_port(parsed) -> int:
+    try:
+        if parsed.port is not None:
+            return int(parsed.port)
+    except ValueError as exc:
+        raise BrowserPolicyError("browser URL contains an invalid port") from exc
+    return 443 if parsed.scheme == "https" else 80
+
+
+def _origin(parsed) -> tuple[str, str, int]:
+    return (
+        parsed.scheme.lower(),
+        (parsed.hostname or "").lower().rstrip("."),
+        _effective_port(parsed),
+    )
+
+
 class PlaywrightReadOnlyTransport:
     """Playwright Chromium adapter for governed read-only browser actions.
 
-    The adapter is intentionally mutation-disabled. It accepts only the hostname
-    and public destination already approved by the SW7 policy layer and uses a
-    fresh Chromium process per action so resolver state cannot leak across jobs.
+    A fresh Chromium process is bound to the public IP already approved by the
+    SW7 policy layer. Requests are constrained to the exact approved origin;
+    cross-origin subresources and redirect navigations fail closed. Mutations
+    remain unavailable until the durable zWorkforce approval adapter is wired.
     """
 
     enforces_pinned_destination = True
@@ -50,9 +68,14 @@ class PlaywrightReadOnlyTransport:
         if action.kind not in READ_ONLY_ACTIONS:
             raise BrowserPolicyError("browser mutations require the zWorkforce approval adapter")
         parsed = urlsplit(action.url)
-        hostname = (parsed.hostname or "").lower().rstrip(".")
-        if hostname != tls_server_name.lower().rstrip("."):
+        approved_origin = _origin(parsed)
+        hostname = approved_origin[1]
+        if not hostname or hostname != tls_server_name.lower().rstrip("."):
             raise BrowserPolicyError("approved hostname and TLS server identity do not match")
+        default_port = 443 if parsed.scheme == "https" else 80
+        expected_authority = hostname if approved_origin[2] == default_port else f"{hostname}:{approved_origin[2]}"
+        if host_header.lower() != expected_authority.lower():
+            raise BrowserPolicyError("browser Host authority does not match the approved origin")
 
         async_playwright = self._loader()
         timeout_ms = max(1, int(timeout_seconds)) * 1000
@@ -69,7 +92,12 @@ class PlaywrightReadOnlyTransport:
 
                     async def guard(route, request):
                         target = urlsplit(request.url)
-                        if (target.hostname or "").lower().rstrip(".") != hostname:
+                        try:
+                            target_origin = _origin(target)
+                        except BrowserPolicyError:
+                            await route.abort()
+                            return
+                        if target_origin != approved_origin:
                             await route.abort()
                             return
                         if request.is_navigation_request() and request.url != action.url:
