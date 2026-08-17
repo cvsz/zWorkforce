@@ -1,0 +1,12 @@
+{
+  "mcp_servers": {
+    "zworkforce_connectors": {
+      "command": "python3",
+      "args": [
+        "-m",
+        "zworkforce.mcp_server",
+        "--stateless"
+      ]
+    }
+  }
+}
