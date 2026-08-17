@@ -21,7 +21,7 @@ SECRET_PATTERNS = re.compile(
 
 # Destructive command patterns that fail closed in tool arguments
 DESTRUCTIVE_COMMAND_PATTERNS = re.compile(
-    r"(?:rm\s+-(?:[a-zA-Z]*f[a-zA-Z]*\s+|[a-zA-Z]*r[a-zA-Z]*\s+)+[/~]|mkfs|dd\s+if=|:\(\)\s*\{\s*:\|:&\s*\};:|chmod\s+-R\s+777\s+/|drop\s+database|format\s+[a-zA-Z]:)",
+    r"(?:rm\s+-[a-zA-Z0-9_-]*[rf][a-zA-Z0-9_-]*\s+[/~]|mkfs|dd\s+if=|:\(\)\s*\{\s*:\|:&\s*\};:|chmod\s+-R\s+777\s+/|drop\s+database|format\s+[a-zA-Z]:)",
     re.I,
 )
 
