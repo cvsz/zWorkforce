@@ -447,7 +447,12 @@ Deliverables:
 
 - Timezone-safe calendar slots.
 - Publication state machine.
-- Idempotent publishing.
+- Idempotent publishing with retry/backoff.
+- **Universal Omnichannel Connectors**:
+  - Social: Facebook Pages & Groups, Instagram Graph API, TikTok Content API, YouTube Data API v3, X (Twitter) v2, LinkedIn Marketing API;
+  - Provider Shops: Shopee Open Platform v2 (OpenAPI v2), TikTok Shop Seller API, Facebook Commerce / Meta Catalog;
+  - Cryptographic HMAC-SHA256 signature verification and fail-closed approval governance.
+- **OpenAI & Codex Plugin Packaging**: `.codex-plugin/plugin.json`, `.mcp.json`, and `.agents/plugins/marketplace.json`.
 - Exponential backoff + jitter.
 - Dead-letter/failure queue.
 - Manual retry/cancel.

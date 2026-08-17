@@ -221,6 +221,8 @@ Core skill categories remain:
 | Model Gateway & Tools | `zworkforce-mcp-integration` | MCP 2026-07-28 stateless tools, tasks, workflows, and memory endpoint. |
 | Model Gateway & Tools | `zworkforce-acp-protocol` | Agent Client Protocol (ACP) JSON-RPC standard for IDE & desktop agent integration. |
 | Model Gateway & Tools | `zworkforce-ecosystem-cookbooks` | Groq, Liquid AI LFM, Gemini, OpenAI, and Llama cookbook pattern adapters. |
+| Plugins & Connectors | `zworkforce-universal-plugins` | Universal plugin packaging (`.codex-plugin/plugin.json`), MCP Apps UI, and marketplace catalog. |
+| Plugins & Connectors | `zworkforce-omnichannel-connectors` | Social (Facebook, IG, TikTok, YouTube, X, LinkedIn) & Provider Shop (Shopee, TikTok Shop, Meta Commerce). |
 | Agent Personas | `oh-my-opencode-specialists` | Specialist personas (`CodeReviewer`, `TestArchitect`, `SecurityAuditor`, `TechLead`) on Free Models. |
 | Agent Lifecycle & Safety | `zworkforce-safety-hooks` | Pre/post tool execution safety guards (`branch-guard`, `secret-guard`, `destructive-guard`). |
 | Knowledge & Prompting | `zworkforce-llm-wiki-patterns` | Structured LLM wiki knowledge compounding and pre-mortem execution templates. |

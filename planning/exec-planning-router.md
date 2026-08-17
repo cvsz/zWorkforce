@@ -135,6 +135,15 @@ graph TD
 - [ ] **Provider Error Classification**: Real-time tracking of 401 (Auth), 404 (No Endpoint / Data Policy), 429 (Rate Limit), and 503 (Upstream Outage).
 - [ ] **FinOps Dashboard & Analytics API**: Programmatic cost accounting, token velocity, cost per completion, and daily savings achieved through intelligent provider routing.
 
+### Phase 6: Universal Plugin Architecture, Tunnel Client & Multi-Agent Framework (Active)
+- [x] **Universal Plugin Packaging**: Implement `.codex-plugin/plugin.json` compatible with OpenAI Plugins, Codex, and Claude Code plugin specs.
+- [x] **Omnichannel Social & E-Commerce Connectors**: Shopee Open Platform v2, TikTok Shop Seller API, Facebook Commerce, Meta Graph, TikTok Content, YouTube, X, LinkedIn.
+- [ ] **Secure Local MCP Tunnel Client Gateway** (`openai/tunnel-client`):
+  - Ingress/egress reverse tunnel for connecting private local MCP servers to cloud workforce agents without exposing firewall ports.
+- [ ] **Multi-Agent Handoff & Guardrail Protocols** (`openai/openai-agents-python`, `openai/openai-agents-js`):
+  - Multi-agent routing with typed input/output validation, context compaction, and deterministic tool call evaluation on zero-cost free model tiers.
+- [ ] **MCP Apps UI Standard**: Support `_meta.ui.resourceUri` and `postMessage` JSON-RPC bridge (`ui/*`) for interactive web components in agent conversations.
+
 ---
 
 ## 4. Verification & Validation Commands
