@@ -109,7 +109,7 @@ class WorkspaceWorktreeServiceTests(unittest.TestCase):
             )
         self.assertEqual(FakeAdapter.instances, [])
 
-    def test_authorized_create_and_remove_are_audited(self):
+    def test_authorized_create_and_remove_are_durable_and_audited(self):
         created = self.service.create_feature_worktree(
             "default",
             "alice",
@@ -117,8 +117,16 @@ class WorkspaceWorktreeServiceTests(unittest.TestCase):
             repo_relative="repo",
             destination_relative="tree-a",
             branch="feat/a",
+            task_id="task-123",
         )
         self.assertEqual(created.branch, "feat/a")
+        rows = self.db.list_workspace_worktrees("default")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["status"], "active")
+        self.assertEqual(rows[0]["branch"], "feat/a")
+        self.assertEqual(rows[0]["task_id"], "task-123")
+        self.assertEqual(rows[0]["expires_at"], self.grant["expires_at"])
+
         self.service.remove_worktree(
             "default",
             "alice",
@@ -126,11 +134,72 @@ class WorkspaceWorktreeServiceTests(unittest.TestCase):
             repo_relative="repo",
             worktree_relative="tree-a",
         )
+        row = self.db.get_workspace_worktree_record("default", rows[0]["id"])
+        self.assertEqual(row["status"], "removed")
+        self.assertTrue(row["removed_at"])
         actions = [item[2] for item in self.authorized]
         self.assertEqual(actions, ["workspace.worktree.create", "workspace.worktree.remove"])
         audit_actions = [row["action"] for row in self.db.list_audit("default", limit=20)]
         self.assertIn("workspace.worktree.create", audit_actions)
         self.assertIn("workspace.worktree.remove", audit_actions)
+
+    def test_remove_rejects_untracked_or_mismatched_worktree(self):
+        with self.assertRaisesRegex(WorktreeError, "not tracked"):
+            self.service.remove_worktree(
+                "default",
+                "alice",
+                self.grant["id"],
+                repo_relative="repo",
+                worktree_relative="unknown-tree",
+            )
+        self.service.create_feature_worktree(
+            "default",
+            "alice",
+            self.grant["id"],
+            repo_relative="repo",
+            destination_relative="tree-b",
+            branch="feat/b",
+        )
+        with self.assertRaisesRegex(WorktreeError, "does not match"):
+            self.service.remove_worktree(
+                "default",
+                "alice",
+                self.grant["id"],
+                repo_relative="other-repo",
+                worktree_relative="tree-b",
+            )
+
+    def test_expired_cleanup_uses_tracked_record_and_authorizer(self):
+        row = self.db.create_workspace_worktree_record(
+            "default",
+            self.grant["id"],
+            "alice",
+            repo_relative="repo",
+            worktree_relative="tree-expired",
+            branch="feat/expired",
+            start_ref="HEAD",
+            expires_at=(datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat(timespec="seconds"),
+        )
+        result = self.service.cleanup_expired("default", "janitor")
+        self.assertEqual(result, {"matched": 1, "removed": 1, "failed": 0})
+        current = self.db.get_workspace_worktree_record("default", row["id"])
+        self.assertEqual(current["status"], "removed")
+        self.assertIn(
+            ("default", "janitor", "workspace.worktree.remove", self.grant["id"]),
+            self.authorized,
+        )
+
+    def test_cross_tenant_lifecycle_rows_are_not_visible(self):
+        self.service.create_feature_worktree(
+            "default",
+            "alice",
+            self.grant["id"],
+            repo_relative="repo",
+            destination_relative="tree-c",
+            branch="feat/c",
+        )
+        self.db.ensure_tenant("other")
+        self.assertEqual(self.db.list_workspace_worktrees("other"), [])
 
     def test_check_audit_excludes_stdout(self):
         result = self.service.run_check(
