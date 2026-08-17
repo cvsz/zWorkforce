@@ -181,6 +181,32 @@ Focus Areas:
 
 ---
 
+### Loop E: Universal Plugin & Omnichannel Connector Automation (`/goal do-plugins-e2e`)
+
+```markdown
+/goal Execute Universal Plugin & Omnichannel Connector Verification Loop
+
+You are Antigravity, leading the testing and deployment of universal plugins (.codex-plugin/plugin.json), MCP servers, and omnichannel social/shop connectors.
+
+Pipeline:
+1. Omnichannel Connectors Verification:
+   - Test Shopee OpenAPI v2 HMAC-SHA256 signature verifier (`shopee_v2_signature`).
+   - Test TikTok Shop Seller API HMAC signature verifier (`tiktok_shop_signature`).
+   - Test Meta Graph / Commerce `appsecret_proof` verifier.
+   - Verify mutating tool operations fail closed without operator approval.
+2. Universal Plugin Package Integrity:
+   - Validate `.codex-plugin/plugin.json` in `plugins/zworkforce-omnichannel-suite`.
+   - Validate bundled MCP server definition in `.mcp.json`.
+   - Validate marketplace catalog in `.agents/plugins/marketplace.json`.
+3. Skill Workflow Execution:
+   - Validate `social-content-publisher`, `shop-inventory-sync`, and `order-fulfillment-ops` skill definitions.
+4. Test Discovery & Health Probe:
+   - Run `PYTHONPATH=. python3 -m unittest tests/test_connectors.py -v`.
+   - Verify clean `zworkforce doctor` probe.
+```
+
+---
+
 ## 3. Automated Post-Execution Commit & GPG Push Playbook
 
 ```bash
@@ -191,7 +217,7 @@ zworkforce doctor
 cd packages/zarvis && node --test scripts/test/*.test.mjs apps/zvoice/test/*.test.mjs services/voice-gateway/test/*.test.mjs && node scripts/validate-release-templates.mjs
 
 # 2. Stage Changes
-git add prompts/autonomous-upgrades.md zworkforce/ tests/ ROADMAPS.md planning/
+git add prompts/autonomous-upgrades.md zworkforce/ tests/ ROADMAPS.md planning/ plugins/ .agents/plugins/
 
 # 3. GPG Signed Commit
 git commit -S -m "docs(prompts): update autonomous upgrade registry with continuous tri-loop triggers"
