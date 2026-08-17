@@ -10,6 +10,7 @@ if str(ZIDER_ROOT) not in sys.path:
 from fastapi.testclient import TestClient
 from app.main import app
 
+
 class TestZiderAPI(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -62,7 +63,6 @@ class TestZiderAPI(unittest.TestCase):
         self.assertIn("summary", data)
 
     def test_summarize_endpoint_rejects_ssrf_and_private_addresses(self):
-        # 1. Localhost rejection
         resp = self.client.post("/api/summarize/webpage", json={
             "url": "http://localhost:8080/internal-secrets"
         })
@@ -70,7 +70,6 @@ class TestZiderAPI(unittest.TestCase):
         data = resp.json()
         self.assertIn("Could not fetch", data["summary"])
 
-        # 2. 127.0.0.1 IP loopback rejection
         resp2 = self.client.post("/api/summarize/webpage", json={
             "url": "http://127.0.0.1:9569/api/v1/overview"
         })
@@ -78,7 +77,6 @@ class TestZiderAPI(unittest.TestCase):
         data2 = resp2.json()
         self.assertIn("Could not fetch", data2["summary"])
 
-        # 3. Unsupported scheme
         resp3 = self.client.post("/api/summarize/webpage", json={
             "url": "file:///etc/passwd"
         })
@@ -139,11 +137,24 @@ class TestZiderAPI(unittest.TestCase):
         dispatch_data = dispatch_resp.json()
         self.assertIn("task_id", dispatch_data)
 
-    def test_agent_run_endpoint(self):
+    def test_agent_run_requires_explicit_structured_actions(self):
         resp = self.client.post("/api/agent/run", json={
             "goal": "Extract table headers from current view"
         })
-        self.assertEqual(resp.status_code, 200)
-        data = resp.json()
-        self.assertEqual(data["status"], "completed")
-        self.assertTrue(len(data["steps"]) > 0)
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("explicit structured actions", resp.json()["detail"])
+
+    def test_agent_run_fails_closed_when_executor_is_unconfigured(self):
+        resp = self.client.post("/api/agent/run", json={
+            "goal": "Inspect the approved page",
+            "actions": [{
+                "kind": "inspect",
+                "url": "https://example.com/"
+            }]
+        })
+        self.assertEqual(resp.status_code, 503)
+        self.assertIn("executor is not configured", resp.json()["detail"])
+
+
+if __name__ == "__main__":
+    unittest.main()

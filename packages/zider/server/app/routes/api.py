@@ -1,7 +1,7 @@
 import base64
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import StreamingResponse
-from typing import List, Optional
+from typing import Optional
 try:
     from app.models import (
         ChatRequest,
@@ -20,7 +20,12 @@ try:
     from app.services.pdf_service import PDFService
     from app.services.summarizer_service import SummarizerService
     from app.services.translator_service import TranslatorService
-    from app.services.agent_runner import AgentRunner
+    from app.services.agent_runner import (
+        AgentRunner,
+        BrowserApprovalRequired,
+        BrowserAutomationUnavailable,
+        BrowserPolicyError,
+    )
     from app.services.search_service import SearchService
     from app.services.vision_service import VisionService
     from app.services.prompt_library import PromptLibraryService
@@ -44,7 +49,12 @@ except ImportError:
     from server.app.services.pdf_service import PDFService
     from server.app.services.summarizer_service import SummarizerService
     from server.app.services.translator_service import TranslatorService
-    from server.app.services.agent_runner import AgentRunner
+    from server.app.services.agent_runner import (
+        AgentRunner,
+        BrowserApprovalRequired,
+        BrowserAutomationUnavailable,
+        BrowserPolicyError,
+    )
     from server.app.services.search_service import SearchService
     from server.app.services.vision_service import VisionService
     from server.app.services.prompt_library import PromptLibraryService
@@ -53,11 +63,11 @@ except ImportError:
 
 router = APIRouter(prefix="/api")
 
+
 @router.post("/chat/stream")
 async def chat_stream(req: ChatRequest):
     messages_payload = [m.model_dump() for m in req.messages]
-    
-    # If web search is enabled, ground with search results
+
     if req.enable_web_search and req.messages:
         last_user_msg = next((m.content for m in reversed(req.messages) if m.role == "user"), "")
         if last_user_msg:
@@ -78,9 +88,11 @@ async def chat_stream(req: ChatRequest):
         media_type="text/event-stream"
     )
 
+
 @router.post("/search")
 async def search_endpoint(req: SearchRequest):
     return await SearchService.search_web(query=req.query, max_results=req.max_results)
+
 
 @router.post("/vision/analyze")
 async def vision_analyze(req: VisionAnalyzeRequest):
@@ -89,6 +101,7 @@ async def vision_analyze(req: VisionAnalyzeRequest):
         prompt=req.prompt,
         model=req.model
     )
+
 
 @router.post("/image/generate")
 async def image_generate(req: ImageGenRequest):
@@ -99,9 +112,11 @@ async def image_generate(req: ImageGenRequest):
         model=req.model
     )
 
+
 @router.get("/zworkforce/overview")
 async def zworkforce_overview():
     return await ZWorkforceBridge.get_overview()
+
 
 @router.post("/zworkforce/dispatch")
 async def zworkforce_dispatch(req: ZWorkforceTaskRequest):
@@ -111,16 +126,19 @@ async def zworkforce_dispatch(req: ZWorkforceTaskRequest):
         target_agent=req.target_agent
     )
 
+
 @router.get("/prompts")
 async def get_prompts(category: Optional[str] = None):
     if category:
         return PromptLibraryService.get_by_category(category)
     return PromptLibraryService.get_all()
 
+
 @router.post("/write")
 async def write_assistant(req: WriteRequest):
     result = f"[{req.tone.upper()} {req.action.upper()}]\n\n{req.text}\n\n[Enhanced and polished draft]"
     return {"result": result, "action": req.action, "tone": req.tone}
+
 
 @router.post("/translate")
 async def translate_text(req: TranslateRequest):
@@ -130,6 +148,7 @@ async def translate_text(req: TranslateRequest):
         target_lang=req.target_lang,
         model=req.model
     )
+
 
 @router.post("/translate/batch")
 async def translate_batch(req: BatchTranslateRequest):
@@ -142,6 +161,7 @@ async def translate_batch(req: BatchTranslateRequest):
         "target_lang": req.target_lang
     }
 
+
 @router.post("/summarize/webpage")
 async def summarize_webpage(req: SummarizeRequest):
     return await SummarizerService.summarize_webpage(
@@ -150,11 +170,12 @@ async def summarize_webpage(req: SummarizeRequest):
         model=req.model
     )
 
+
 @router.post("/pdf/upload")
 async def upload_pdf(request: Request):
     content_type = request.headers.get("content-type", "")
     filename = request.headers.get("x-filename", "uploaded.pdf")
-    
+
     if "application/json" in content_type:
         body = await request.json()
         raw_b64 = body.get("file_base64", "")
@@ -162,8 +183,9 @@ async def upload_pdf(request: Request):
         content = base64.b64decode(raw_b64) if raw_b64 else b""
     else:
         content = await request.body()
-    
+
     return await PDFService.process_pdf(content, filename)
+
 
 @router.post("/pdf/query")
 async def query_pdf(req: PdfQueryRequest):
@@ -173,9 +195,19 @@ async def query_pdf(req: PdfQueryRequest):
         model=req.model
     )
 
+
 @router.post("/agent/run")
 async def run_agent(req: AgentRunRequest):
-    return await AgentRunner.run_claw_task(
-        goal=req.goal,
-        model=req.model
-    )
+    try:
+        return await AgentRunner.run_claw_task(
+            goal=req.goal,
+            model=req.model,
+            actions=[action.model_dump() for action in req.actions],
+            approval_token=req.approval_token,
+        )
+    except BrowserApprovalRequired as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except BrowserPolicyError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except BrowserAutomationUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
