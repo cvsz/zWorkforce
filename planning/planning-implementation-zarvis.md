@@ -54,6 +54,9 @@ graph TD
 - [x] **VAD Sensitivity Tuning & Adaptive Barge-in (Phase 3)**:
   - Built `packages/zarvis/services/voice-gateway/vad_config.mjs` with root-mean-square amplitude calculation, configurable energy thresholds, and silence duration bounds.
   - Test suite in `packages/zarvis/services/voice-gateway/test/vad_config.test.mjs`.
+- [x] **Multi-Language Live Transcription Overlay (Phase 4)**:
+  - Built `packages/zarvis/apps/zvoice/src/transcript_overlay.mjs` with timed caption display and BCP-47 language tag switching.
+  - Test suite in `packages/zarvis/apps/zvoice/test/transcript_overlay.test.mjs`.
 
 ---
 
@@ -64,12 +67,6 @@ graph TD
 - **Files**:
   - `ZWorkforceClient/src/ZWorkforceClient.Core/Services/VoiceService.cs`: Native audio pipeline.
   - `ZWorkforceClient/tests/ZWorkforceClient.Core.Tests/VoiceServiceTests.cs`: Unit tests.
-
-### Phase 4: Multi-Language Live Transcription Overlay
-- **Objective**: Browser-visible real-time captions synchronized with Gemini Live streaming responses with language code switching (`BCP-47`).
-- **Files**:
-  - `packages/zarvis/apps/zvoice/src/transcript_overlay.ts`: DOM injection and fade-out animation.
-  - `packages/zarvis/apps/zvoice/test/transcript_overlay.test.mjs`: Overlay rendering and cleanup tests.
 
 ---
 
