@@ -9,7 +9,17 @@ from .agent_runner import BrowserAction, BrowserAutomationUnavailable, BrowserPo
 
 
 class BrowserTransport(Protocol):
-    async def request(self, *, action: BrowserAction, connect_ip: str, host_header: str, timeout_seconds: int) -> Mapping[str, object]: ...
+    enforces_pinned_destination: bool
+    disables_automatic_redirects: bool
+
+    async def request(
+        self,
+        *,
+        action: BrowserAction,
+        connect_ip: str,
+        host_header: str,
+        timeout_seconds: int,
+    ) -> Mapping[str, object]: ...
 
 
 class PinnedBrowserExecutor:
@@ -20,6 +30,16 @@ class PinnedBrowserExecutor:
     def __init__(self, transport: BrowserTransport, *, timeout_seconds: int = 30) -> None:
         self.transport = transport
         self.timeout_seconds = max(1, min(int(timeout_seconds), 120))
+
+    def _require_transport_contract(self) -> None:
+        if getattr(self.transport, "enforces_pinned_destination", False) is not True:
+            raise BrowserAutomationUnavailable(
+                "browser transport must enforce the supplied pinned destination"
+            )
+        if getattr(self.transport, "disables_automatic_redirects", False) is not True:
+            raise BrowserAutomationUnavailable(
+                "browser transport must disable automatic redirects"
+            )
 
     @staticmethod
     def _addresses(action: BrowserAction) -> tuple[str, ...]:
@@ -39,6 +59,7 @@ class PinnedBrowserExecutor:
         return tuple(values)
 
     async def execute(self, action: BrowserAction) -> Mapping[str, object]:
+        self._require_transport_contract()
         host = urlsplit(action.url).hostname or ""
         if not host:
             raise BrowserPolicyError("browser action URL is missing a hostname")
@@ -62,4 +83,6 @@ class PinnedBrowserExecutor:
             if result.get("redirect_url"):
                 raise BrowserPolicyError("browser redirects require policy revalidation before following")
             return dict(result)
-        raise BrowserAutomationUnavailable("browser transport could not connect to an approved destination") from last_error
+        raise BrowserAutomationUnavailable(
+            "browser transport could not connect to an approved destination"
+        ) from last_error
