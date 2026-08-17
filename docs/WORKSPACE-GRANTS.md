@@ -2,7 +2,7 @@
 
 Workspace grants are tenant-scoped, operator-managed authorization records for local workspace roots. The configured `ZWORKFORCE_WORKSPACE_ROOT` remains the hard host-level ceiling; a grant can only select an existing directory **inside** that ceiling.
 
-File-tool enforcement is now a separate layer over this control plane. Process/network isolation for shell/coder execution is still a later boundary: a stored `network_policy` is not proof of an enforced process network sandbox.
+Grant enforcement is layered: file tools use the grant directly, while production shell/coder execution additionally requires the probed process sandbox documented in [PROCESS-SANDBOX.md](PROCESS-SANDBOX.md). A stored `network_policy` is never treated as proof of containment by itself.
 
 ## API
 
@@ -38,9 +38,9 @@ The durable record stores the approved canonical **relative** root as `root_rel`
 - `name`: operator label.
 - `root_rel`: canonical relative path inside `ZWORKFORCE_WORKSPACE_ROOT`.
 - `read`: whether file-read capabilities may use the grant.
-- `write`: whether file-write capabilities may use the grant.
-- `commands`: executable names declared for the later process-sandbox boundary. Names must already be in `ZWORKFORCE_SHELL_ALLOWLIST`.
-- `network_policy`: `deny` or `allowlisted`, declared for the later process-sandbox boundary.
+- `write`: whether file-write or production process capabilities may use the grant.
+- `commands`: generic shell executable names permitted by this grant. Names must also be in `ZWORKFORCE_SHELL_ALLOWLIST`.
+- `network_policy`: `deny` or `allowlisted`. Production process execution currently supports only `deny`; `allowlisted` fails closed.
 - `enabled`: false disables future use.
 - `expires_at`: timezone-aware ISO-8601 timestamp. New API grants must expire in the future and within 365 days.
 - creation/update actor and timestamps.
@@ -51,7 +51,7 @@ The durable record stores the approved canonical **relative** root as `root_rel`
 
 In `production`, `workspace_id` is mandatory for these three local file tools. The runtime resolves the grant by authenticated task tenant, rejects disabled/expired/cross-tenant grants, checks the grant's read/write capability, and re-resolves the approved root for each invocation. The caller cannot supply an absolute host root.
 
-In non-production environments, omission of `workspace_id` retains legacy use of the configured host workspace root for compatibility with existing development/test workflows. Supplying a grant uses the same grant checks as production.
+In non-production environments, omission of `workspace_id` retains legacy use of the configured host workspace root for compatibility with existing development/test workflows. Supplying a grant uses the grant-aware path.
 
 Host operators also have independent kill switches:
 
@@ -66,27 +66,32 @@ File paths are relative to the resolved grant root. Absolute paths and traversal
 
 `workspace_write` tool evidence never persists raw file content. It records grant ID, relative path, parent-creation flag and byte count only.
 
+## Process-tool enforcement
+
+`workspace_id` is also part of the server-owned schemas for `shell_exec` and `zworkforce_code_agent`.
+
+In production both process tools require an enabled, unexpired, writable tenant grant. Generic `shell_exec` additionally requires:
+
+- host `ZWORKFORCE_SHELL_ENABLED=true`;
+- executable membership in the host shell allowlist;
+- executable membership in the grant's `commands`.
+
+The coding-agent tool uses a fixed trusted zWorkforce coder executable rather than expanding the generic shell allowlist. Its working directory must remain inside the grant root.
+
+Production process execution then passes through the probed Bubblewrap + `prlimit` backend. `network_policy=deny` receives an isolated network namespace. `network_policy=allowlisted` is rejected until a technically enforced allowlisted-egress implementation exists.
+
+If Bubblewrap/prlimit is missing or the deployed kernel/container policy prevents namespace creation, process execution fails closed. Installation of the sandbox packages alone is not treated as runtime evidence.
+
+In non-production environments, process calls that omit `workspace_id` retain the pre-existing direct subprocess behavior and are explicitly not labeled sandboxed. Supplying a grant selects the grant-aware sandbox path.
+
+Durable process tool-event metadata excludes shell argument values and coding-agent prompt bodies.
+
 ## Canonical-path safety
 
 Grant creation resolves the requested path against the configured workspace root and requires an existing directory. Grant use re-resolves the stored relative path every time. This is important because a directory can be replaced with a symlink or junction after approval; a changed path that now resolves outside the host ceiling must fail closed rather than inherit the old authorization.
 
-Filesystem containment is defense in depth, not a claim of a hostile-OS filesystem sandbox. Process isolation and stronger platform-specific containment are handled by the later process-executor boundary.
+Filesystem containment is defense in depth, not a claim that path checks alone form a hostile-OS sandbox. Process isolation is provided separately by the probed process backend.
 
 ## Tenant and audit contract
 
 Grant repository reads/writes are scoped by `(tenant_id, id)`. A grant UUID from another tenant is not resolved. API create/update/disable operations are audited with relative root and policy metadata only; no provider credentials or absolute host paths are recorded.
-
-## Process-enforcement boundary
-
-`commands` and `network_policy` are intentionally **not** described as enforced for shell/coder execution yet. Before process execution can use a grant, the process sandbox must additionally enforce:
-
-- grant expiry/enabled state and command membership;
-- canonical working directory inside the grant root;
-- argv execution with `shell=False`;
-- sanitized environment;
-- time/output/process/resource limits;
-- cancellation and cleanup;
-- real network isolation for `deny`, or a technically enforced allowlist for `allowlisted`;
-- audit evidence without command-output secret leakage.
-
-Until that executor boundary is merged and validated, durable grants provide file-tool authorization and declared process policy, but not proof of shell/coder process containment.

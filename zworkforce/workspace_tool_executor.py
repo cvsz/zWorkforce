@@ -2,24 +2,30 @@ from __future__ import annotations
 
 import os
 from pathlib import Path, PureWindowsPath
+import shutil
 import tempfile
 from typing import Any
 
+from .process_sandbox import BubblewrapProcessSandbox, ProcessSandboxError
 from .tools import TOOL_DEFINITIONS, ToolError, ToolExecutor
 from .workspace_grants import WorkspaceGrantError, WorkspaceGrantService
 
-_WORKSPACE_TOOLS = {"workspace_list", "workspace_read", "workspace_write"}
+_FILE_TOOLS = {"workspace_list", "workspace_read", "workspace_write"}
+_PROCESS_TOOLS = {"shell_exec", "zworkforce_code_agent"}
+_WORKSPACE_TOOLS = _FILE_TOOLS | _PROCESS_TOOLS
 
 
 def _install_workspace_id_schema() -> None:
     for name in _WORKSPACE_TOOLS:
         parameters = TOOL_DEFINITIONS[name]["schema"]["function"]["parameters"]
-        properties = parameters.setdefault("properties", {})
+        properties = parameters.setdefault(
+            "properties", {}
+        )
         properties.setdefault(
             "workspace_id",
             {
                 "type": "string",
-                "description": "Tenant-scoped workspace grant UUID. Required in production for local file access.",
+                "description": "Tenant-scoped workspace grant UUID. Required in production for local file/process access.",
             },
         )
 
@@ -28,16 +34,21 @@ _install_workspace_id_schema()
 
 
 class WorkspaceGrantedToolExecutor(ToolExecutor):
-    """Tool executor that applies durable tenant workspace grants to file tools."""
+    """Tool executor that applies durable tenant workspace grants to local file/process tools."""
 
     def __init__(self, settings, db):
         super().__init__(settings, db)
         self.grants = WorkspaceGrantService(settings, db)
+        self.sandbox = BubblewrapProcessSandbox(settings)
 
     def execute(self, name: str, args: dict[str, Any], *, tenant_id: str, agent_id: str, actor: str) -> Any:
         if name not in _WORKSPACE_TOOLS:
             return super().execute(name, args, tenant_id=tenant_id, agent_id=agent_id, actor=actor)
+        if name in _FILE_TOOLS:
+            return self._execute_file_tool(name, args, tenant_id=tenant_id)
+        return self._execute_process_tool(name, args, tenant_id=tenant_id, agent_id=agent_id, actor=actor)
 
+    def _execute_file_tool(self, name: str, args: dict[str, Any], *, tenant_id: str) -> Any:
         if name in {"workspace_list", "workspace_read"} and not self.settings.workspace_read_enabled:
             raise ToolError("workspace read tools are disabled by host policy")
         if name == "workspace_write" and not self.settings.workspace_write_enabled:
@@ -69,6 +80,96 @@ class WorkspaceGrantedToolExecutor(ToolExecutor):
             str(args.get("content", "")),
             bool(args.get("create_parents", False)),
         )
+
+    def _resolve_process_grant(self, tenant_id: str, args: dict[str, Any]) -> tuple[dict[str, Any], Path] | None:
+        workspace_id = str(args.get("workspace_id") or "").strip()
+        if not workspace_id:
+            if self.settings.env == "production":
+                raise ToolError("workspace_id grant is required for process tools in production")
+            return None
+        try:
+            grant, root = self.grants.resolve_root(tenant_id, workspace_id, require_write=True)
+        except WorkspaceGrantError as exc:
+            raise ToolError(str(exc)) from exc
+        if grant.get("network_policy") != "deny":
+            raise ToolError("process network_policy=allowlisted is not implemented; refusing to run")
+        return grant, root
+
+    def _execute_process_tool(self, name: str, args: dict[str, Any], *, tenant_id: str, agent_id: str, actor: str) -> Any:
+        resolved = self._resolve_process_grant(tenant_id, args)
+        if resolved is None:
+            # Non-production compatibility path. No sandbox claim is made for legacy calls without a grant.
+            return super().execute(name, args, tenant_id=tenant_id, agent_id=agent_id, actor=actor)
+        grant, root = resolved
+        if name == "shell_exec":
+            raw_args = args.get("args", [])
+            if not isinstance(raw_args, list) or any(not isinstance(item, (str, int, float, bool)) for item in raw_args):
+                raise ToolError("shell args must be an array of scalar values")
+            return self._sandboxed_shell(grant, root, str(args.get("command", "")), [str(item) for item in raw_args])
+        return self._sandboxed_coder(grant, root, str(args.get("prompt", "")), str(args.get("cwd", ".")))
+
+    def _sandboxed_shell(self, grant: dict[str, Any], root: Path, command: str, args: list[str]) -> dict[str, Any]:
+        if not self.settings.shell_enabled:
+            raise ToolError("shell tool is disabled")
+        if command not in self.settings.shell_allowlist or os.path.basename(command) != command:
+            raise ToolError("command is not allowlisted by host policy")
+        if command not in set(grant.get("commands") or []):
+            raise ToolError("command is not allowlisted by workspace grant")
+        if len(args) > 64 or any(len(item) > 4096 or "\x00" in item for item in args):
+            raise ToolError("shell arguments exceed limits")
+        executable = shutil.which(command)
+        if not executable or not os.path.isabs(executable):
+            raise ToolError("allowlisted command was not found on PATH")
+        try:
+            result = self.sandbox.run(
+                root,
+                [executable, *args],
+                network_policy=str(grant["network_policy"]),
+                timeout_seconds=self.settings.tool_timeout_seconds,
+            )
+        except ProcessSandboxError as exc:
+            raise ToolError(str(exc)) from exc
+        return {
+            "exit_code": result.exit_code,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "sandbox_backend": result.backend,
+            "network_policy": result.network_policy,
+        }
+
+    def _sandboxed_coder(self, grant: dict[str, Any], root: Path, prompt: str, raw_cwd: str) -> dict[str, Any]:
+        prompt = prompt.strip()
+        if not prompt:
+            raise ToolError("prompt is required for zworkforce coding agent")
+        if len(prompt.encode("utf-8")) > self.settings.max_request_bytes:
+            raise ToolError("prompt exceeds request size limit")
+        target_dir = self._safe_path_for_root(root, raw_cwd)
+        if not target_dir.is_dir():
+            raise ToolError("target workspace directory does not exist")
+        executable = shutil.which("zktcoder") or shutil.which("zwf-coder") or "/usr/local/bin/zwf-coder"
+        if not os.path.exists(executable) or not os.path.isabs(executable):
+            raise ToolError("zWorkforce coding engine executable (zwf-coder) was not found on system")
+        relative = "." if target_dir == root else target_dir.relative_to(root).as_posix()
+        sandbox_cwd = "/workspace" if relative == "." else f"/workspace/{relative}"
+        try:
+            result = self.sandbox.run(
+                root,
+                [executable, "--cwd", sandbox_cwd],
+                network_policy=str(grant["network_policy"]),
+                timeout_seconds=max(60, self.settings.tool_timeout_seconds * 2),
+                cwd_relative=relative,
+                stdin_text=prompt,
+            )
+        except ProcessSandboxError as exc:
+            raise ToolError(str(exc)) from exc
+        return {
+            "exit_code": result.exit_code,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "cwd": relative,
+            "sandbox_backend": result.backend,
+            "network_policy": result.network_policy,
+        }
 
     @staticmethod
     def _safe_path_for_root(root: Path, raw: str) -> Path:
