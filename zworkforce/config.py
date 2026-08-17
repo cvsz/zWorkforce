@@ -83,6 +83,9 @@ class Settings:
     provider_circuit_seconds: int = 30
     skill_signing_key: str = ""
 
+    doom_loop_max_identical_calls: int = 3
+    doom_loop_max_consecutive_failures: int = 5
+
     rates: dict[str, Rate] = field(default_factory=lambda: {
         "sol": Rate(125.0, 12.5, 750.0),
         "terra": Rate(50.0, 5.0, 300.0),
@@ -173,6 +176,8 @@ class Settings:
             provider_circuit_failures=i("ZWORKFORCE_PROVIDER_CIRCUIT_FAILURES", 3, 1),
             provider_circuit_seconds=i("ZWORKFORCE_PROVIDER_CIRCUIT_SECONDS", 30, 1),
             skill_signing_key=skill_key,
+            doom_loop_max_identical_calls=i("ZWORKFORCE_DOOM_LOOP_MAX_IDENTICAL_CALLS", 3, 1),
+            doom_loop_max_consecutive_failures=i("ZWORKFORCE_DOOM_LOOP_MAX_CONSECUTIVE_FAILURES", 5, 1),
             rates=rates,
         )
 

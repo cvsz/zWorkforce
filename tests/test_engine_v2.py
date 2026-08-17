@@ -47,4 +47,41 @@ class EngineV2Tests(unittest.TestCase):
         mid=self.db.get_task("default",task["id"]); self.assertEqual(mid["status"],"queued"); self.db.update_task(task["id"],run_after="2000-01-01T00:00:00+00:00"); self.engine.worker_loop("w2",once=True)
         self.assertEqual(self.db.get_task("default",task["id"])["status"],"succeeded")
 
-if __name__ == "__main__": unittest.main()
+    def test_doom_loop_identical_tool_calls(self):
+        # 4 identical tool calls with limit = 3
+        fake = ScriptedProvider([
+            ProviderResult("", "scripted", "model-terra", Usage(10, 0, 5), [ToolCall("1", "calculator", {"expression": "2+2"})], {"role": "assistant", "content": ""}),
+            ProviderResult("", "scripted", "model-terra", Usage(10, 0, 5), [ToolCall("2", "calculator", {"expression": "2+2"})], {"role": "assistant", "content": ""}),
+            ProviderResult("", "scripted", "model-terra", Usage(10, 0, 5), [ToolCall("3", "calculator", {"expression": "2+2"})], {"role": "assistant", "content": ""}),
+            ProviderResult("", "scripted", "model-terra", Usage(10, 0, 5), [ToolCall("4", "calculator", {"expression": "2+2"})], {"role": "assistant", "content": ""}),
+        ])
+        self.engine.shutdown()
+        from zworkforce.engine import Engine
+        self.engine = Engine(self.settings, self.db, fake)
+        task, _ = self.engine.submit("default", "researcher", "calculate loop", actor="alice", tier_override="terra")
+        self.engine.worker_loop("w", once=True)
+        record = self.db.get_task("default", task["id"])
+        self.assertEqual(record["status"], "failed")
+        self.assertIn("doom-loop detected", record["error"])
+        self.assertIn("invoked 4 times with identical arguments", record["error"])
+
+    def test_doom_loop_consecutive_tool_failures(self):
+        # 5 consecutive tool execution errors (e.g. invalid arithmetic expressions)
+        fake = ScriptedProvider([
+            ProviderResult("", "scripted", "model-terra", Usage(10, 0, 5), [ToolCall(str(i), "calculator", {"expression": f"invalid_syntax_{i}++"})], {"role": "assistant", "content": ""})
+            for i in range(1, 6)
+        ])
+        self.engine.shutdown()
+        from zworkforce.engine import Engine
+        self.engine = Engine(self.settings, self.db, fake)
+        task, _ = self.engine.submit("default", "researcher", "failing tool loop", actor="alice", tier_override="terra")
+        self.engine.worker_loop("w", once=True)
+        record = self.db.get_task("default", task["id"])
+        self.assertEqual(record["status"], "failed")
+        self.assertIn("doom-loop detected", record["error"])
+        self.assertIn("consecutive tool execution failures", record["error"])
+
+
+if __name__ == "__main__":
+    unittest.main()
+

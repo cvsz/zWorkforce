@@ -178,7 +178,7 @@ Refactor the voice runtime toward a typed registry while keeping the current ser
 - [ ] Agent Loop Hardening & Reliability Patterns:
   - Human-in-the-Loop (HITL) tool approval gates with resumable conversation state persistence;
   - Long-Horizon Agent loops with cost ceilings, token bounds, and voice/PTT interaction;
-  - Automatic Doom-Loop Detection: identify and abort repetitive tool calls, server-tool loops, or cyclical text without progress;
+  - [x] Automatic Doom-Loop Detection: identify and abort repetitive tool calls, server-tool loops, or cyclical text without progress;
   - Dynamic parameter injection (`nextTurnParams`) for context-aware skills and modular plugin execution;
   - Typed Lifecycle Hooks (`beforeTurn`, `afterTurn`, `onToolCall`, `onToolResult`) for fine-grained execution governance.
 - [ ] Multimodal Video & Media Synthesis Engine:

@@ -216,6 +216,11 @@ class Engine:
         heartbeat_stop = threading.Event()
         heartbeat = threading.Thread(target=self._heartbeat_loop, args=(task_id, worker_id, heartbeat_stop), daemon=True)
         heartbeat.start()
+        consecutive_tool_failures = 0
+        identical_call_counts: dict[str, int] = {}
+        max_identical = max(1, getattr(self.settings, "doom_loop_max_identical_calls", 3))
+        max_failures = max(1, getattr(self.settings, "doom_loop_max_consecutive_failures", 5))
+
         try:
             for iteration in range(1, int(agent["max_iterations"]) + 1):
                 current = self.db.get_task(tenant_id, task_id) or task
@@ -273,6 +278,15 @@ class Engine:
                     if current.get("cancel_requested"):
                         self.db.update_task(task_id, status="canceled", finished_at=utcnow(), lease_owner=None, lease_expires_at=None, heartbeat_at=None)
                         return
+
+                    # Doom loop detection: Track identical tool call signatures
+                    call_sig = json.dumps({"name": call.name, "args": call.arguments}, sort_keys=True, default=str)
+                    identical_count = identical_call_counts.get(call_sig, 0) + 1
+                    identical_call_counts[call_sig] = identical_count
+                    if identical_count > max_identical:
+                        self.db.task_event(tenant_id, task_id, "doom_loop_detected", "runtime", {"tool": call.name, "identical_count": identical_count})
+                        raise RuntimeError(f"doom-loop detected: tool {call.name!r} invoked {identical_count} times with identical arguments")
+
                     if call.name not in allowed_tools:
                         tool_result = {"error": f"tool {call.name!r} is not granted to this agent"}
                     elif call.name == "agent_delegate":
@@ -303,6 +317,16 @@ class Engine:
                             tool_result = {"error": "tool policy requires approval"}
                         else:
                             tool_result = self._execute_tool(task, call.name, call.arguments)
+
+                    # Doom loop detection: Track consecutive tool execution failures
+                    if isinstance(tool_result, dict) and "error" in tool_result:
+                        consecutive_tool_failures += 1
+                        if consecutive_tool_failures >= max_failures:
+                            self.db.task_event(tenant_id, task_id, "doom_loop_detected", "runtime", {"consecutive_failures": consecutive_tool_failures, "last_error": str(tool_result["error"])})
+                            raise RuntimeError(f"doom-loop detected: {consecutive_tool_failures} consecutive tool execution failures (last error: {tool_result['error']})")
+                    else:
+                        consecutive_tool_failures = 0
+
                     messages.append({"role": "tool", "tool_call_id": call.id, "content": json.dumps(tool_result, ensure_ascii=False, default=str)})
             raise RuntimeError("max_iterations reached before completion")
         except ProviderError as exc:
