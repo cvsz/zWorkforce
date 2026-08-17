@@ -32,27 +32,21 @@ graph LR
   - Shop adapters: Shopee Open Platform v2, TikTok Shop Seller API, Facebook Commerce Catalog.
 - [x] **Cryptographic Verification**: HMAC-SHA256 partner key signing for Shopee OpenAPI v2 and TikTok Shop.
 - [x] **Universal Plugin Packaging**: Packaged as `zworkforce-omnichannel-suite` with skills for content publishing, shop inventory sync, and order operations.
+- [x] **Automated 12-Point QA Self-Correction Loop (Phase 1)**:
+  - Built `packages/zeto/src/domain/qa_engine.js` scoring hook clarity, brand voice, safe margins, claim substantiation, and CTAs with auto-remediation.
+  - Unit tests in `packages/zeto/test/qa_seo_engine.test.js`.
+- [x] **SEO & Platform Algorithm Keyword Injection (Phase 3)**:
+  - Built `packages/zeto/src/domain/seo_engine.js` with per-platform keyword density and hashtag policies (Shopee, TikTok, Meta, YouTube).
+  - Unit tests in `packages/zeto/test/qa_seo_engine.test.js`.
 
 ---
 
 ## 3. Active & Upcoming Implementation Workstreams
 
-### Phase 1: Automated 12-Point QA Self-Correction Loop
-- **Objective**: When a generated draft scores < 90, the agent autonomously executes targeted remediation before requesting human approval.
-- **Files**:
-  - `packages/zeto/src/qa_engine.ts`: Multi-criteria scoring engine (Brand palette, font policy, safe margins, claim substantiation).
-  - `packages/zeto/tests/qa_engine.test.ts`: Automated remediation unit tests.
-
 ### Phase 2: Live Performance Feedback & Prompt Tuning
 - **Objective**: Ingest social engagement metrics (views, shares, retention rate) and automatically recalibrate ProMeta prompt weights.
 - **Files**:
   - `packages/zeto/src/feedback_optimizer.ts`: Retention curve analytics and prompt re-weighting.
-
-### Phase 3: SEO & Platform Algorithm Keyword Injection
-- **Objective**: Per-platform keyword density and hashtag policy enforcement for Shopee, TikTok, and Meta with A/B scoring.
-- **Files**:
-  - `packages/zeto/src/seo_engine.ts`: Platform-specific keyword density scoring and auto-inject.
-  - `packages/zeto/tests/seo_engine.test.ts`: Scoring boundary tests and injection idempotency checks.
 
 ### Phase 4: Approval Gate & Human-in-Loop Escalation
 - **Objective**: Wiring the 12-point QA scorecard into the zWorkforce approval gate (`approval_requests` table) with auto-escalation for scores below 90.

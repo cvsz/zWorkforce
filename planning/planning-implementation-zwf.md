@@ -62,35 +62,25 @@ graph TD
 - [x] **Standalone Test Runner Import Fix (PR #110)**:
   - Added `try/except ImportError` fallback for `tests.common` import in `tests/test_connectors.py`.
   - Enables canonical `PYTHONPATH=. python3 -m unittest tests/test_connectors.py -v` to pass per `AGENTS.md`.
+- [x] **OTLP Telemetry & Multi-Sink Trace Export (Phase 3)**:
+  - Built `zworkforce/telemetry.py` with OpenTelemetry JSON exporter, sensitive attribute redaction, and token counter attribution.
+  - Test suite in `tests/test_v3_telemetry_handoff.py`.
+- [x] **Typed Agent Handoff & Guardrail Protocol (Phase 4)**:
+  - Built `zworkforce/agent_handoff.py` with typed handoff contracts, self-delegation guards, and context token budgets.
+  - Integrated into `zworkforce/engine.py` delegation loop.
+- [x] **Secure MCP Reverse Tunnel Client Gateway (Phase 1)**:
+  - Built `zworkforce/tunnel.py` with `McpTunnelManager` supporting client registration, encrypted tunnel heartbeats, and timeout fencing.
+  - Test suite in `tests/test_v3_tunnel.py`.
 
 ---
 
 ## 3. Active & Upcoming Implementation Workstreams
-
-### Phase 1: Secure MCP Reverse Tunnel Client Gateway
-- **Objective**: Allow localhost / private edge MCP servers to securely connect to cloud workforce without inbound ports.
-- **Files to Implement/Touch**:
-  - `zworkforce/tunnel.py`: Reverse-tunnel client using encrypted WebSockets and ephemeral ticket auth.
-  - `zworkforce/api.py`: Endpoint `POST /api/v1/mcp/tunnel/connect`.
-  - `tests/test_tunnel.py`: Unit test suite verifying tunnel handshake, heartbeat, and tool forwarding.
 
 ### Phase 2: Agent Client Protocol (ACP) Multi-IDE Integration
 - **Objective**: Expose full ACP JSON-RPC standard for Cursor, VS Code, and Zed editor companion integration.
 - **Files to Implement/Touch**:
   - `zworkforce/acp.py`: Bidirectional ACP server with standard operations (`initialize`, `newSession`, `prompt`, `cancel`, `requestPermission`).
   - `tests/test_acp.py`: ACP compliance test suite.
-
-### Phase 3: OTLP Telemetry & Multi-Sink Trace Export
-- **Objective**: Programmatic trace export to OpenTelemetry Collector, Langfuse, Grafana Cloud, Arize AX.
-- **Files to Implement/Touch**:
-  - `zworkforce/telemetry.py`: OTLP span processor, token counter histogram, and provider attribution metadata.
-  - `tests/test_telemetry.py`: Unit tests verifying span structure and no-credential export invariants.
-
-### Phase 4: Typed Agent Handoff & Guardrail Protocol
-- **Objective**: Multi-agent routing with typed input/output validation, context compaction, and deterministic tool call evaluation on zero-cost free model tiers.
-- **Files to Implement/Touch**:
-  - `zworkforce/agent_handoff.py`: Typed handoff contracts, context window budgets, and escalation guards.
-  - `tests/test_agent_handoff.py`: Context isolation and cross-agent boundary tests.
 
 ---
 
