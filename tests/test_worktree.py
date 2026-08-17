@@ -161,6 +161,57 @@ class GitWorktreeAdapterTests(unittest.TestCase):
                 allowlisted_checks={"unit": ("python", "-m", "unittest", "tests.test_workspace")},
             )
 
+    def test_commit_stages_all_uses_tracked_branch_and_returns_sha(self):
+        calls = []
+        commit_sha = "a" * 40
+
+        def commit_runner(argv, **kwargs):
+            calls.append((list(argv), dict(kwargs)))
+            if "rev-parse" in argv and "--show-toplevel" in argv:
+                return Completed(stdout=str(self.repo) + "\n")
+            if "branch" in argv and "--show-current" in argv:
+                return Completed(stdout="feat/example\n")
+            if "status" in argv:
+                return Completed(stdout=" M app.py\n")
+            if "diff" in argv and "--cached" in argv and "--quiet" in argv:
+                return Completed(returncode=1)
+            if "rev-parse" in argv and "HEAD" in argv:
+                return Completed(stdout=commit_sha + "\n")
+            return Completed()
+
+        adapter, _ = self.adapter(runner=commit_runner)
+        result = adapter.commit("repo", message="feat: bounded commit", expected_branch="feat/example")
+        self.assertEqual(result.branch, "feat/example")
+        self.assertEqual(result.commit_sha, commit_sha)
+        commands = [call[0] for call in calls]
+        self.assertTrue(any("add" in argv and "--all" in argv and "--" in argv for argv in commands))
+        commit_call = next(call for call in calls if "commit" in call[0])
+        self.assertIn("feat: bounded commit", commit_call[0])
+        self.assertEqual(commit_call[1]["shell"], False)
+        self.assertNotIn("HOME", commit_call[1]["env"])
+
+    def test_commit_fails_closed_for_branch_mismatch_empty_change_and_bad_message(self):
+        adapter, _ = self.adapter()
+        with self.assertRaisesRegex(WorktreeError, "branch"):
+            adapter.commit("repo", message="feat: test", expected_branch="feat/other")
+        with self.assertRaisesRegex(WorktreeError, "single non-empty line"):
+            adapter.commit("repo", message="line one\nline two", expected_branch="feat/example")
+
+        def empty_runner(argv, **kwargs):
+            if "rev-parse" in argv:
+                return Completed(stdout=str(self.repo) + "\n")
+            if "branch" in argv and "--show-current" in argv:
+                return Completed(stdout="feat/example\n")
+            if "status" in argv:
+                return Completed(stdout="")
+            if "diff" in argv and "--cached" in argv:
+                return Completed(returncode=0)
+            return Completed()
+
+        empty, _ = self.adapter(runner=empty_runner)
+        with self.assertRaisesRegex(WorktreeError, "no changes"):
+            empty.commit("repo", message="feat: nothing", expected_branch="feat/example")
+
     def test_remove_refuses_primary_repo_and_uses_double_dash(self):
         child = self.root / "child"
         child.mkdir()
