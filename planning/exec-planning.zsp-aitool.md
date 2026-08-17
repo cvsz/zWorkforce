@@ -93,6 +93,12 @@ graph TD
 - Routes: `/dashboard/hyperframes`, `/dashboard/hyperframes/renders`, `/dashboard/hyperframes/batch`, `/dashboard/hyperframes/ops/queue`.
 - Background worker watchdog, render queue metrics, and automated stale-job recovery.
 
+### Phase 4 — OpenRouter Multimodal Video Generation & Webhook Dispatch (Forward)
+- **Direct Video Generation API**: Text-to-Video and Image-to-Video generation using OpenRouter hosted video models for short affiliate product teasers.
+- **Frame & Reference Conditioning**: First-frame / last-frame image anchors and reference images for character/product brand consistency.
+- **Asynchronous Webhook Ingestion**: Receive video render callbacks at `/api/webhooks/openrouter-video` with HMAC signature validation and auto-linking to `HyperFrameRenderJob`.
+- **Preset-Enhanced Image & Thumbnail Studio**: LLM prompt expansion pairing with image generation server tools for high-CTR Shopee product cover art.
+
 ---
 
 ## 5. Incident Response & Disaster Recovery (ZSP-ZIDER)

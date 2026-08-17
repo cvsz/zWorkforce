@@ -137,14 +137,61 @@ Refactor the voice runtime toward a typed registry while keeping the current ser
 - [x] Support operator-configured failover without silent provider substitution for pinned workloads.
 - [x] Keep cloud transmission disabled for protected data unless policy explicitly permits it.
 
-### R8.1 — OpenRouter & Enterprise Model Gateway Integration
+### R8.1 — OpenRouter & Enterprise Model Gateway Integration (Free Model First)
 
 - [x] Unified OpenAI-Compatible Router Gateway (`http://api:9569/v1`) with server-side credentials and rate-limit safety.
+- [x] **Free Model First Routing Architecture**:
+  - Primary dispatch defaults to OpenRouter Free Models Router (`openrouter/free`) and explicit `:free` variants (`meta-llama/llama-3.3-70b-instruct:free`, `deepseek/deepseek-r1:free`, `google/gemini-2.0-flash-lite:free`, `qwen/qwen-2.5-coder-32b-instruct:free`);
+  - Multi-tier zero-cost fallback chain: `openrouter/free` → Groq Free Quota (`llama-3.3-70b`) → Local Edge (Ollama/vLLM) → Paid Escalation (Sol tier);
+  - Dynamic capability filtering: automatic selection of free models matching required modalities (vision, tool calling, structured JSON output).
 - [x] OpenRouter Multi-Provider Failover: support automatic failover across 600+ hosted models (Anthropic, OpenAI, Google, DeepSeek, Groq, Meta, Mistral, Moonshot).
 - [x] Dynamic Provider & Privacy Routing: honor zero-data-retention (ZDR) flags, privacy toggles, data-training policies, and allowed provider routing constraints without breaking tenant isolation.
 - [x] Open WebUI Enterprise Control Center integration (`:3080`): interactive chat, dual model arena, interactive code artifacts, RAG knowledge, and OpenAPI tool/function dispatch.
-- [ ] Automated Provider Key Health Probes: periodic verification of upstream provider keys (OpenRouter, Groq, DeepSeek, Google AI Studio) with auto-quarantine for revoked credentials.
+- [ ] Smart Model Variant Slugs & Specialized Routing:
+  - `:free` (Free Models Router primary tier with zero token cost);
+  - `:thinking` / Extended Reasoning variant handling across free DeepSeek-R1, Claude, and OpenAI o-series;
+  - `:exacto` & Auto-Exacto provider sorting for quality-optimized tool/function calling;
+  - `:nitro` for ultra-low latency inference;
+  - `:extended` for large context window retention;
+  - `:online` for model-agnostic web search grounding;
+  - Pareto Router (minimum coding benchmark routing without pinning static model slugs);
+  - Fusion Router & Multi-Model Deliberation (synthesizing consensus outputs from parallel challenger models).
+- [ ] Model Migration & Parameter Modernization:
+  - Claude Opus 5 / Claude 5 Sonnet / Claude 4.7 / Claude 4.6 migration alignment (adaptive thinking, xhigh/max effort levels, sampling parameter deprecations, mid-conversation tool mutations);
+  - GPT-5.6 / GPT-5.5 / GPT-5.4 adoption (`reasoning.mode`, `reasoning.context`, phase field routing, and explicit prompt caching).
+- [ ] Zero Completion Insurance & Prompt Caching:
+  - Automatic zero-token billing protection and retry handler;
+  - Dynamic prompt cache block optimization (`cache_control`) across large workspace context turns.
+- [ ] Automated Provider Key Health Probes & Rotation:
+  - Periodic background verification of upstream provider keys (OpenRouter, Groq, DeepSeek, Google AI Studio) with auto-quarantine for revoked credentials;
+  - Automatic key rotation integration with Infisical and OpenRouter Management API Keys.
 - [ ] Adaptive Fallback & Cost-Optimized Routing: latency and token cost aware routing across tier variants (Luna/Terra/Sol) with fallback to ultra-fast Groq endpoints on upstream 503/429.
+
+### R8.2 — OpenRouter Agent SDK, Server Tools & Broadcast Observability
+
+- [ ] OpenRouter Server-Side Tools Gateway:
+  - Hosted Web Search (`web_search`) and Web Fetch (`web_fetch`) for live web grounding;
+  - Hosted Sandboxed Shell (`shell`) and Apply Patch (`apply_patch`) for V4A diff file mutations;
+  - Advisor Tool (`advisor`) for mid-generation token-efficient verification by stronger models;
+  - Subagent Tool (`subagent`) for delegating bounded tasks to lightweight worker models;
+  - Hosted Datetime (`datetime`) and Model Catalog Search (`search_models`).
+- [ ] Agent Loop Hardening & Reliability Patterns:
+  - Human-in-the-Loop (HITL) tool approval gates with resumable conversation state persistence;
+  - Long-Horizon Agent loops with cost ceilings, token bounds, and voice/PTT interaction;
+  - Automatic Doom-Loop Detection: identify and abort repetitive tool calls, server-tool loops, or cyclical text without progress;
+  - Dynamic parameter injection (`nextTurnParams`) for context-aware skills and modular plugin execution;
+  - Typed Lifecycle Hooks (`beforeTurn`, `afterTurn`, `onToolCall`, `onToolResult`) for fine-grained execution governance.
+- [ ] Multimodal Video & Media Synthesis Engine:
+  - Dedicated Video Generation API: Text-to-Video, Image-to-Video (first/last frame control), and Reference-to-Video (style/subject guidance);
+  - Asynchronous video webhook delivery with cryptographic signature verification;
+  - Preset-Enhanced Image Generation pairing LLM prompt refinement with image generation server tools.
+- [ ] Enterprise Observability & OpenTelemetry Broadcast:
+  - OpenRouter Broadcast integration forwarding full generation traces directly to OpenTelemetry Collector, Langfuse, Grafana Cloud, Arize AX, Datadog, Comet Opik, Braintrust, and S3 sinks;
+  - Analytics API integration for programmatic cost breakdown, token velocity, and activity exports.
+- [ ] Security Guardrails & Sovereign AI Compliance:
+  - Regex and heuristic Prompt Injection detection with customizable phrase allowlists;
+  - Sensitive Info Guardrails (automated PII masking/redaction before model egress);
+  - Sovereign AI regional routing enforcement to maintain national/jurisdictional boundaries.
 
 ### R9 — Observability and SLO hardening
 
@@ -191,6 +238,53 @@ This roadmap line translates the strongest public Skywork workspace-agent patter
 - [ ] FinOps preflight before expensive runs plus project/task/agent/model usage drilldown.
 - [ ] Optional internal request signing with replay protection and key rotation for selected service-to-service boundaries.
 
+### R12 — Agent Client Protocol (ACP) & OpenCode Architecture (Free Model First)
+
+Adopt the architectural patterns from OpenCode-Book (`0xtresser/OpenCode-Book`):
+
+- [x] **Agent Client Protocol (ACP) Server Endpoint**:
+  - Implement bidirectional ACP JSON-RPC standard (`@agentclientprotocol/sdk`) over stdio and HTTP/SSE on zWorkforce API (`POST /acp`);
+  - Standardized operations: `initialize`, `authenticate`, `newSession`, `loadSession`, `prompt`, `cancel`, `sessionUpdate` (text chunks, tool calls, tool progress), and `requestPermission` (HITL confirmation);
+  - Direct integration support for IDEs (VS Code, Zed, Cursor) and native WinUI desktop companion.
+- [x] **Comprehensive Model Metadata & Capability Matrix**:
+  - Unified `ModelMetadata` schema tracking `capabilities` (`toolcall`, `reasoning`, `temperature`, `interleaved` reasoning fields), `cost` (input, output, prompt cache read/write), and `limit` (context window, max output);
+  - Dynamic capability matching for **Free Model First** routing (e.g. verifying `toolcall: true` and `input.image: true` before dispatching to free models).
+- [x] **Snapshot, Versioning & Undo Engine**:
+  - Pre-mutation workspace file snapshots with checksum verification;
+  - Granular undo/rollback capabilities for agent file changes (`/undo` command);
+  - Visual diff calculation and state restoration.
+- [x] **`oh-my-opencode` Specialist Agent Personas & Multi-Agent Collaboration**:
+  - Specialist persona presets: `CodeReviewer`, `TestArchitect`, `SecurityAuditor`, `TechLead`, and `DocSpecialist`;
+  - Standardized multi-agent handoffs with bounded context and explicit stop conditions;
+  - All specialist agent runs default to OpenRouter Free Models (`openrouter/free`, `qwen-2.5-coder-32b:free`, `deepseek-r1:free`).
+
+### R13 — Global AI Ecosystem Cookbooks & Safety Lifecycle Integration (Free Model First)
+
+Adopt proven engineering patterns from official Anthropic, OpenAI, Google Gemini, Meta Llama, Groq, Mistral, HuggingFace, Liquid AI, Solana, Cursor, and community hook/skill repositories:
+
+- [x] **Agent Lifecycle Hooks & Deterministic Safety Guards** (`yurukusa/claude-code-hooks`, `wasabeef/claude-code-cookbook`):
+  - Pre-tool / post-tool execution hooks with deterministic safety gate filters;
+  - `branch-guard`: block mutating execution on protected branches (`main`, `master`, `release/*`);
+  - `secret-guard` & `destructive-guard`: pre-execution AST scan preventing command injection, `rm -rf`, or plaintext credential egress;
+  - `auto-approve-readonly`: zero-friction auto-approval for read-only tools (`grep`, `glob`, `view_file`, `cat`) while keeping mutations approval-gated.
+- [x] **Structured LLM Wiki & Pre-Mortem Prompting Patterns** (`gamer80hdd/claude-helpers`, `neklyudovs/claude-skills`):
+  - Pre-mortem architectural analysis templates before generating multi-step execution plans;
+  - LLM wiki pattern for compounding codebase knowledge without context window exhaustion;
+  - Anti-AI-writing filters and tone calibrators for enterprise content production.
+- [x] **Groq Ultra-Fast Inference & Reasoning Routing** (`groq/groq-api-cookbook`):
+  - Prioritize Groq Free Tier quotas (`llama-3.3-70b-versatile`, `llama-3.1-8b-instant`, `deepseek-r1-distill-llama-70b`) for low-latency (<500ms TTFT) subagent steps;
+  - Compound tool calling with JSON mode schema validation and structured output guarantees.
+- [x] **Liquid AI Foundational Models (LFM) Edge Support** (`Liquid4All/cookbook`):
+  - Support hybrid edge runtime for compact LFM-1B/3B and LFM-Vision on resource-constrained worker nodes;
+  - Low-latency local audio transcription and vision triage without cloud egress.
+- [x] **Multimodal Vision & Function Calling Standardization** (`google-gemini/cookbook`, `openai/openai-cookbook`, `anthropics/claude-cookbooks`, `meta-llama/llama-cookbook`):
+  - Unified multimodal payload formatting (base64 image, audio chunks, PDF documents);
+  - Dynamic tool schema generation with strict typed output parsing;
+  - Context caching alignment across Gemini (`cachedContent`), Claude (`cache_control`), and OpenRouter Free Models.
+- [x] **Decentralized Solana & Web3 Verification Infrastructure** (`solana-developers/solana-cookbook`):
+  - Content provenance notarization and hash anchoring on Solana devnet/mainnet for tamper-proof audit trails;
+  - Cryptographic keypair signature verification for agent-to-agent task attestation.
+
 ---
 
 ## 6. Monorepo Sub-Package Forward Roadmaps
@@ -204,6 +298,11 @@ This roadmap line translates the strongest public Skywork workspace-agent patter
   - [x] Shopee API product ingestion and OCR vision pipeline foundation.
   - [x] Multi-platform social publishing adapter surfaces.
   - [x] Video rendering watchdog with stale-job recovery.
+  - [ ] OpenRouter Multimodal Video Generation Engine:
+    - Text-to-Video and Image-to-Video generation (first and last frame conditioning);
+    - Reference-to-Video styling and product identity consistency;
+    - Asynchronous video webhook receiver with HMAC signature verification;
+    - Preset-Enhanced image & thumbnail prompt compiler pairing with image generation server tools.
 
 ### 6.2 Zider AI Browser Companion (`packages/zider`)
 - **Mission**: Manifest V3 AI Browser Sidebar Companion with Shadow DOM isolation, ChatPDF document intelligence, and multi-model group streaming (`:8085`).
@@ -214,6 +313,10 @@ This roadmap line translates the strongest public Skywork workspace-agent patter
   - [x] Group AI multi-model streaming compare.
   - [x] ChatPDF tenant-scoped vector indexing and citation highlights.
   - [x] YouTube transcript summarizer and multi-language translator surfaces.
+  - [ ] OpenRouter Rerank & Multimodal Integration:
+    - High-precision RAG pipeline combining OpenRouter embeddings with `/rerank` API to filter top document chunks;
+    - Multimodal PDF and image input handling with server-side URL and base64 parsing;
+    - Model-agnostic web grounding via `:online` router variant and OpenRouter web-search plugin.
 
 ### 6.3 Zeto AI Content Factory (`packages/zeto`)
 - **Mission**: Enterprise AI content lifecycle engine executing `IDEATE → GENERATE → WRITE → APPROVE → SCHEDULE → PUBLISH → MONITOR → LEARN`.
@@ -222,12 +325,18 @@ This roadmap line translates the strongest public Skywork workspace-agent patter
   - [x] Tool registry and point-cloud canvas HUD foundation.
   - [x] Multi-tenant content scheduling outbox with integrity protection.
   - [x] Automated QA scorecard evaluation and self-correction loops.
+  - [ ] Token-Efficient Review & Delegation Architecture:
+    - Advisor Server Tool integration: lightweight executor runs standard drafting and invokes Advisor for compact uncertainty validation;
+    - Subagent Server Tool delegation: orchestrator generates structured task DAG and delegates sub-tasks to cheap worker models;
+    - Automated Non-Blocking Code & Copy Review using lifecycle hooks;
+    - Dynamic prompt caching (`cache_control`) for long-form brand guides and product catalogs.
 
 ### 6.4 Autonomous Workspace & Deep Research Super Agents (`zworkforce` + `packages/zeto`)
 - **Mission**: Skywork-inspired multimodal workspace intelligence capable of turning prompts into end-to-end research reports, slide specs, structured spreadsheets, and TTS-ready audio scripts while retaining source provenance and approval boundaries.
 - **Architectural Paradigms**:
   - **A2A (Agent2Agent) Protocol Support**: interoperability for workforce agents to discover capabilities, exchange bounded context, and delegate sub-tasks across heterogeneous runtimes.
-  - **Deep Research Autonomous Engine**: iterative multi-hop search, citation cross-referencing, document verification, and synthesis pipeline with source provenance.
+  - **Deep Research Autonomous Engine**: iterative multi-hop search with OpenRouter `:online` web grounding, citation cross-referencing, document verification, and synthesis pipeline with source provenance.
+  - **Multi-Model Deliberation (Fusion)**: combine insights from diverse LLM families to reach consensus on complex analytical findings.
   - **Cross-Model Memory Import**: standardized memory import/export with tenant, consent, and provenance controls.
   - **Multimodal Document Output Formats**: compilation of verified research into formatted Markdown, presentation specs, CSV/Excel data sheets, and TTS-ready audio scripts.
 

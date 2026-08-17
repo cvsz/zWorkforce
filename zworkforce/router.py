@@ -1,8 +1,103 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 import re
+from typing import Any
 
 TIERS = ("luna", "terra", "sol")
+
+# Recognized free tier models with their capability profiles
+FREE_MODEL_SPECS: dict[str, dict[str, Any]] = {
+    "openrouter/free": {
+        "provider": "openrouter",
+        "toolcall": True,
+        "reasoning": True,
+        "input_image": True,
+        "input_pdf": True,
+        "context_window": 128_000,
+        "is_free": True,
+    },
+    "meta-llama/llama-3.3-70b-instruct:free": {
+        "provider": "openrouter",
+        "toolcall": True,
+        "reasoning": False,
+        "input_image": False,
+        "input_pdf": False,
+        "context_window": 131_072,
+        "is_free": True,
+    },
+    "deepseek/deepseek-r1:free": {
+        "provider": "openrouter",
+        "toolcall": True,
+        "reasoning": True,
+        "input_image": False,
+        "input_pdf": False,
+        "context_window": 64_000,
+        "is_free": True,
+    },
+    "qwen/qwen-2.5-coder-32b-instruct:free": {
+        "provider": "openrouter",
+        "toolcall": True,
+        "reasoning": False,
+        "input_image": False,
+        "input_pdf": False,
+        "context_window": 32_768,
+        "is_free": True,
+    },
+    "google/gemini-2.0-flash-lite:free": {
+        "provider": "openrouter",
+        "toolcall": True,
+        "reasoning": False,
+        "input_image": True,
+        "input_pdf": True,
+        "context_window": 1_048_576,
+        "is_free": True,
+    },
+    "llama-3.3-70b-versatile": {
+        "provider": "groq",
+        "toolcall": True,
+        "reasoning": False,
+        "input_image": False,
+        "input_pdf": False,
+        "context_window": 128_000,
+        "is_free": True,
+    },
+    "deepseek-r1-distill-llama-70b": {
+        "provider": "groq",
+        "toolcall": True,
+        "reasoning": True,
+        "input_image": False,
+        "input_pdf": False,
+        "context_window": 128_000,
+        "is_free": True,
+    },
+}
+
+
+@dataclass(frozen=True)
+class ModelCapabilities:
+    toolcall: bool = True
+    reasoning: bool = False
+    temperature: bool = True
+    input_image: bool = False
+    input_pdf: bool = False
+    input_audio: bool = False
+    output_audio: bool = False
+    interleaved_reasoning: bool = False
+    context_window: int = 128_000
+    is_free: bool = False
+
+
+@dataclass(frozen=True)
+class ModelMetadata:
+    id: str
+    provider: str
+    capabilities: ModelCapabilities = field(default_factory=ModelCapabilities)
+    input_cost_per_m: float = 0.0
+    output_cost_per_m: float = 0.0
+    cache_read_cost_per_m: float = 0.0
+    cache_write_cost_per_m: float = 0.0
+    status: str = "active"
 
 
 class ModelRouter:
@@ -13,6 +108,47 @@ class ModelRouter:
     )
     LIGHT_TERMS = re.compile(r"\b(summarize|format|classify|extract|tag|rename|translate|normalize|rewrite|deduplicate)\b", re.I)
 
+    def __init__(self, catalog: dict[str, ModelMetadata] | None = None):
+        self.catalog = catalog or self._build_default_catalog()
+
+    @staticmethod
+    def _build_default_catalog() -> dict[str, ModelMetadata]:
+        out = {}
+        for mid, spec in FREE_MODEL_SPECS.items():
+            caps = ModelCapabilities(
+                toolcall=spec.get("toolcall", True),
+                reasoning=spec.get("reasoning", False),
+                input_image=spec.get("input_image", False),
+                input_pdf=spec.get("input_pdf", False),
+                context_window=spec.get("context_window", 128_000),
+                is_free=spec.get("is_free", True),
+            )
+            out[mid] = ModelMetadata(id=mid, provider=spec["provider"], capabilities=caps)
+        return out
+
+    def resolve_free_model(
+        self,
+        required_tools: bool = False,
+        required_vision: bool = False,
+        required_pdf: bool = False,
+        required_reasoning: bool = False,
+    ) -> str | None:
+        """Find the best zero-cost model matching required capabilities."""
+        for mid, meta in self.catalog.items():
+            caps = meta.capabilities
+            if not caps.is_free:
+                continue
+            if required_tools and not caps.toolcall:
+                continue
+            if required_vision and not caps.input_image:
+                continue
+            if required_pdf and not caps.input_pdf:
+                continue
+            if required_reasoning and not caps.reasoning:
+                continue
+            return mid
+        return "openrouter/free"
+
     def choose(
         self,
         prompt: str,
@@ -21,6 +157,7 @@ class ModelRouter:
         override: str | None = None,
         context_bytes: int = 0,
         tool_count: int = 0,
+        prefer_free: bool = True,
     ) -> tuple[str, dict]:
         if override:
             if override not in TIERS:
@@ -50,7 +187,22 @@ class ModelRouter:
         elif default_tier == "luna":
             score -= 1
         tier = "luna" if score <= 2 else "terra" if score <= 5 else "sol"
-        return tier, {"reason": "complexity_router", "score": score, "estimated_context": length}
+
+        free_candidate = None
+        if prefer_free:
+            free_candidate = self.resolve_free_model(
+                required_tools=(tool_count > 0 or mutating),
+                required_reasoning=(score >= 6),
+            )
+
+        rationale = {
+            "reason": "complexity_router",
+            "score": score,
+            "estimated_context": length,
+            "free_candidate": free_candidate,
+            "free_first": prefer_free,
+        }
+        return tier, rationale
 
     @staticmethod
     def escalate(tier: str) -> str | None:

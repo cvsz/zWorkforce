@@ -9,17 +9,18 @@
 
 ## 1. Executive Summary & Objectives
 
-The zWorkforce Multi-Model Router is the central gateway providing unified OpenAI-compatible routing (`http://api:9569/v1` and Open WebUI on `:3080`) across local and cloud intelligence providers (Anthropic, OpenAI, Google, DeepSeek, Groq, Meta, Mistral, Moonshot, and OpenRouter's 600+ model catalog).
+The zWorkforce Multi-Model Router is the central gateway providing unified OpenAI-compatible routing (`http://api:9569/v1` and Open WebUI on `:3080`) across local and cloud intelligence providers (Anthropic, OpenAI, Google, DeepSeek, Groq, Meta, Mistral, Moonshot, and OpenRouter's 600+ model catalog) with an absolute **Free Model First** dispatch policy.
 
 ### Key Objectives:
-1. **Zero Secret Leakage**: Provider credentials and management tokens remain strictly server-side; client UIs and extensions never receive raw API keys.
-2. **Dynamic Provider Fallback & Load Balancing**: Automatic failover from high-latency/unavailable providers to ultra-fast endpoints (e.g. Groq Llama 3.3) with sub-second switchover.
-3. **Privacy & Data Governance**: Strict adherence to tenant boundaries, Zero Data Retention (ZDR) requirements, data training policies, and allowed provider allowlists.
-4. **Interactive Enterprise Surface**: Seamless integration with Open WebUI (`zworkforce-open-webui`), Code Artifacts engine, and RAG semantic knowledge ingestion.
+1. **Free Model First Priority (Zero-Cost Inference)**: All routine tasks, interactive chat, code searches, summarization, and draft workflows dispatch to OpenRouter Free Models (`openrouter/free`, `meta-llama/llama-3.3-70b-instruct:free`, `deepseek/deepseek-r1:free`, `google/gemini-2.0-flash-lite:free`, `qwen/qwen-2.5-coder-32b-instruct:free`) and Groq free quotas before consuming paid credits.
+2. **Zero Secret Leakage**: Provider credentials and management tokens remain strictly server-side; client UIs and extensions never receive raw API keys.
+3. **Dynamic Provider Fallback & Load Balancing**: Multi-stage waterfall failover: `openrouter/free` → Groq Free Tier → Local Edge (Ollama) → Paid Escalation (Sol tier).
+4. **Privacy & Data Governance**: Strict adherence to tenant boundaries, Zero Data Retention (ZDR) requirements, data training policies, and allowed provider allowlists.
+5. **Interactive Enterprise Surface**: Seamless integration with Open WebUI (`zworkforce-open-webui`), Code Artifacts engine, and RAG semantic knowledge ingestion.
 
 ---
 
-## 2. Router Architecture & Data Flow
+## 2. Router Architecture & Data Flow (Free Model First)
 
 ```mermaid
 graph TD
@@ -32,16 +33,22 @@ graph TD
 
     subgraph "zWorkforce Gateway & Policy Plane (:9569)"
         ROUTER["Multi-Model Router Gateway (/v1/chat/completions)"]
+        FREE_ENFORCER["Free Model First Policy & Capability Matcher"]
         POLICY_ENGINE["Tenant Policy, ZDR & Privacy Enforcer"]
         KEY_VAULT["Server-Side Key Vault (.env.ai)"]
         CIRCUIT_BREAKER["Health Probe & Circuit Breaker"]
     end
 
-    subgraph "Upstream Intelligence Providers"
-        GROQ["Groq (Ultra-fast Llama 3.3 / 3.1)"]
-        OPENROUTER["OpenRouter (600+ Model Catalog)"]
-        DIRECT_LLM["Direct Cloud (OpenAI, Gemini, DeepSeek)"]
-        LOCAL_MODELS["Local / Edge Models (Ollama, vLLM)"]
+    subgraph "Free Model Primary Tier (Zero Token Cost)"
+        OR_FREE["OpenRouter Free Router (openrouter/free)"]
+        OR_FREE_MODELS["Free Variants (:free / DeepSeek-R1, Llama 3.3, Gemini Flash)"]
+        GROQ_FREE["Groq High-Speed Free Quota (Llama 3.3 / 3.1)"]
+        LOCAL_MODELS["Local Edge (Ollama, vLLM)"]
+    end
+
+    subgraph "Paid Escalation Tier (On-Demand Sol)"
+        PAID_OR["OpenRouter Paid Tier (Claude, GPT-5, Sol)"]
+        DIRECT_LLM["Direct Cloud (OpenAI, Gemini Pro, Anthropic)"]
     end
 
     OWUI --> ROUTER
@@ -49,14 +56,17 @@ graph TD
     ZIDER --> ROUTER
     AGENT_RUNTIME --> ROUTER
 
-    ROUTER <--> POLICY_ENGINE
+    ROUTER <--> FREE_ENFORCER
+    FREE_ENFORCER <--> POLICY_ENGINE
     ROUTER <--> KEY_VAULT
     ROUTER <--> CIRCUIT_BREAKER
 
-    CIRCUIT_BREAKER --> GROQ
-    CIRCUIT_BREAKER --> OPENROUTER
-    CIRCUIT_BREAKER --> DIRECT_LLM
-    CIRCUIT_BREAKER --> LOCAL_MODELS
+    CIRCUIT_BREAKER -->|1. Primary: Free First| OR_FREE
+    CIRCUIT_BREAKER -->|1. Primary: Free First| OR_FREE_MODELS
+    CIRCUIT_BREAKER -->|2. Fallback: Free Quota| GROQ_FREE
+    CIRCUIT_BREAKER -->|3. Fallback: Local Zero Cost| LOCAL_MODELS
+    CIRCUIT_BREAKER -.->|4. Escalation Only: 429/Paid Required| PAID_OR
+    CIRCUIT_BREAKER -.->|4. Escalation Only: 429/Paid Required| DIRECT_LLM
 ```
 
 ---
@@ -73,18 +83,57 @@ graph TD
 - [x] **OpenRouter Dynamic Provisioning**: Management key provisioning integration to generate and rotate working API keys with zero manual downtime.
 - [x] **Groq High-Speed Tier**: Direct integration with Groq API (`gsk_...`) for `llama-3.3-70b-versatile` and `llama-3.1-8b-instant` fallback.
 - [ ] **Automated Key Health Heartbeat**: Background task polling upstream auth endpoints every 15 minutes to flag revoked or expired credentials before user impact.
-- [ ] **Automatic Key Rotation Outbox**: Trigger alerts and rotation hooks when an upstream key incurs repeated 401/403 responses.
+- [ ] **Automated Key Rotation & Infisical Sync**: Trigger alerts and automated rotation hooks via OpenRouter Management API and Infisical when an upstream key incurs repeated 401/403 responses.
+- [ ] **Zero Completion Insurance**: Automatic detection of zero-token empty responses with immediate failover to alternative provider/variant without double charging.
 
-### Phase 3: Privacy, Guardrails & Policy Routing (In Progress)
+### Phase 3: Smart Variant Slugs, Server Tools, ACP & Model Metadata (In Progress)
 - [x] **Account-Level Privacy Sync**: Document and maintain compliance for OpenRouter Data Training policies (`Allow free endpoints that train on request data` & `Allow free endpoints that publish prompts`).
 - [x] **Allowed Provider Routing**: Complete provider mapping allowlist ensuring zero unintended provider lockouts.
+- [ ] **OpenCode Model Metadata & Capability Matrix**:
+  - Implement unified `ModelMetadata` schema tracking `capabilities` (`toolcall`, `reasoning`, `temperature`, `interleaved`), `cost` (input, output, cache read/write), and `limit` (context, max output);
+  - Dynamic capability filter matching for **Free Model First** routing (verifying `toolcall: true` before dispatching agentic loops to free models).
+- [ ] **Agent Client Protocol (ACP) Gateway Integration**:
+  - Support bidirectional ACP standard (`@agentclientprotocol/sdk`) over stdio and HTTP/SSE for IDE / client attachments;
+  - Real-time `sessionUpdate` streaming for token chunks, tool call execution events, and HITL permission requests.
+- [ ] **OpenRouter Smart Variant Slugs (Free First Priority)**:
+  - `:free` (Free Models Router primary tier for zero-cost inference);
+  - `:thinking` (extended reasoning parameter translation for free DeepSeek-R1, Claude, and OpenAI o-series);
+  - `:exacto` & Auto-Exacto (quality-first provider sorting for tool and function calling);
+  - `:nitro` (high-throughput low-latency inference routing);
+  - `:extended` (large context window models);
+  - `:online` (model-agnostic web grounding plugin);
+  - Pareto Router (minimum coding score router) & Fusion Router (multi-model deliberation).
+- [ ] **Model Migration Specification Alignment**:
+  - Claude Opus 5, Claude 5 Sonnet, Claude 4.7/4.6 adaptive thinking, xhigh effort levels, and mid-turn tool mutation support;
+  - GPT-5.6 / GPT-5.5 / GPT-5.4 `reasoning.mode`, `reasoning.context`, and phase field parameters.
+- [ ] **Server Tools Gateway Integration**:
+  - Server-side Web Search (`web_search`) and Web Fetch (`web_fetch`);
+  - Sandboxed Shell (`shell`) and Apply Patch (`apply_patch`) for V4A diff edits;
+  - Advisor Tool (`advisor`) for compact uncertainty validation;
+  - Subagent Tool (`subagent`) for subtask delegation.
+- [ ] **Dynamic Prompt Caching**: Header and payload injection for explicit `cache_control` blocks, maximizing cache hit rate across multi-turn sessions.
+- [ ] **Global Ecosystem Cookbook Adapters (Free Model First)**:
+  - Groq Free Quota Orchestrator (`groq/groq-api-cookbook`): ultra-fast low-latency routing for `llama-3.3-70b-versatile` & `deepseek-r1-distill-llama-70b`;
+  - Liquid AI Foundational Models (`Liquid4All/cookbook`): local edge LFM-1B/3B / LFM-Vision integration for resource-bounded nodes;
+  - Unified Multimodal & Function Calling (`google-gemini/cookbook`, `openai/openai-cookbook`, `meta-llama/llama-cookbook`);
+  - Solana Ledger Audit Anchoring (`solana-developers/solana-cookbook`): immutable content hash notarization on devnet/mainnet.
+
+### Phase 4: Privacy, Guardrails, Safety Hooks & Sovereign Governance (Active)
+- [ ] **Agent Lifecycle Hooks & Deterministic Safety Guards** (`yurukusa/claude-code-hooks`, `wasabeef/claude-code-cookbook`):
+  - Pre-tool / post-tool execution hooks with deterministic safety gate filters;
+  - `branch-guard`: block mutating execution on protected branches (`main`, `master`, `release/*`);
+  - `secret-guard` & `destructive-guard`: pre-execution AST scan preventing command injection, `rm -rf`, or plaintext credential egress;
+  - `auto-approve-readonly`: zero-friction auto-approval for read-only tools (`grep`, `glob`, `view_file`, `cat`).
 - [ ] **Zero Data Retention (ZDR) Enforcement**: Header injection (`HTTP-Referer`, `X-Title`, and `zdr: true`) for enterprise-confidential tenant workloads.
 - [ ] **Tenant Token Budget Preflight**: Validate tenant credit and token quotas before forwarding multi-turn large context prompts.
+- [ ] **Prompt Injection & Sensitive Info Guardrails**: Regex-based injection detection, custom allowlists, and automatic PII masking/redaction before model egress.
+- [ ] **Sovereign AI Routing**: Enforce regional routing constraints to guarantee data resides within designated sovereign boundaries (e.g. EU, US-only).
 
-### Phase 4: Observability, Metrics & Telemetry (Forward)
+### Phase 5: Observability, Broadcast & FinOps Telemetry (Forward)
+- [ ] **OpenRouter Broadcast Tracing**: Route execution traces to OpenTelemetry Collector, Langfuse, Grafana Cloud, Arize AX, Datadog, and S3 sinks.
 - [ ] **Per-Route Latency Histograms**: Track Time-to-First-Token (TTFT) and tokens/sec across Groq, OpenRouter, and Direct providers.
 - [ ] **Provider Error Classification**: Real-time tracking of 401 (Auth), 404 (No Endpoint / Data Policy), 429 (Rate Limit), and 503 (Upstream Outage).
-- [ ] **FinOps Dashboard**: Live token usage, cost per completion, and daily savings achieved through intelligent provider routing.
+- [ ] **FinOps Dashboard & Analytics API**: Programmatic cost accounting, token velocity, cost per completion, and daily savings achieved through intelligent provider routing.
 
 ---
 

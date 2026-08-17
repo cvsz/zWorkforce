@@ -20,6 +20,7 @@ COMMANDS: tuple[WorkspaceCommand, ...] = (
     WorkspaceCommand("plan", "Create or refine an execution plan through the task boundary.", "operator", "task:write", "task.plan", True),
     WorkspaceCommand("review", "Inspect task, workflow, artifact and approval evidence.", "viewer", "workforce:read", "workspace.review"),
     WorkspaceCommand("compact", "Create an explicit durable context-compaction snapshot.", "operator", "workspace:compact", "workspace.compact", True),
+    WorkspaceCommand("undo", "Rollback workspace state using pre-mutation file snapshot.", "operator", "workspace:write", "workspace.undo", True),
     WorkspaceCommand("goal", "Update the active workspace goal/context intent.", "operator", "workspace:write", "workspace.goal", True),
     WorkspaceCommand("status", "Inspect current workspace/task execution status.", "viewer", "workforce:read", "workspace.status"),
     WorkspaceCommand("artifacts", "Inspect durable artifacts associated with the current work.", "viewer", "workforce:read", "workspace.artifacts"),

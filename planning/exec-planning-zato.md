@@ -625,6 +625,11 @@ Exit criteria:
 - [x] Command Stream and orb wired to real events (spec §2.2 S1, §2.3, §2.4, §4.2): `/zarvis` command center opens/resumes an operator session over SSE (`Last-Event-ID` resume persisted), renders the command stream from real catalog events with empty/error states, submits text commands to the runtime, and drives the orb presentation from canonical session state with reduced-motion fallbacks. Stream-entry and orb-presentation mapping is a shared, unit-tested module (`public/js/operatorStream.js`); `GET /v1/operator/sessions/:id` restores the session snapshot on reload.
 - [x] Sequence Builder persistence and execution (spec §4.3, §9, §11): durable sequence definitions with ordered steps (`operator_sequences`/`operator_sequence_steps`), `GET/POST/PUT/DELETE /v1/operator/sequences` + `GET /v1/operator/sequences/:id`, sequential execution with `s<N>.result` arg resolution, per-run idempotent step execution (`operator_sequence_runs`/`operator_sequence_run_steps`, UNIQUE `(run_id, step_key)`), dry-run, partial-failure stop with resume (`POST /v1/operator/sequences/:id/run`, resume reuses the same run and skips succeeded steps), operator confirmation gate for high-risk replay, canonical event emission (`input.received` type sequence + `step.started/finished/failed`), built-in read-only intents grounded in persisted state (`queue.read`, `session.status`, `events.recent`) with loud unsupported-intent failures, and `GET /v1/operator/sequence-runs/:id` for resume UI.
 - [ ] Skill/tool registries and policy gateway.
+- [ ] OpenRouter Advisor & Subagent Delegation:
+  - Token-efficient Advisor server tool invocation for high-uncertainty brand QA and factual review;
+  - Subagent server tool for parallel research and media generation task delegation;
+  - Automatic Doom-Loop detection to terminate unproductive copy generation cycles;
+  - Dynamic prompt cache block optimization (`cache_control`) across large brand voice guidelines.
 - [ ] Browser automation adapter + verifier.
 - [ ] Desktop/application adapters + verifier.
 - [ ] Voice STT/TTS + push-to-talk + barge-in.

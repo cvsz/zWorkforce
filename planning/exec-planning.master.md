@@ -138,13 +138,18 @@ A capability or module is only marked complete when all criteria are satisfied:
   - Loop: `DISCOVER → TRIAGE → VALIDATE → ROOT-CAUSE → PATCH → TEST → REGRESSION TEST → SECURITY REVIEW → RE-SCAN`.
   - Boundaries: zero raw secret leakage, SSRF filtering, salted API tokens, bounded tool execution.
 
-### 3.7 Multi-Model Router & Enterprise Gateway: `router`
+### 3.7 Multi-Model Router & Enterprise Gateway: `router` (Free Model First)
 - **Canonical Reference**: [`exec-planning-router.md`](exec-planning-router.md)
 - **Status**: Active Gateway & Open WebUI Integration (`:3080` / `chat.zeaz.dev`)
 - **Key Modules**:
   - Unified OpenAI Router: server-side provider key vault and rate limit protection (`/v1/chat/completions`).
+  - **Free Model First Priority**: Default routing dispatches to `openrouter/free` and explicit `:free` variants (`meta-llama/llama-3.3-70b-instruct:free`, `deepseek/deepseek-r1:free`, `google/gemini-2.0-flash-lite:free`, `qwen/qwen-2.5-coder-32b-instruct:free`), falling back to Groq free tier and local edge models before paid escalation.
   - OpenRouter Multi-Provider Failover: dynamic routing across 600+ models with automatic failover to ultra-fast Groq endpoints.
-  - Privacy & ZDR Governance: data policy enforcement, Zero Data Retention header injection, and tenant-scoped routing allowlists.
+  - Smart Variant Slugs: `:free` zero-cost tier, `:thinking` reasoning, `:exacto` tool calling, `:nitro` speed tier, `:online` web grounding, Pareto coding score routing, and Fusion multi-model deliberation.
+  - OpenRouter Server Tools: `web_search`, `web_fetch`, `shell`, `apply_patch`, `advisor` (verification), and `subagent` (delegation).
+  - Multimodal Video & Media API: text-to-video, image-to-video, reference-to-video, and asynchronous webhook delivery.
+  - Privacy & ZDR Governance: data policy enforcement, Zero Data Retention header injection (`zdr: true`), prompt injection regex patterns, and sovereign AI regional routing allowlists.
+  - Enterprise Observability: OpenRouter Broadcast trace forwarding to OTLP Collector, Langfuse, Grafana Cloud, Arize AX, and S3.
 
 
 ### 3.8 Runtime Agent Platform: `Hermes Agent` & `Spawn`
@@ -169,7 +174,9 @@ Current delivered foundation includes:
 - enable/disable and rollback foundations;
 - safe system-skill auto-update inside the authorized capability envelope;
 - rejection of silent tool-capability expansion, mutability escalation or approval weakening;
-- durable tenant-scoped projects and conversations with ordered messages.
+- durable tenant-scoped projects and conversations with ordered messages;
+- OpenRouter Agent SDK patterns: Human-in-the-Loop (HITL) approval gates, Doom-Loop detection, lifecycle hooks, and long-horizon execution bounds;
+- OpenCode ACP (Agent Client Protocol) and pre-mutation Snapshot & Undo engine.
 
 ## 4. Feature Upgrade & Next Milestones Roadmap
 
@@ -182,12 +189,16 @@ timeline
     section Z.A.R.V.I.S. (zarvis)
       Voice Card & Orb UI : PTT Barge-in lifecycle : Worklet PCM16 streaming
       Workspace Upgrade : Governed skill registry : Context and sandbox milestones
+    section Router & Model Gateway
+      Free Model First : openrouter/free & :free variants : Groq free quota fallback
+      Smart Variant Slugs : :thinking / :exacto / :nitro / Fusion : Server tools gateway
+      ACP & Broadcast : Agent Client Protocol : OTLP Langfuse/Grafana traces
     section Studio (zsp-aitool)
       Next.js Upgrade : Tenant data model : HyperFrames batch rendering
       Affiliate Automation : Vision OCR ingestion : Analytics dashboard
     section Companion (zider)
       Manifest V3 Sidebar : Shadow DOM isolation : Group AI streaming
-      ChatPDF Intelligence : Tenant vector graph : YouTube translator
+      ChatPDF Intelligence : Rerank & vector graph : YouTube translator
 ```
 
 ---
@@ -207,8 +218,15 @@ Core skill categories remain:
 | Voice & Orchestration | `zworkforce-zarvis-contracts` | Z.A.R.V.I.S. contracts and package validation. |
 | Voice & Orchestration | `zworkforce-zarvis-runtime-orchestration` | Multi-agent handoffs, continuous execution, capability policy and supervision. |
 | Voice & Orchestration | `zworkforce-zarvis-voice-ui` | Realtime audio, PTT, orb states and voice BFF. |
-| Intelligence & Memory | `zworkforce-rag-curation` | Tenant-scoped memory and embeddings. |
-| Intelligence & FinOps | `zworkforce-finops-optimization` | Cost/quality routing, budgets and chargeback. |
+| Model Gateway & Tools | `zworkforce-mcp-integration` | MCP 2026-07-28 stateless tools, tasks, workflows, and memory endpoint. |
+| Model Gateway & Tools | `zworkforce-acp-protocol` | Agent Client Protocol (ACP) JSON-RPC standard for IDE & desktop agent integration. |
+| Model Gateway & Tools | `zworkforce-ecosystem-cookbooks` | Groq, Liquid AI LFM, Gemini, OpenAI, and Llama cookbook pattern adapters. |
+| Agent Personas | `oh-my-opencode-specialists` | Specialist personas (`CodeReviewer`, `TestArchitect`, `SecurityAuditor`, `TechLead`) on Free Models. |
+| Agent Lifecycle & Safety | `zworkforce-safety-hooks` | Pre/post tool execution safety guards (`branch-guard`, `secret-guard`, `destructive-guard`). |
+| Knowledge & Prompting | `zworkforce-llm-wiki-patterns` | Structured LLM wiki knowledge compounding and pre-mortem execution templates. |
+| Ledger & Web3 Provenance | `zworkforce-solana-notarization` | Content hash notarization and agent task attestation on Solana ledger. |
+| Intelligence & Memory | `zworkforce-rag-curation` | Tenant-scoped memory, embeddings, and Rerank API precision filters. |
+| Intelligence & FinOps | `zworkforce-finops-optimization` | Cost/quality routing, budgets, token analytics, and chargeback. |
 | Platform | `zworkforce-github-operations` | PR lifecycle, checks, security runs and release operations. |
 | Workspace | workspace sandbox/worktree adapter | Scoped local project execution with explicit write/command authority. |
 | Workspace | command/context layer | Context budget, compaction, slash commands and task continuity. |

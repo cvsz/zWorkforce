@@ -103,6 +103,17 @@ Repository coding skills in `.agents/skills` and runtime assistant skills are di
 | `packages/zarvis/skills/productivity/` | Scheduled briefing/task coordination where connectors are configured. |
 | `packages/zarvis/skills/*/test*` | Manifest, dependency, policy, timeout and denial-path tests. |
 
+### P4.1 — OpenRouter Agent SDK & Reliability Patterns
+
+Adopt key resilience patterns from the OpenRouter Agent SDK and Cookbook:
+
+- **Human-in-the-Loop (HITL) Tool Gates**: tools with side-effects or external mutating authority pause execution and serialize conversation/tool state until operator approval.
+- **Doom-Loop Detection**: runtime monitor detects cyclical repeated tool calls, identical arguments, or stagnant text responses and terminates or escalates to fallback.
+- **Dynamic Context Injection (`nextTurnParams`)**: dynamic prompt parameter and cache injection across multi-turn reasoning steps.
+- **Advisor & Subagent Tools**:
+  - `advisor`: consults stronger models mid-generation for compact uncertainty checks;
+  - `subagent`: delegates isolated sub-tasks to faster/cheaper worker models with bounded tool envelopes.
+
 Every runtime skill requires:
 
 - stable ID + semantic version;
@@ -114,18 +125,21 @@ Every runtime skill requires:
 - audit event mapping;
 - owner and rollback/version policy.
 
-### P5 — Agents and continuous operators
+### P5 — Agents and continuous operators (Free Model First)
 
-Reuse the large existing specialist-agent catalog. Add only missing orchestration roles.
+Reuse the large existing specialist-agent catalog and adopt OpenCode `oh-my-opencode` specialist personas:
 
 | File | Action | Responsibility |
 |---|---|---|
 | `packages/zarvis/agents/voice-orchestrator.md` | **ADD** | Low-latency spoken-turn planner/router and safe handoff. |
-| `packages/zarvis/agents/operator-supervisor.md` | **ADD** | Continuous/scheduled agent health, heartbeat, rate-limit and recovery policy. |
+| `packages/zarvis/agents/operator-supervisor.md` | **ADD** | Continuous/scheduled agent health, heartbeat, rate-limit, execution ceilings (max cost/tokens/steps), and recovery policy. |
 | `packages/zarvis/agents/chief-of-staff.md` | **KEEP/INTEGRATE** | High-level task decomposition and delegation. |
 | `packages/zarvis/agents/brain-memory-agent.md` | **KEEP/INTEGRATE** | Memory/context specialization. |
+| `packages/zarvis/agents/code-reviewer.md` | **ADD** | `oh-my-opencode` style async non-blocking PR and code review agent powered by `qwen-2.5-coder-32b:free`. |
+| `packages/zarvis/agents/test-architect.md` | **ADD** | Test coverage generator and regression test planner on `deepseek-r1:free`. |
+| `packages/zarvis/agents/security-auditor.md` | **ADD** | SAST vulnerability scan and credential leak defense specialist. |
 | Existing code/review/build agents | **KEEP/INTEGRATE** | Specialist engineering work; no duplicate clones. |
-| `packages/zarvis/services/zarvis-orchestrator/` | **UPDATE** | Agent manifest resolution, execution mode and handoff policy. |
+| `packages/zarvis/services/zarvis-orchestrator/` | **UPDATE** | Agent manifest resolution, execution mode, long-horizon loop control, ACP server dispatch, pre-mutation file snapshot rollback, and handoff policy. |
 | Existing scheduler/event infrastructure | **INTEGRATE** | Durable scheduled/event-driven dispatch rather than a second scheduler. |
 
 Required modes:
@@ -134,7 +148,7 @@ Required modes:
 - `scheduled`: cron/interval occurrence with stable idempotency key;
 - `continuous`: bounded long-running operator with heartbeat/lease/rate limit.
 
-Continuous mode requires heartbeat, stale-run detection, max concurrency, rate limit, pause/resume, version pinning, failure budget and rollback. It must not create unrestricted autonomous mutation.
+Continuous and long-horizon modes require heartbeat, stale-run detection, max concurrency, token/cost budget enforcement, pause/resume, version pinning, failure budget and rollback. All specialist agents default to **Free Model First** routing (`openrouter/free`, `qwen-2.5-coder-32b-instruct:free`, `deepseek-r1:free`). Pre-mutation file modifications create sha256 checksummed snapshot checkpoints allowing one-click visual diff rollback.
 
 ### P6 — Repository coding-agent skills
 
@@ -142,6 +156,8 @@ Continuous mode requires heartbeat, stale-run detection, max concurrency, rate l
 |---|---|
 | `.agents/skills/zworkforce-zarvis-voice-ui/SKILL.md` | **ADD** safe implementation workflow for dashboard/ZVoice/realtime speech work. |
 | `.agents/skills/zworkforce-zarvis-runtime-orchestration/SKILL.md` | **ADD** safe workflow for skills, agents, scheduler and capability-policy work. |
+| `.agents/skills/zworkforce-safety-hooks/SKILL.md` | **ADD** deterministic pre/post execution safety guards (`branch-guard`, `secret-guard`, `destructive-guard`). |
+| `.agents/skills/zworkforce-llm-wiki-patterns/SKILL.md` | **ADD** structured LLM wiki knowledge compounding and pre-mortem architectural review patterns. |
 | Corresponding `agents/openai.yaml` files | **OPTIONAL FOLLOW-UP** if the repository requires provider-specific skill metadata. |
 
 ### P7 — Observability, tests and release
