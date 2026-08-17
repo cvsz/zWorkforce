@@ -25,35 +25,30 @@ graph TD
 - [x] **Branch Guard**: Blocks mutating execution on protected branches (`main`, `master`, `release/*`).
 - [x] **Secret Guard**: Automatic detection and redaction of provider keys (`sk-*`, `ghp_*`, `zwf_*`, private keys).
 - [x] **Destructive Command Guard**: AST pre-execution filter blocking dangerous bash commands (`rm -rf /`, `mkfs`, database drop queries).
-- [x] **SSRF Defense**: IP address allowlisting/denylisting preventing access to cloud metadata endpoints (`169.254.169.254`).
+- [x] **Adversarial Red-Teaming Methodology**: Automated jailbreak fuzzing, tool escalation probes, and SSRF boundary testing.
+- [x] **Multi-Tenant Memory Isolation Verifier**: Cross-tenant knowledge leak tests.
+- [x] **Automated CVSS-Scored Vulnerability Triage (Phase 3)**:
+  - Built `scripts/sarif_triage.py` with CodeQL SARIF JSON parser and CVSS v3.1 severity categorization.
+  - Test suite in `tests/test_v3_zred_canary.py`.
+- [x] **Runtime Secret Canary & Heap Dump Redaction (Phase 4)**:
+  - Built `zworkforce/secret_canary.py` with `SecretCanaryRegistry` providing startup canary token injection, log scanner, and leak halting.
+  - Test suite in `tests/test_v3_zred_canary.py`.
 
 ---
 
 ## 3. Active & Upcoming Implementation Workstreams
 
-### Phase 1: Pre/Post Tool Execution Lifecycle Hooks
-- **Objective**: Embed deterministic security checks before tool dispatch and scrub output payloads for PII/tokens before returning to the model.
+### Phase 1: Automated Jailbreak & Prompt Injection Fuzzing Matrix
+- **Objective**: Execute continuous mutation tests against agent system prompts with multi-turn jailbreak attempts.
 - **Files**:
-  - `zworkforce/safety_hooks.py`: Pre/post tool execution hooks.
-  - `tests/test_safety_hooks.py`: Penetration testing suite for boundary evasion.
+  - `zworkforce/redteam_fuzzer.py`: Automated prompt mutation suite.
 
 ### Phase 2: Solana Ledger Content Hash Notarization
 - **Objective**: Anchor audit head hashes and artifact checksums to Solana devnet/mainnet for immutable public verification.
 - **Files**:
   - `zworkforce/solana_notary.py`: Ledger notarization client.
 
-### Phase 3: Automated CVSS-Scored Vulnerability Triage (CodeQL SARIF)
-- **Objective**: Parse CodeQL SARIF output, score results by CVSS v3.1, auto-close `LOW`/`INFO` findings, and open GitHub issues for `HIGH`/`CRITICAL`.
-- **Files**:
-  - `scripts/sarif_triage.py`: SARIF JSON parser and CVSS auto-scorer.
-  - `tests/test_sarif_triage.py`: Mock SARIF fixture and severity bucketing tests.
-  - `.github/workflows/ci.yml`: Post-CodeQL step invoking `sarif_triage.py`.
-
-### Phase 4: Runtime Secret Canary & Heap Dump Redaction
-- **Objective**: Inject canary tokens into provider secret slots at startup; alert and halt if any canary appears in log output, API responses, or serialized task payloads.
-- **Files**:
-  - `zworkforce/secret_canary.py`: Canary token injection and runtime output scanner.
-  - `tests/test_secret_canary.py`: Canary-in-log detection and halt-on-leak tests.
+---
 
 ## 4. Verification & Validation Protocol
 
