@@ -57,6 +57,22 @@ class PlaywrightRuntimeTests(unittest.IsolatedAsyncioTestCase):
                 timeout_seconds=5,
             )
 
+    async def test_transport_rejects_host_authority_mismatch_before_loading_browser(self):
+        transport = PlaywrightReadOnlyTransport()
+        action = BrowserAction(
+            kind="inspect",
+            url="https://example.com:8443/page",
+            resolved_addresses=("93.184.216.34",),
+        )
+        with self.assertRaisesRegex(BrowserPolicyError, "Host authority"):
+            await transport.request(
+                action=action,
+                connect_ip="93.184.216.34",
+                host_header="example.com",
+                tls_server_name="example.com",
+                timeout_seconds=5,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
