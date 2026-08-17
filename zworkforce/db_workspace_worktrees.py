@@ -47,6 +47,8 @@ class WorkspaceWorktreeMixin:
             raise ValueError("start_ref is required and must be <= 256 characters")
         if task_id and len(task_id) > 128:
             raise ValueError("task_id must be <= 128 characters")
+        if task_id and hasattr(self, "get_task") and not self.get_task(tenant_id, task_id):
+            raise ValueError("task not found")
         if len(str(expires_at or "")) > 64 or not str(expires_at or "").strip():
             raise ValueError("expires_at is required")
         with self.connection() as c:
