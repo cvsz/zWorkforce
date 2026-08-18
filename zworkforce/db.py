@@ -6,6 +6,7 @@ from .db_tasks import TaskMixin
 from .db_finops import FinOpsMixin
 from .db_governance import GovernanceMixin
 from .db_automation import AutomationMixin
+from .db_artifact_content import ArtifactContentMixin
 from .db_browser_effects import BrowserEffectMixin
 from .db_evidence import EvidenceMixin
 from .db_workspace import WorkspaceMixin
@@ -19,7 +20,7 @@ from .db_schema_workspace_worktrees import WORKSPACE_WORKTREE_SCHEMA_SQL
 SCHEMA_VERSION = 8
 
 
-class Database(WorkspaceWorktreeMixin, WorkspaceGrantMixin, WorkspaceContextMixin, WorkspaceMixin, EvidenceMixin, BrowserEffectMixin, AutomationMixin, TaskMixin, FinOpsMixin, GovernanceMixin, MigrationMixin, DatabaseBase):
+class Database(WorkspaceWorktreeMixin, WorkspaceGrantMixin, WorkspaceContextMixin, WorkspaceMixin, EvidenceMixin, BrowserEffectMixin, ArtifactContentMixin, AutomationMixin, TaskMixin, FinOpsMixin, GovernanceMixin, MigrationMixin, DatabaseBase):
     def _initialize_schema(self, c) -> None:
         super()._initialize_schema(c)
         c.executescript(WORKSPACE_GRANT_SCHEMA_SQL)
