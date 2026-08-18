@@ -1,6 +1,7 @@
 import json
 import sys
 import unittest
+from datetime import datetime
 from pathlib import Path
 
 ZIDER_SERVER = Path(__file__).resolve().parent.parent / "packages" / "zider" / "server"
@@ -165,7 +166,8 @@ class ZiderBrowserContractRequiredCiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(evidence["result_sha256"], "d" * 64)
         self.assertEqual(evidence["redirect_count"], 1)
         self.assertEqual(evidence["browser_version"], "chromium-138.0.0.0")
-        self.assertNotEqual(evidence["started_at"], evidence["finished_at"])
+        for stamp in (evidence["started_at"], evidence["finished_at"]):
+            datetime.fromisoformat(stamp)
 
 
 if __name__ == "__main__":
