@@ -33,6 +33,7 @@ def action(**overrides):
 class FakeBridge:
     task = {}
     approvals = []
+    agents = []
     requested = []
     canceled = []
     fail_lookup = False
@@ -41,9 +42,23 @@ class FakeBridge:
     def reset(cls):
         cls.task = {}
         cls.approvals = []
+        cls.agents = [
+            {
+                "id": "browser-review",
+                "enabled": True,
+                "requires_approval_for_mutations": True,
+                "required_approvals": 1,
+                "allowed_tools": [],
+                "skill_ids": [],
+            }
+        ]
         cls.requested = []
         cls.canceled = []
         cls.fail_lookup = False
+
+    @classmethod
+    async def get_agents(cls):
+        return [dict(item) for item in cls.agents]
 
     @classmethod
     async def request_browser_approval(cls, *, agent_id, prompt, idempotency_key):
@@ -151,7 +166,7 @@ class BrowserApprovalAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(await self.adapter.authorize(browser_action, TASK_ID))
         self.assertFalse(await self.adapter.authorize(browser_action, "not-a-task-id"))
 
-    async def test_request_requires_control_plane_waiting_approval(self):
+    async def test_request_requires_safe_control_plane_approval_agent(self):
         browser_action = action()
         envelope = self.adapter.envelope(browser_action)
         FakeBridge.task = {
@@ -164,10 +179,28 @@ class BrowserApprovalAdapterTests(unittest.IsolatedAsyncioTestCase):
         result = await self.adapter.request(browser_action, agent_id="browser-review")
         self.assertEqual(result["id"], TASK_ID)
         self.assertEqual(FakeBridge.requested[0][0], "browser-review")
-        self.assertEqual(FakeBridge.requested[0][2], "browser-approval:browser-action-42")
+        approval_key = FakeBridge.requested[0][2]
+        self.assertTrue(approval_key.startswith("browser-approval:"))
+        self.assertLessEqual(len(approval_key), 128)
         self.assertEqual(FakeBridge.canceled, [])
 
-    async def test_misconfigured_approval_agent_is_canceled_and_rejected(self):
+    async def test_approval_agent_with_tools_skills_or_no_required_approval_is_rejected_before_task_creation(self):
+        browser_action = action()
+        unsafe_variants = [
+            {"allowed_tools": ["http_post"]},
+            {"skill_ids": ["mutating-skill"]},
+            {"requires_approval_for_mutations": False},
+            {"required_approvals": 0},
+        ]
+        for overrides in unsafe_variants:
+            with self.subTest(overrides=overrides):
+                FakeBridge.reset()
+                FakeBridge.agents[0].update(overrides)
+                with self.assertRaises(ZWorkforceBridgeError):
+                    await self.adapter.request(browser_action, agent_id="browser-review")
+                self.assertEqual(FakeBridge.requested, [])
+
+    async def test_control_plane_returning_non_waiting_task_is_canceled_and_rejected(self):
         browser_action = action()
         FakeBridge.task = {
             "id": TASK_ID,
@@ -176,7 +209,7 @@ class BrowserApprovalAdapterTests(unittest.IsolatedAsyncioTestCase):
         }
 
         with self.assertRaisesRegex(ZWorkforceBridgeError, "does not enforce mutation approval"):
-            await self.adapter.request(browser_action, agent_id="unsafe-agent")
+            await self.adapter.request(browser_action, agent_id="browser-review")
         self.assertEqual(FakeBridge.canceled, [TASK_ID])
 
 
