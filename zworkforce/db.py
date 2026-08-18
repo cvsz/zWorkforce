@@ -6,22 +6,25 @@ from .db_tasks import TaskMixin
 from .db_finops import FinOpsMixin
 from .db_governance import GovernanceMixin
 from .db_automation import AutomationMixin
+from .db_browser_effects import BrowserEffectMixin
 from .db_evidence import EvidenceMixin
 from .db_workspace import WorkspaceMixin
 from .db_workspace_context import WorkspaceContextMixin
 from .db_workspace_grants import WorkspaceGrantMixin
 from .db_workspace_worktrees import WorkspaceWorktreeMixin
+from .db_schema_browser_effects import BROWSER_EFFECT_SCHEMA_SQL
 from .db_schema_workspace_grants import WORKSPACE_GRANT_SCHEMA_SQL
 from .db_schema_workspace_worktrees import WORKSPACE_WORKTREE_SCHEMA_SQL
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 
 
-class Database(WorkspaceWorktreeMixin, WorkspaceGrantMixin, WorkspaceContextMixin, WorkspaceMixin, EvidenceMixin, AutomationMixin, TaskMixin, FinOpsMixin, GovernanceMixin, MigrationMixin, DatabaseBase):
+class Database(WorkspaceWorktreeMixin, WorkspaceGrantMixin, WorkspaceContextMixin, WorkspaceMixin, EvidenceMixin, BrowserEffectMixin, AutomationMixin, TaskMixin, FinOpsMixin, GovernanceMixin, MigrationMixin, DatabaseBase):
     def _initialize_schema(self, c) -> None:
         super()._initialize_schema(c)
         c.executescript(WORKSPACE_GRANT_SCHEMA_SQL)
         c.executescript(WORKSPACE_WORKTREE_SCHEMA_SQL)
+        c.executescript(BROWSER_EFFECT_SCHEMA_SQL)
         c.execute(
             "INSERT INTO schema_meta(key,value) VALUES('schema_version',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
             (str(SCHEMA_VERSION),),
