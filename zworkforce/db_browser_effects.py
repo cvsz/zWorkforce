@@ -31,41 +31,47 @@ class BrowserEffectMixin:
         now = utcnow()
         effect_id = str(uuid.uuid4())
         with self.connection() as c:
-            approval = c.execute(
-                "SELECT * FROM tasks2 WHERE tenant_id=? AND id=? AND mutating=1 AND approved_at IS NOT NULL",
-                (tenant_id, approval_id),
-            ).fetchone()
-            if not approval:
-                raise ValueError("browser effect approval task is not an approved tenant mutation")
-            if bool(approval["cancel_requested"]) or str(approval["status"]) in {"canceled", "failed", "dead_letter"}:
-                raise ValueError("browser effect approval task is canceled or failed")
-            required = int(approval["required_approvals"] or 0)
-            if required < 1:
-                raise ValueError("browser effect approval task does not require independent approval")
-            approved_count = c.execute(
-                "SELECT COUNT(DISTINCT actor) FROM approvals2 WHERE tenant_id=? AND task_id=? AND decision='approve'",
-                (tenant_id, approval_id),
-            ).fetchone()[0]
-            rejected_count = c.execute(
-                "SELECT COUNT(*) FROM approvals2 WHERE tenant_id=? AND task_id=? AND decision='reject'",
-                (tenant_id, approval_id),
-            ).fetchone()[0]
-            if rejected_count or int(approved_count) < required:
-                raise ValueError("browser effect approval task lacks valid independent approvals")
-            c.execute(
-                """INSERT INTO browser_effects3(
-                    id,tenant_id,idempotency_key,action_sha256,approval_task_id,status,created_at,updated_at
-                ) VALUES(?,?,?,?,?,'not_started',?,?) ON CONFLICT DO NOTHING""",
-                (effect_id, tenant_id, key, digest, approval_id, now, now),
-            )
-            row = c.execute(
-                "SELECT * FROM browser_effects3 WHERE tenant_id=? AND idempotency_key=?",
-                (tenant_id, key),
-            ).fetchone()
-            approval_row = c.execute(
-                "SELECT * FROM browser_effects3 WHERE tenant_id=? AND approval_task_id=?",
-                (tenant_id, approval_id),
-            ).fetchone()
+            c.execute("BEGIN" if self.backend_kind == "postgres" else "BEGIN IMMEDIATE")
+            try:
+                approval = c.execute(
+                    "SELECT * FROM tasks2 WHERE tenant_id=? AND id=? AND mutating=1 AND approved_at IS NOT NULL",
+                    (tenant_id, approval_id),
+                ).fetchone()
+                if not approval:
+                    raise ValueError("browser effect approval task is not an approved tenant mutation")
+                if bool(approval["cancel_requested"]) or str(approval["status"]) in {"canceled", "failed", "dead_letter"}:
+                    raise ValueError("browser effect approval task is canceled or failed")
+                required = int(approval["required_approvals"] or 0)
+                if required < 1:
+                    raise ValueError("browser effect approval task does not require independent approval")
+                approved_count = c.execute(
+                    "SELECT COUNT(DISTINCT actor) FROM approvals2 WHERE tenant_id=? AND task_id=? AND decision='approve'",
+                    (tenant_id, approval_id),
+                ).fetchone()[0]
+                rejected_count = c.execute(
+                    "SELECT COUNT(*) FROM approvals2 WHERE tenant_id=? AND task_id=? AND decision='reject'",
+                    (tenant_id, approval_id),
+                ).fetchone()[0]
+                if rejected_count or int(approved_count) < required:
+                    raise ValueError("browser effect approval task lacks valid independent approvals")
+                c.execute(
+                    """INSERT INTO browser_effects3(
+                        id,tenant_id,idempotency_key,action_sha256,approval_task_id,status,created_at,updated_at
+                    ) VALUES(?,?,?,?,?,'not_started',?,?) ON CONFLICT DO NOTHING""",
+                    (effect_id, tenant_id, key, digest, approval_id, now, now),
+                )
+                row = c.execute(
+                    "SELECT * FROM browser_effects3 WHERE tenant_id=? AND idempotency_key=?",
+                    (tenant_id, key),
+                ).fetchone()
+                approval_row = c.execute(
+                    "SELECT * FROM browser_effects3 WHERE tenant_id=? AND approval_task_id=?",
+                    (tenant_id, approval_id),
+                ).fetchone()
+                c.execute("COMMIT")
+            except Exception:
+                c.execute("ROLLBACK")
+                raise
         if not row:
             if approval_row:
                 raise ValueError("browser approval task is already bound to another browser effect")
@@ -87,8 +93,21 @@ class BrowserEffectMixin:
         now = utcnow()
         with self.connection() as c:
             changed = c.execute(
-                """UPDATE browser_effects3 SET status='executing',started_at=COALESCE(started_at,?),updated_at=?
-                WHERE tenant_id=? AND id=? AND status='not_started'""",
+                """UPDATE browser_effects3 AS e
+                SET status='executing',started_at=COALESCE(started_at,?),updated_at=?
+                WHERE e.tenant_id=? AND e.id=? AND e.status='not_started'
+                  AND EXISTS (
+                    SELECT 1 FROM tasks2 t
+                    WHERE t.tenant_id=e.tenant_id AND t.id=e.approval_task_id
+                      AND t.mutating=1 AND t.approved_at IS NOT NULL
+                      AND t.cancel_requested=0
+                      AND t.status NOT IN ('canceled','failed','dead_letter')
+                      AND t.required_approvals>=1
+                      AND (SELECT COUNT(DISTINCT a.actor) FROM approvals2 a
+                           WHERE a.tenant_id=t.tenant_id AND a.task_id=t.id AND a.decision='approve') >= t.required_approvals
+                      AND NOT EXISTS (SELECT 1 FROM approvals2 r
+                           WHERE r.tenant_id=t.tenant_id AND r.task_id=t.id AND r.decision='reject')
+                  )""",
                 (now, now, tenant_id, effect_id),
             ).rowcount
             row = c.execute(
