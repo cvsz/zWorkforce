@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: Install package and runtime dependencies
-        run: python -m pip install --no-cache-dir .
+        run: python -m pip install --no-cache-dir '.[test]'
       - name: Compile
         run: python -m compileall -q zworkforce tests scripts
       - name: Unit and integration tests
