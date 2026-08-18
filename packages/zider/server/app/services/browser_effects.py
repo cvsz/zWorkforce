@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 from typing import Any, Awaitable, Callable, Mapping, Protocol
@@ -99,10 +100,13 @@ class DurableBrowserEffectExecutor:
         encoded = json.dumps(dict(result), sort_keys=True, separators=(",", ":"), default=str)
         return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
-    async def _best_effort_unknown(self, effect_id: str, error_code: str) -> None:
+    async def _best_effort_finish(self, effect_id: str, *, status: str, error_code: str) -> None:
         try:
-            await self.controller.finish(effect_id, status="unknown", error_code=error_code)
-        except Exception:
+            await self.controller.finish(effect_id, status=status, error_code=error_code)
+        except (Exception, asyncio.CancelledError):
+            # Cleanup must not replace the original execution/cancellation signal.
+            # Failed cleanup leaves the durable state non-replayable whenever the
+            # claim committed, and cannot falsely turn an ambiguous effect into success.
             pass
 
     async def execute(self, action: BrowserAction) -> Mapping[str, Any]:
@@ -123,31 +127,51 @@ class DurableBrowserEffectExecutor:
         if status in {"failed", "canceled"}:
             raise BrowserAutomationUnavailable("browser effect is terminal and cannot be replayed")
 
-        claimed_effect, claimed = await self.controller.claim(effect_id)
+        try:
+            claimed_effect, claimed = await self.controller.claim(effect_id)
+        except asyncio.CancelledError:
+            # A canceled claim may have committed remotely, but browser execution
+            # has not started yet. If it committed, canceled is a safe terminal
+            # state; otherwise finish fails harmlessly against not_started.
+            await self._best_effort_finish(effect_id, status="canceled", error_code="claim_canceled")
+            raise
         if not claimed or str(claimed_effect.get("status") or "") != "executing":
             raise BrowserAutomationUnavailable("browser effect could not be atomically claimed")
+
         try:
             result = await self.delegate.execute(action)
+        except asyncio.CancelledError:
+            # Cancellation or an outer timeout after claim is outcome-ambiguous:
+            # the remote side effect may already have committed. Quarantine it.
+            await self._best_effort_finish(effect_id, status="unknown", error_code="execution_canceled")
+            raise
         except Exception:
-            await self._best_effort_unknown(effect_id, "execution_ambiguous")
+            await self._best_effort_finish(effect_id, status="unknown", error_code="execution_ambiguous")
             raise
         if not isinstance(result, Mapping):
-            await self._best_effort_unknown(effect_id, "invalid_result")
+            await self._best_effort_finish(effect_id, status="unknown", error_code="invalid_result")
             raise BrowserAutomationUnavailable("browser executor returned an invalid result")
+
         if self.cancel_checker is not None:
             try:
                 canceled = await self.cancel_checker(action)
             except Exception:
                 canceled = False
             if canceled:
-                await self._best_effort_unknown(effect_id, "canceled_during_execution")
+                await self._best_effort_finish(effect_id, status="unknown", error_code="canceled_during_execution")
                 raise BrowserAutomationUnavailable(
                     "browser mutation result is ambiguous: the approval task was canceled during execution"
                 )
+
         digest = self._result_digest(result)
         try:
             await self.controller.finish(effect_id, status="succeeded", result_sha256=digest)
+        except asyncio.CancelledError:
+            # External execution returned, but durable success may or may not have
+            # committed. Preserve no-replay semantics by quarantining as unknown.
+            await self._best_effort_finish(effect_id, status="unknown", error_code="completion_canceled")
+            raise
         except Exception:
-            await self._best_effort_unknown(effect_id, "completion_ambiguous")
+            await self._best_effort_finish(effect_id, status="unknown", error_code="completion_ambiguous")
             raise
         return {**dict(result), "effect_id": effect_id, "result_sha256": digest}

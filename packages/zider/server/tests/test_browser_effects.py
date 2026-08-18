@@ -1,3 +1,4 @@
+import asyncio
 import sys
 import unittest
 from pathlib import Path
@@ -12,27 +13,37 @@ from app.services.browser_effects import DurableBrowserEffectExecutor
 
 class FakeDelegate:
     enforces_resolved_addresses = True
-    def __init__(self, result=None, error=None):
+    def __init__(self, result=None, error=None, block=False):
         self.result = result if result is not None else {"ok": True}
         self.error = error
+        self.block = block
         self.calls = 0
     async def execute(self, action):
         self.calls += 1
+        if self.block:
+            await asyncio.Event().wait()
         if self.error:
             raise self.error
         return self.result
 
 
 class FakeController:
-    def __init__(self, status="not_started", claimed=True):
+    def __init__(self, status="not_started", claimed=True, cancel_claim=False, cancel_success_finish=False):
         self.status = status
         self.claimed = claimed
+        self.cancel_claim = cancel_claim
+        self.cancel_success_finish = cancel_success_finish
         self.finished = []
     async def begin(self, action, approval_task_id):
         return {"id": "123e4567-e89b-12d3-a456-426614174001", "status": self.status, "result_sha256": "a" * 64}
     async def claim(self, effect_id):
+        if self.cancel_claim:
+            raise asyncio.CancelledError()
         return ({"id": effect_id, "status": "executing" if self.claimed else "not_started"}, self.claimed)
     async def finish(self, effect_id, *, status, result_sha256="", error_code=""):
+        if status == "succeeded" and self.cancel_success_finish:
+            self.cancel_success_finish = False
+            raise asyncio.CancelledError()
         self.finished.append((status, result_sha256, error_code))
         return {"id": effect_id, "status": status}
 
@@ -70,6 +81,27 @@ class DurableBrowserEffectExecutorTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(RuntimeError):
             await DurableBrowserEffectExecutor(FakeDelegate(error=RuntimeError("ambiguous")), controller).execute(mutation())
         self.assertEqual(controller.finished[-1][0], "unknown")
+
+    async def test_outer_timeout_marks_claimed_execution_unknown(self):
+        controller = FakeController()
+        executor = DurableBrowserEffectExecutor(FakeDelegate(block=True), controller)
+        with self.assertRaises(asyncio.TimeoutError):
+            await asyncio.wait_for(executor.execute(mutation()), timeout=0.01)
+        self.assertEqual(controller.finished[-1], ("unknown", "", "execution_canceled"))
+
+    async def test_cancellation_during_claim_never_executes_and_cancels_claimed_effect(self):
+        delegate = FakeDelegate()
+        controller = FakeController(cancel_claim=True)
+        with self.assertRaises(asyncio.CancelledError):
+            await DurableBrowserEffectExecutor(delegate, controller).execute(mutation())
+        self.assertEqual(delegate.calls, 0)
+        self.assertEqual(controller.finished[-1], ("canceled", "", "claim_canceled"))
+
+    async def test_cancellation_while_recording_success_quarantines_unknown(self):
+        controller = FakeController(cancel_success_finish=True)
+        with self.assertRaises(asyncio.CancelledError):
+            await DurableBrowserEffectExecutor(FakeDelegate(), controller).execute(mutation())
+        self.assertEqual(controller.finished[-1], ("unknown", "", "completion_canceled"))
 
     async def test_missing_approval_binding_fails_closed(self):
         delegate = FakeDelegate()
