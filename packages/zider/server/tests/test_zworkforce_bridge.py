@@ -170,6 +170,65 @@ class ZWorkforceBridgeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["status"], "healthy")
         self.assertEqual(client.requests[0][1], "http://127.0.0.1:8000/api/v1/overview")
 
+    async def test_browser_approval_request_uses_mutating_task_and_bounded_idempotency(self):
+        client = FakeClient(
+            post_result=FakeResponse(
+                payload={"id": "123e4567-e89b-12d3-a456-426614174000", "status": "waiting_approval", "required_approvals": 1}
+            )
+        )
+        with patch.object(bridge_module.httpx, "AsyncClient", return_value=client):
+            result = await ZWorkforceBridge.request_browser_approval(
+                agent_id="browser-review",
+                prompt="zider-browser-approval:v1 {}",
+                idempotency_key="browser-approval:action-42",
+            )
+        self.assertEqual(result["status"], "waiting_approval")
+        method, url, request = client.requests[0]
+        self.assertEqual(method, "POST")
+        self.assertEqual(url, "https://zwf.example.test/api/v1/tasks")
+        self.assertEqual(
+            request["json"],
+            {
+                "agent_id": "browser-review",
+                "prompt": "zider-browser-approval:v1 {}",
+                "mutating": True,
+                "max_attempts": 1,
+            },
+        )
+        self.assertEqual(request["headers"]["Idempotency-Key"], "browser-approval:action-42")
+
+    async def test_browser_approval_lookup_and_cancel_use_existing_task_authority(self):
+        task_id = "123e4567-e89b-12d3-a456-426614174000"
+        lookup = FakeClient(get_result=FakeResponse(payload={"id": task_id, "status": "queued", "approved_at": "now"}))
+        with patch.object(bridge_module.httpx, "AsyncClient", return_value=lookup):
+            result = await ZWorkforceBridge.get_task(task_id)
+        self.assertEqual(result["id"], task_id)
+        self.assertEqual(lookup.requests[0][1], f"https://zwf.example.test/api/v1/tasks/{task_id}")
+
+        approvals = FakeClient(get_result=FakeResponse(payload={"items": [{"actor": "reviewer", "decision": "approve"}]}))
+        with patch.object(bridge_module.httpx, "AsyncClient", return_value=approvals):
+            items = await ZWorkforceBridge.get_task_approvals(task_id)
+        self.assertEqual(items[0]["decision"], "approve")
+        self.assertEqual(approvals.requests[0][1], f"https://zwf.example.test/api/v1/tasks/{task_id}/approvals")
+
+        cancel = FakeClient(post_result=FakeResponse(payload={"id": task_id, "status": "canceled"}))
+        with patch.object(bridge_module.httpx, "AsyncClient", return_value=cancel):
+            canceled = await ZWorkforceBridge.cancel_task(task_id)
+        self.assertEqual(canceled["status"], "canceled")
+        self.assertEqual(cancel.requests[0][1], f"https://zwf.example.test/api/v1/tasks/{task_id}/cancel")
+
+    async def test_approval_lookup_rejects_invalid_shape_and_task_ids_before_transport(self):
+        bad_shape = FakeClient(get_result=FakeResponse(payload={"items": "not-a-list"}))
+        with patch.object(bridge_module.httpx, "AsyncClient", return_value=bad_shape):
+            with self.assertRaisesRegex(ZWorkforceBridgeError, "response shape"):
+                await ZWorkforceBridge.get_task_approvals("123e4567-e89b-12d3-a456-426614174000")
+
+        client = FakeClient(get_result=FakeResponse(payload={"unexpected": True}))
+        with patch.object(bridge_module.httpx, "AsyncClient", return_value=client):
+            with self.assertRaisesRegex(ZWorkforceBridgeError, "task id is invalid"):
+                await ZWorkforceBridge.get_task("../other-tenant")
+        self.assertEqual(client.requests, [])
+
 
 if __name__ == "__main__":
     unittest.main()
