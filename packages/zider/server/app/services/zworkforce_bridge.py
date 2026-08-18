@@ -117,6 +117,27 @@ class ZWorkforceBridge:
         return cls._decode_json(resp, "overview")
 
     @classmethod
+    async def get_agents(cls) -> list[Dict[str, Any]]:
+        base_url = cls._base_url()
+        try:
+            async with httpx.AsyncClient(timeout=cls.APPROVAL_TIMEOUT_SECONDS) as client:
+                resp = await client.get(
+                    f"{base_url}/api/v1/agents",
+                    headers=cls._headers(),
+                )
+        except httpx.RequestError as exc:
+            raise ZWorkforceBridgeError("zWorkforce control plane is unavailable") from exc
+        cls._raise_for_status(resp, "agent lookup")
+        payload = cls._decode_json(resp, "agent lookup")
+        items = payload.get("items")
+        if not isinstance(items, list) or not all(isinstance(item, dict) for item in items):
+            raise ZWorkforceBridgeError(
+                "zWorkforce agent lookup returned an invalid response shape",
+                status_code=502,
+            )
+        return [dict(item) for item in items]
+
+    @classmethod
     async def dispatch_task(
         cls,
         title: str,
