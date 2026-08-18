@@ -1,0 +1,26 @@
+{
+  "name": "@zworkforce/zider",
+  "version": "1.3.0",
+  "description": "Full-stack AI Browser Sidebar, ChatPDF, YouTube/Web Summarizer, and Companion for zWorkforce",
+  "main": "extension/background.js",
+  "scripts": {
+    "dev": "uvicorn server.app.main:app --host 0.0.0.0 --port 8085 --reload",
+    "start": "uvicorn server.app.main:app --host 0.0.0.0 --port 8085",
+    "build": "node scripts/verify_csp.test.mjs",
+    "test": "node --test scripts/verify_csp.test.mjs extension/test_context_menu.mjs server/test/rerank_engine.test.mjs"
+  },
+  "keywords": [
+    "ai",
+    "sidebar",
+    "browser-extension",
+    "chatgpt",
+    "claude",
+    "gemini",
+    "deepseek",
+    "chatpdf",
+    "summarizer",
+    "zworkforce"
+  ],
+  "author": "zWorkforce Core Team",
+  "license": "MIT"
+}
