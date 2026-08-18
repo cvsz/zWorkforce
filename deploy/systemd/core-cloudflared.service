@@ -1,0 +1,18 @@
+[Unit]
+Description=zWorkforce Core Cloudflare Tunnel connector
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/cvsz/zworkforce
+ExecStart=/home/cvsz/zworkforce/scripts/cloudflare/cloudflare-tunnel.sh
+Restart=always
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=default.target

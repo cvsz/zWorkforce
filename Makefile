@@ -1,7 +1,22 @@
 PYTHON ?= python3
 VERSION ?= 3.0.3
 
-.PHONY: check test compile doctor postgres-test release-check shell-check run worker scheduler lint-security docker-build
+.PHONY: help check test compile doctor postgres-test release-check shell-check run worker scheduler lint-security docker-build
+
+help:
+	@echo "zWorkforce Control Plane - Available Makefile Targets:"
+	@echo "  make check          - Run all test, doctor, release-check, shell-check, and lint-security gates"
+	@echo "  make compile        - Compile Python bytecode across zworkforce, tests, and scripts"
+	@echo "  make test           - Run full Python unit test discovery suite"
+	@echo "  make doctor         - Run zWorkforce system doctor health check"
+	@echo "  make postgres-test  - Run PostgreSQL integration tests (requires ZWORKFORCE_TEST_POSTGRES_URL)"
+	@echo "  make release-check  - Verify release artifacts and metadata integrity"
+	@echo "  make shell-check    - Syntax check bash scripts and frontend JS"
+	@echo "  make lint-security  - Verify no shell=True or exposed static provider credentials"
+	@echo "  make run            - Start local zWorkforce API server"
+	@echo "  make worker         - Start local background worker daemon"
+	@echo "  make scheduler      - Run one-shot scheduler tick"
+	@echo "  make docker-build   - Build production Docker image"
 
 check: test doctor release-check shell-check lint-security
 
