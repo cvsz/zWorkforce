@@ -143,7 +143,8 @@ class AgentRunner:
             canonical = address.compressed
             if canonical not in addresses:
                 addresses.append(canonical)
-        return value, tuple(sorted(addresses))
+        canonical_url = urlunsplit((parsed.scheme.lower(), parsed.netloc.lower(), parsed.path, parsed.query, ""))
+        return canonical_url, tuple(sorted(addresses))
 
     @classmethod
     def _validate_action(cls, item: Mapping[str, Any]) -> BrowserAction:
