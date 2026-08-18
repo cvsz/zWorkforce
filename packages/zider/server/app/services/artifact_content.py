@@ -35,6 +35,9 @@ class GovernedArtifactContentLoader:
         encoded = payload.get("content_base64")
         if not isinstance(encoded, str):
             raise ZWorkforceBridgeError("zWorkforce artifact content is malformed", status_code=502)
+        max_encoded = ((self.max_bytes + 2) // 3) * 4
+        if len(encoded) > max_encoded:
+            raise ZWorkforceBridgeError("zWorkforce artifact content exceeds the configured bound", status_code=502)
         try:
             data = base64.b64decode(encoded, validate=True)
         except (ValueError, binascii.Error) as exc:
