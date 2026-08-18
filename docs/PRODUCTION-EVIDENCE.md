@@ -36,9 +36,25 @@ The rows below record repository regression evidence observed on exact PR #160 h
 
 Additional repository execution evidence recorded by PR #154: 241/241 Python tests PASS, 36/36 Z.A.R.V.I.S. tests PASS, `zworkforce doctor` HEALTHY, and 7/7 connector tests PASS. These are repository/test evidence only.
 
+## Local compose stack drills (2026-08-18)
+
+The operator's local `compose.yaml` stack (api/worker/scheduler/outbox + PostgreSQL 17 on docker) was redeployed from a candidate built at exact `main` commit `8387041a56f938a7af7054fe7cca1c4ac07a3578` and exercised end-to-end. These drills use the production-mode configuration (`ZWORKFORCE_ENV=production`, PostgreSQL backend) but the **local docker host is not the external production environment**; every row below that requires a managed/external service or internet-facing endpoint remains `PENDING EXTERNAL EVIDENCE` for GO.
+
+| Drill | Evidence recorded | Status |
+| --- | --- | --- |
+| Candidate image build | `zworkforce:3.0.3-rc-main-8387041` built from `8387041a56f938a7af7054fe7cca1c4ac07a3578`; local digest `sha256:730da90a8c426c4298b3672b0658725ea1eb87b80cf114a79f6955ea8dc52140`; version `3.0.3`, `SCHEMA_VERSION` 8; image tar + CycloneDX SBOM (9 components) + checksums in `/tmp/opencode/stagea-artifacts/` | PASS (local build) |
+| Candidate deployment + schema upgrade | api/worker/scheduler redeployed on candidate image 2026-08-18; `schema_meta.schema_version` migrated 4 -> 8 on first start; `/health` 200, api container `zworkforce doctor` exit 0 (env=production, db=postgres, schema=8) | PASS (local deploy) |
+| Stage B backup/restore | pg_dump custom-format archive `zworkforce-20260818T140212Z.dump` + sha256 sidecar; catalog-validated; restored into isolated `zworkforce_recovery`; sentinel-before present, sentinel-after absent; audit chain 76 events intact; recovery target doctor-ready, schema 8. Observed RPO ≈ 2.1 s (backup duration, WAL 0/84095F8 -> 0/8412430), RTO ≈ 3.0 s pg_restore, 7.4 s to doctor-ready | PASS on local PG 17.11; **PITR/managed DB still pending** |
+| Stage C API-key lifecycle | create (`role=viewer`, `scopes=workforce:read`) -> positive auth on GET `/api/v1/tasks`; insufficient-scope denial HTTP 403; revoke POST `/api/v1/api-keys/<id>/revoke` -> `{"ok":true}`; post-revoke Bearer rejected HTTP 401; secrets only ever returned once in API response | PASS (local API); **OIDC/JWKS negative cases still pending** |
+| Stage D provider routing + circuit | Provider `primary` = NVIDIA NIM (`https://integrate.api.nvidia.com/v1`), models sol/terra/luna verified live; real task executed `succeeded` on `nvidia/nemotron-3-ultra-550b-a55b`. Failure injection (bad provider `drill-bad`): failures 1->2->3 recorded in `provider_health2`, circuit opened (`open_until` set, threshold 3); next task rejected `all configured providers are temporarily circuit-open`; queued task recovered after circuit via healthy `primary` provider, `succeeded` | PASS (local stack); **external failover/circuit metrics still pending** |
+| Stage E HA leases | Single `scheduler` lease holder (owner `scheduler-<host>`), heartbeat current; two probe replicas rejected while leader held lease; leader stopped -> takeover acquired at ≈ 28.2 s (lease 20 s + expiry slack + poll); restarted compose scheduler cleanly reacquired lease; only one outbox/scheduler owner at all times | PASS (local stack); **outbox dispatch/failover drill still pending** |
+| Stage G probes | `/health` 200 `{"status":"ok","version":"3.0.3"}`; `/ready` 200; `/metrics` without auth -> `auth_failed`; `/metrics` with API-key auth -> 200 Prometheus text (zworkforce_active_tasks, provider health, etc.); `/api/v1/api-keys` requires `admin`+`key:read`, returns key rows without secrets | PASS (local stack); **OTLP/metrics backend/alert routing pending** |
+
+Note: the earlier running image (`ghcr.io/cvsz/zworkforce:v3.0.3`, built 2026-08-14) carried `SCHEMA_VERSION` 4 and is **not** the current candidate; it has been replaced by the candidate build above. The immutable GHCR-published `v3.0.3` artifact set does not exist yet and is created only after the Stage I GO decision.
+
 ## Stage A — staging topology and secrets
 
-Status: **PENDING EXTERNAL EVIDENCE**
+Status: **PARTIAL — local candidate deployed (see local drills); external cluster/ingress and immutable GHCR digest PENDING EXTERNAL EVIDENCE**
 
 Record:
 - staging cluster/account/region and ingress hostname;
@@ -61,7 +77,7 @@ Artifact/reference:
 
 ## Stage B — PostgreSQL durability, backup, restore, and PITR
 
-Status: **PENDING EXTERNAL EVIDENCE**
+Status: **PARTIAL — local PG 17.11 backup/restore drill PASS (see local drills); managed/external PITR and RPO/RTO evidence PENDING**
 
 The repository CI performs a real PostgreSQL dump/restore regression drill, but production readiness additionally requires the managed/external database recovery path.
 
@@ -89,7 +105,7 @@ Artifact/reference:
 
 ## Stage C — identity and credential lifecycle
 
-Status: **PENDING EXTERNAL EVIDENCE**
+Status: **PARTIAL — API-key lifecycle PASS (see local drills); OIDC/JWKS positive and negative cases PENDING**
 
 Verify both native OIDC and API-key operational paths used by the target environment:
 - valid OIDC issuer/audience/JWKS authentication;
@@ -110,7 +126,7 @@ Artifact/reference:
 
 ## Stage D — provider routing, failover, and bounded execution
 
-Status: **PENDING EXTERNAL EVIDENCE**
+Status: **PARTIAL — routing + circuit open/deny/recover PASS on local stack (see local drills); external provider failover/circuit metrics PENDING**
 
 Verify with configured external providers:
 - Luna/Terra/Sol routing resolves to intended models;
@@ -131,7 +147,7 @@ Artifact/reference:
 
 ## Stage E — scheduler, worker, outbox, and HA leases
 
-Status: **PENDING EXTERNAL EVIDENCE**
+Status: **PARTIAL — single-lease-leader and failover PASS on local stack (see local drills); outbox dispatch/failover and task-lease reclaim drills PENDING**
 
 With at least two eligible replicas where the deployment topology supports it:
 - prove only one scheduler lease holder performs each due action;
@@ -173,7 +189,7 @@ Artifact/reference:
 
 ## Stage G — observability and SLO evidence
 
-Status: **PENDING EXTERNAL EVIDENCE**
+Status: **PARTIAL — `/health`, `/ready`, authenticated `/metrics` verified on local stack (see local drills); OTLP collector, metric/alert visibility and alert routing PENDING**
 
 Verify:
 - `/health`, `/ready`, and authenticated `/metrics` from the deployed environment;
