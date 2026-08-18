@@ -109,6 +109,124 @@ class ZarvisVoiceTests(unittest.TestCase):
         self.assertEqual(ctx.exception.code, "voice_gateway_rejected")
         self.assertNotIn("secret details", str(ctx.exception))
 
+    def test_rejects_upstream_payload_that_echoes_service_token(self):
+        def opener(request, timeout):
+            return FakeResponse({
+                "ticket": "server-secret-token",
+                "expires_at": "2026-08-15T00:01:00.000Z",
+                "websocket_url": "wss://voice.example.com/v1/realtime",
+            })
+
+        service = ZarvisVoiceService(self.config(), opener=opener)
+        with self.assertRaises(ZarvisVoiceError) as ctx:
+            service.issue_session(tenant_id="default", subject_id="user", request_id="request-5")
+        self.assertEqual(ctx.exception.code, "voice_gateway_invalid_response")
+        self.assertNotIn("server-secret-token", str(ctx.exception))
+
+    def test_issue_session_result_never_contains_token_or_authorization_keys(self):
+        def opener(request, timeout):
+            return FakeResponse({
+                "ticket": "signed-ticket",
+                "expires_at": "2026-08-15T00:01:00.000Z",
+                "websocket_url": "wss://voice.example.com/v1/realtime",
+                "service_token": "leaked",
+                "Authorization": "Bearer leaked",
+            })
+
+        service = ZarvisVoiceService(self.config(), opener=opener)
+        result = service.issue_session(tenant_id="default", subject_id="user", request_id="request-6")
+        rendered = json.dumps(result)
+        self.assertNotIn("service_token", rendered)
+        self.assertNotIn("Authorization", rendered)
+        self.assertNotIn("Bearer", rendered)
+        self.assertNotIn("server-secret-token", rendered)
+        self.assertEqual(set(result), {"ticket", "expires_at", "websocket_url", "ticket_transport", "model", "transport"})
+
+
+class ZarvisVoiceApiTests(unittest.TestCase):
+    """API-level coverage: the 201 session response must never carry the service token."""
+
+    def setUp(self):
+        import threading
+        from http.server import ThreadingHTTPServer
+
+        from tests.common import stack
+        from zworkforce.api import App
+
+        self.temp, self.settings, self.db, self.provider, self.engine, self.auth = stack()
+        self.app = App(self.settings, self.db, self.engine, self.auth, self.provider)
+        self.app.voice = ZarvisVoiceService(
+            ZarvisVoiceConfig(
+                enabled=True,
+                gateway_url="http://voice-gateway:8450",
+                service_token="server-secret-token",
+                websocket_allowlist=("wss://voice.example.com",),
+                model="voice-local",
+                timeout_seconds=2.0,
+            ),
+            opener=self._opener,
+        )
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), self.app.handler())
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
+
+    def tearDown(self):
+        self.server.shutdown()
+        self.server.server_close()
+        self.engine.shutdown()
+        self.temp.cleanup()
+
+    def _opener(self, request, timeout):
+        return FakeResponse({
+            "ticket": "signed-ticket",
+            "expires_at": "2026-08-15T00:01:00.000Z",
+            "websocket_url": "wss://voice.example.com/v1/realtime",
+        })
+
+    def _session(self, body=None):
+        import urllib.request
+
+        payload = json.dumps(body or {}).encode("utf-8")
+        req = urllib.request.Request(
+            self.base + "/api/v1/zarvis/voice/session",
+            data=payload,
+            headers={"Content-Type": "application/json", "Authorization": "Bearer test-admin-secret"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return resp.status, json.loads(resp.read())
+
+    def test_session_response_body_is_browser_safe(self):
+        status, data = self._session()
+        self.assertEqual(status, 201)
+        rendered = json.dumps(data)
+        self.assertNotIn("service_token", rendered)
+        self.assertNotIn("Authorization", rendered)
+        self.assertNotIn("server-secret-token", rendered)
+        self.assertEqual(set(data), {"ticket", "expires_at", "websocket_url", "ticket_transport", "model", "transport"})
+        self.assertEqual(data["ticket"], "signed-ticket")
+
+    def test_session_response_rejects_upstream_token_echo(self):
+        import urllib.error
+
+        original_opener = self._opener
+
+        def echoing_opener(request, timeout):
+            return FakeResponse({
+                "ticket": "server-secret-token",
+                "expires_at": "2026-08-15T00:01:00.000Z",
+                "websocket_url": "wss://voice.example.com/v1/realtime",
+            })
+
+        self.app.voice = ZarvisVoiceService(self.app.voice.config, opener=echoing_opener)
+        with self.assertRaises(urllib.error.HTTPError) as ctx:
+            self._session()
+        self.assertEqual(ctx.exception.code, 502)
+        body = json.loads(ctx.exception.read().decode("utf-8"))
+        self.assertEqual(body["error"]["code"], "voice_gateway_invalid_response")
+        self.assertNotIn("server-secret-token", json.dumps(body))
+
 
 if __name__ == "__main__":
     unittest.main()

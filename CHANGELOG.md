@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.0.3 — 2026-08-17
 
 ### Autonomous Control Plane & Subsystems
 - **MCP Reverse Tunnel Gateway** (`zworkforce/tunnel.py`): Encrypted localhost-to-cloud reverse tunnel with heartbeat fencing and tenant isolation (PR #117).
@@ -16,8 +16,6 @@
 ### Free-model coding CLI
 - Added `zktcoder`: a zero-dependency, stdin-driven coding CLI for the zWorkforce OpenAI-compatible gateway (Claude Fable 5 / DeepSeek V4 and friends) with a model selector, `--list-models`, `--cwd`, and no telemetry.
 - Registered the `zktcoder` console script and pointed the `ZworkforceLocalEndpoint` and `zworkforce_code_agent` tool at it (falling back to the legacy `zwf-coder` binary).
-
-## 3.0.3 — 2026-08-14
 
 ### Release readiness and operator experience
 - Promoted active Python, Compose, Kubernetes, container-publishing, dashboard, and Makefile metadata to the `v3.0.3` release candidate.
