@@ -66,7 +66,15 @@ def _sha256(value: str) -> str:
 
 def _safe_destination(raw_url: str) -> str:
     parsed = urlsplit(raw_url)
-    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, "", ""))
+    host = parsed.hostname or ""
+    if ":" in host and not host.startswith("["):
+        host = f"[{host}]"
+    try:
+        port = parsed.port
+    except ValueError:
+        port = None
+    authority = host if port is None else f"{host}:{port}"
+    return urlunsplit((parsed.scheme, authority, parsed.path, "", ""))
 
 
 def browser_action_binding(action: BrowserAction) -> str:
@@ -208,6 +216,9 @@ class ZWorkforceMutationApprovalAdapter:
         approved_at = _parse_timestamp(task.get("approved_at"))
         if approved_at is None:
             return False
+        now = self._now().astimezone(timezone.utc)
+        if approved_at > now:
+            return False
         if not str(task.get("created_by") or "").strip():
             return False
 
@@ -221,7 +232,7 @@ class ZWorkforceMutationApprovalAdapter:
         if envelope.safe_destination != _safe_destination(action.url):
             return False
         expires_at = _parse_timestamp(envelope.expires_at)
-        if expires_at is None or approved_at > expires_at or self._now().astimezone(timezone.utc) > expires_at:
+        if expires_at is None or approved_at > expires_at or now > expires_at:
             return False
 
         if any(str(item.get("decision") or "") == "reject" for item in approvals):
