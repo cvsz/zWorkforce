@@ -7,6 +7,8 @@ Repository release candidate: `v3.0.3`.
 
 Forward feature plans under `planning/` (including Z.A.R.V.I.S., Zeto, Zider, zsp-aitool, router, Hermes/Spawn and Skywork-inspired workspace upgrades) are not automatically `v3.0.3` release blockers. Treat an item as a current-release blocker only when `ROADMAP.md`, `planning/exec-planning-zwf.md`, `docs/PRODUCTION-EVIDENCE.md`, a failing required check/security finding, or an explicit master-plan requirement binds it to the `v3.0.3` candidate. Never mark forward work complete merely to make release status green.
 
+Use `planning/RELEASE-SCOPE-STATUS.md` as the normalized subsystem classification overlay for release triage. It does not replace subsystem Definitions of Complete; it translates broad feature-plan labels such as `Active`, `Production Target`, and `Integrated` into the four-state current-release vocabulary defined by `ROADMAP.md`.
+
 ## Repository intent
 zWorkforce is a production AI Workforce control plane. Changes must preserve tenant isolation, server-side secrets, bounded execution, explicit mutation authorization and durable state transitions.
 
