@@ -90,6 +90,12 @@ class DurableBrowserEffectExecutor:
         encoded = json.dumps(dict(result), sort_keys=True, separators=(",", ":"), default=str)
         return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
+    async def _best_effort_unknown(self, effect_id: str, error_code: str) -> None:
+        try:
+            await self.controller.finish(effect_id, status="unknown", error_code=error_code)
+        except Exception:
+            pass
+
     async def execute(self, action: BrowserAction) -> Mapping[str, Any]:
         if action.kind not in MUTATING_ACTIONS:
             return await self.delegate.execute(action)
@@ -114,16 +120,15 @@ class DurableBrowserEffectExecutor:
         try:
             result = await self.delegate.execute(action)
         except Exception:
-            try:
-                await self.controller.finish(effect_id, status="unknown", error_code="execution_ambiguous")
-            except Exception:
-                pass
+            await self._best_effort_unknown(effect_id, "execution_ambiguous")
             raise
         if not isinstance(result, Mapping):
-            try:
-                await self.controller.finish(effect_id, status="unknown", error_code="invalid_result")
-            finally:
-                raise BrowserAutomationUnavailable("browser executor returned an invalid result")
+            await self._best_effort_unknown(effect_id, "invalid_result")
+            raise BrowserAutomationUnavailable("browser executor returned an invalid result")
         digest = self._result_digest(result)
-        await self.controller.finish(effect_id, status="succeeded", result_sha256=digest)
+        try:
+            await self.controller.finish(effect_id, status="succeeded", result_sha256=digest)
+        except Exception:
+            await self._best_effort_unknown(effect_id, "completion_ambiguous")
+            raise
         return {**dict(result), "effect_id": effect_id, "result_sha256": digest}
