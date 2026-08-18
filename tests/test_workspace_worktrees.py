@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from tests.common import stack
 from zworkforce.workspace_grants import WorkspaceGrantService
 from zworkforce.workspace_worktrees import WorkspaceWorktreeService
-from zworkforce.worktree import WorktreeCommandResult, WorktreeCommitResult, WorktreeError, WorktreeStatus
+from zworkforce.worktree import GitWorktreeAdapter, WorktreeCommandResult, WorktreeCommitResult, WorktreeError, WorktreeStatus
 
 
 class FakeAdapter:
@@ -380,6 +380,72 @@ class WorkspaceWorktreeServiceTests(unittest.TestCase):
         self.assertEqual(res.pr_url, "https://github.com/cvsz/zworkforce/pull/42")
         self.assertEqual(len(client_calls), 1)
         self.assertEqual(client_calls[0], ("repo", "feat/gh", "main", "feat: submit PR", "Detailed review notes", True))
+
+
+class WorkspaceWorktreeTraversalTests(unittest.TestCase):
+    """Path-traversal rejection through the real adapter bound to the service."""
+
+    def setUp(self):
+        self.temp, self.settings, self.db, self.provider, self.engine, self.auth = stack()
+        self.root = self.settings.workspace_root / "repo-root"
+        (self.root / "repo").mkdir(parents=True)
+        service = WorkspaceGrantService(self.settings, self.db)
+        grant = service.normalize(
+            {
+                "name": "repo grant",
+                "root": "repo-root",
+                "read": True,
+                "write": True,
+                "commands": ["git", "python"],
+                "network_policy": "deny",
+                "expires_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(timespec="seconds"),
+            }
+        )
+        self.grant = self.db.upsert_workspace_grant("default", grant, "tester")
+        self.service = WorkspaceWorktreeService(
+            self.settings,
+            self.db,
+            mutation_authorizer=lambda *_args: None,
+            adapter_factory=GitWorktreeAdapter,
+        )
+
+    def tearDown(self):
+        self.engine.shutdown()
+        self.temp.cleanup()
+
+    def _assert_traversal_rejected(self, path):
+        with self.assertRaises(WorktreeError) as ctx:
+            self.service.status("default", "alice", self.grant["id"], path)
+        self.assertNotIn("alice", str(ctx.exception))
+
+    def test_rejects_dotdot_traversal_paths(self):
+        for bad in ("../../etc/passwd", "../escape", "repo/../../etc/passwd", ".."):
+            self._assert_traversal_rejected(bad)
+
+    def test_rejects_url_encoded_traversal_segments(self):
+        for bad in ("%2e%2e/secret", "%2E%2E/secret", "repo/%2e%2e/secret", "%2e./secret", ".%2e/secret"):
+            self._assert_traversal_rejected(bad)
+
+    def test_rejects_symlink_outside_grant_root(self):
+        link = self.root / "escape"
+        try:
+            link.symlink_to(self.root.parent, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            self.skipTest("symlink creation unavailable")
+        self._assert_traversal_rejected("escape")
+        self._assert_traversal_rejected("repo/../escape")
+
+    def test_rejects_traversal_on_destination_paths(self):
+        for bad in ("../escape", "%2e%2e/secret"):
+            with self.assertRaises(WorktreeError):
+                self.service.create_feature_worktree(
+                    "default",
+                    "alice",
+                    self.grant["id"],
+                    repo_relative="repo",
+                    destination_relative=bad,
+                    branch="feat/nope",
+                )
 
 
 if __name__ == "__main__":

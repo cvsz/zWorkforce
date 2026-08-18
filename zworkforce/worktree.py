@@ -101,7 +101,7 @@ class GitWorktreeAdapter:
 
     def _resolve_existing(self, relative: str, *, directory: bool = True) -> Path:
         candidate = Path(str(relative or "."))
-        if candidate.is_absolute() or ".." in candidate.parts:
+        if candidate.is_absolute() or ".." in candidate.parts or any("%2e" in part.lower() for part in candidate.parts):
             raise WorktreeError("path must be relative to the workspace grant root")
         resolved = (self.grant_root / candidate).resolve(strict=True)
         if not self._is_within(resolved, self.grant_root):
@@ -112,7 +112,7 @@ class GitWorktreeAdapter:
 
     def _resolve_new_directory(self, relative: str) -> Path:
         candidate = Path(str(relative or "").strip())
-        if not candidate.parts or candidate.is_absolute() or ".." in candidate.parts:
+        if not candidate.parts or candidate.is_absolute() or ".." in candidate.parts or any("%2e" in part.lower() for part in candidate.parts):
             raise WorktreeError("destination must be a non-empty relative path")
         parent = (self.grant_root / candidate.parent).resolve(strict=True)
         if not self._is_within(parent, self.grant_root):
