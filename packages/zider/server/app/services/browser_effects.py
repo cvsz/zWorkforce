@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Any, Mapping, Protocol
+from typing import Any, Awaitable, Callable, Mapping, Protocol
 
 import httpx
 
@@ -15,6 +15,9 @@ class BrowserEffectDelegate(Protocol):
     enforces_resolved_addresses: bool
 
     async def execute(self, action: BrowserAction) -> Mapping[str, Any]: ...
+
+
+CancelChecker = Callable[[BrowserAction], Awaitable[bool]]
 
 
 class ZWorkforceBrowserEffectController:
@@ -79,11 +82,17 @@ class DurableBrowserEffectExecutor:
 
     enforces_resolved_addresses = True
 
-    def __init__(self, delegate: BrowserEffectDelegate, controller: ZWorkforceBrowserEffectController | None = None) -> None:
+    def __init__(
+        self,
+        delegate: BrowserEffectDelegate,
+        controller: ZWorkforceBrowserEffectController | None = None,
+        cancel_checker: CancelChecker | None = None,
+    ) -> None:
         if getattr(delegate, "enforces_resolved_addresses", False) is not True:
             raise BrowserAutomationUnavailable("browser effect delegate must enforce resolved addresses")
         self.delegate = delegate
         self.controller = controller or ZWorkforceBrowserEffectController()
+        self.cancel_checker = cancel_checker
 
     @staticmethod
     def _result_digest(result: Mapping[str, Any]) -> str:
@@ -125,6 +134,16 @@ class DurableBrowserEffectExecutor:
         if not isinstance(result, Mapping):
             await self._best_effort_unknown(effect_id, "invalid_result")
             raise BrowserAutomationUnavailable("browser executor returned an invalid result")
+        if self.cancel_checker is not None:
+            try:
+                canceled = await self.cancel_checker(action)
+            except Exception:
+                canceled = False
+            if canceled:
+                await self._best_effort_unknown(effect_id, "canceled_during_execution")
+                raise BrowserAutomationUnavailable(
+                    "browser mutation result is ambiguous: the approval task was canceled during execution"
+                )
         digest = self._result_digest(result)
         try:
             await self.controller.finish(effect_id, status="succeeded", result_sha256=digest)
