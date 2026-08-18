@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import base64
-from typing import Mapping
+from typing import Any, Awaitable, Callable, Mapping
 from urllib.parse import urlsplit
 
 from .agent_runner import (
@@ -14,6 +14,7 @@ from .agent_runner import (
 
 
 MAX_SCREENSHOT_BYTES = 4 * 1024 * 1024
+ArtifactLoader = Callable[[str], Awaitable[Mapping[str, Any]]]
 
 
 def _effective_port(parsed) -> int:
@@ -49,7 +50,12 @@ def _encode_screenshot(data: bytes) -> dict[str, object]:
     }
 
 
-async def _execute_approved_mutation(page, action: BrowserAction, timeout_ms: int) -> Mapping[str, object]:
+async def _execute_approved_mutation(
+    page,
+    action: BrowserAction,
+    timeout_ms: int,
+    artifact_loader: ArtifactLoader | None,
+) -> Mapping[str, object]:
     locator = page.locator(action.selector).first
     if action.kind == "click":
         await locator.click(timeout=timeout_ms)
@@ -65,7 +71,26 @@ async def _execute_approved_mutation(page, action: BrowserAction, timeout_ms: in
         )
         return {"ok": True, "action": "submit"}
     if action.kind == "upload":
-        raise BrowserPolicyError("browser upload requires the governed artifact-content adapter")
+        if artifact_loader is None:
+            raise BrowserPolicyError("browser upload requires the governed artifact-content adapter")
+        artifact = dict(await artifact_loader(action.artifact_id))
+        name = str(artifact.get("name") or "upload.bin")[:255]
+        mime_type = str(artifact.get("mime_type") or "application/octet-stream")[:255]
+        buffer = artifact.get("buffer")
+        digest = str(artifact.get("sha256") or "")
+        if not isinstance(buffer, (bytes, bytearray)) or not buffer:
+            raise BrowserPolicyError("governed artifact content is empty or invalid")
+        await locator.set_input_files(
+            {"name": name, "mimeType": mime_type, "buffer": bytes(buffer)},
+            timeout=timeout_ms,
+        )
+        return {
+            "ok": True,
+            "action": "upload",
+            "artifact_id": action.artifact_id,
+            "artifact_sha256": digest,
+            "size_bytes": len(buffer),
+        }
     raise BrowserPolicyError("unsupported browser mutation")
 
 
@@ -76,9 +101,16 @@ class PlaywrightReadOnlyTransport:
     disables_automatic_redirects = True
     verifies_tls_server_identity = True
 
-    def __init__(self, *, headless: bool = True, allow_mutations: bool = False) -> None:
+    def __init__(
+        self,
+        *,
+        headless: bool = True,
+        allow_mutations: bool = False,
+        artifact_loader: ArtifactLoader | None = None,
+    ) -> None:
         self.headless = bool(headless)
         self.allow_mutations = bool(allow_mutations)
+        self.artifact_loader = artifact_loader
 
     @staticmethod
     def _loader():
@@ -162,7 +194,7 @@ class PlaywrightReadOnlyTransport:
                         return {**_encode_screenshot(screenshot), "title": (await page.title())[:500]}
                     if action.kind in MUTATING_ACTIONS:
                         try:
-                            result = dict(await _execute_approved_mutation(page, action, timeout_ms))
+                            result = dict(await _execute_approved_mutation(page, action, timeout_ms, self.artifact_loader))
                         except Exception:
                             if blocked_navigation_url:
                                 return {"redirect_url": blocked_navigation_url, "mutation_redirect_blocked": True}
