@@ -52,6 +52,18 @@ The operator's local `compose.yaml` stack (api/worker/scheduler/outbox + Postgre
 
 Note: the earlier running image (`ghcr.io/cvsz/zworkforce:v3.0.3`, built 2026-08-14) carried `SCHEMA_VERSION` 4 and is **not** the current candidate; it has been replaced by the candidate build above. The immutable GHCR-published `v3.0.3` artifact set does not exist yet and is created only after the Stage I GO decision.
 
+## External publication state (verified 2026-08-18)
+
+Verified via `gh release list` / `gh release view` / the GHCR package page on 2026-08-18:
+
+| Registry | State |
+| --- | --- |
+| GitHub Releases | Latest = `v3.0.2` (2026-08-12T23:36:13Z, target `main`, assets `SHA256SUMS`, `zworkforce-3.0.2-py3-none-any.whl`, `zworkforce-3.0.2.cdx.json`, `zworkforce-3.0.2.tar.gz`); `v3.0.1` (2026-08-09T08:37:04Z); `v3.0.0` (2026-08-09T04:47:21Z) |
+| GHCR `ghcr.io/cvsz/zworkforce` | Published versions: `latest`/`3.0.2`/`v3.0.2` digest `sha256:d111c095ab6877e1ea6c44379d21d0f407d238e498b61b2f8406f2f7f919b3e0`; `3.0.1`/`v3.0.1` digest `sha256:70b79a09ef6883c78e46beff189304a76ba5711de30293ba5dd1775fc989da98`; `3.0.0`/`v3.0.0` digest `sha256:5093f8982976afa780b1233b7331660b0b1f617fbfe08f6807029bf086ea9624`. **No `3.0.3` image exists** |
+| Git tags | `v3.0.2` -> `f56544ba58281e910dfa2132829f79992afa2a50`; `v3.0.1` -> `d5c0655c1ae343334e2ef2dc17f770e76461ee82`; `v3.0.0` -> `1425192f9f544683b37352032298138c8b36b519` |
+
+No immutable `v3.0.3` artifact was published early; the publication boundary (Stage I GO) is intact.
+
 ## Stage A — staging topology and secrets
 
 Status: **PARTIAL — local candidate deployed (see local drills); external cluster/ingress and immutable GHCR digest PENDING EXTERNAL EVIDENCE**
