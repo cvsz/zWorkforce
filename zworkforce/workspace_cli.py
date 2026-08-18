@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from . import cli
-from .workspace_grant_api import WorkspaceGrantApp
+from .browser_effect_api import BrowserEffectApp
 
 
 def main(argv=None):
-    """Run the existing CLI while composing workspace/context/command/evidence/grant routes into API serve mode."""
+    """Run the existing CLI while composing workspace and browser-effect routes into API serve mode."""
     previous = cli.App
-    cli.App = WorkspaceGrantApp
+    cli.App = BrowserEffectApp
     try:
         return cli.main(argv)
     finally:

@@ -4,6 +4,7 @@ import os
 
 from .agent_runner import AgentRunner, BrowserAutomationUnavailable
 from .browser_approval import ZWorkforceMutationApprovalAdapter
+from .browser_effects import DurableBrowserEffectExecutor
 from .browser_executor import PinnedBrowserExecutor
 from .playwright_runtime import PlaywrightReadOnlyTransport
 
@@ -11,12 +12,10 @@ from .playwright_runtime import PlaywrightReadOnlyTransport
 async def configure_browser_runtime() -> str:
     """Configure the explicitly selected browser runtime.
 
-    Disabled is the safe default. Enabling Playwright performs a startup probe so
-    a missing Chromium binary fails startup instead of producing fake success.
-    Mutating click/submit execution is enabled only when the durable zWorkforce
-    approval authorizer is installed; upload remains fail-closed until the
-    governed artifact-content boundary is wired. Read-only redirects are
-    revalidated through the same AgentRunner allowlist/DNS/public-IP policy.
+    Disabled is the safe default. Mutating click/submit execution requires both
+    durable zWorkforce approval validation and durable browser-effect fencing.
+    Unknown effects are never automatically replayed. Upload remains fail-closed
+    until the governed artifact-content boundary is wired.
     """
 
     runtime = os.getenv("ZIDER_BROWSER_RUNTIME", "disabled").strip().lower()
@@ -47,6 +46,8 @@ async def configure_browser_runtime() -> str:
         redirect_validator=AgentRunner._validate_url,
         max_redirects=max_redirects,
     )
+    if approval_authorizer is not None:
+        executor = DurableBrowserEffectExecutor(executor)
 
     AgentRunner.configure(
         executor=executor,

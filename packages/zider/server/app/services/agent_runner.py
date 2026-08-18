@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import inspect
 import ipaddress
 import os
@@ -36,6 +36,7 @@ class BrowserAction:
     artifact_id: str = ""
     idempotency_key: str = ""
     resolved_addresses: tuple[str, ...] = ()
+    approval_task_id: str = ""
 
 
 class BrowserExecutor(Protocol):
@@ -66,14 +67,7 @@ def _safe_url_metadata(raw_url: str) -> str:
 
 
 class AgentRunner:
-    """Policy boundary for Zider browser automation.
-
-    The BFF does not ship a privileged browser driver by default. A production
-    executor must be injected explicitly and must enforce the public addresses
-    resolved during policy validation so DNS rebinding cannot redirect a
-    validated hostname to a private destination. Until then the endpoint fails
-    closed rather than returning a fabricated success response.
-    """
+    """Policy boundary for Zider browser automation."""
 
     _executor: BrowserExecutor | None = None
     _approval_authorizer: ApprovalAuthorizer | None = None
@@ -181,7 +175,7 @@ class AgentRunner:
         )
 
     @classmethod
-    async def _authorize_mutation(cls, action: BrowserAction, approval_token: str) -> None:
+    async def _authorize_mutation(cls, action: BrowserAction, approval_token: str) -> BrowserAction:
         if not approval_token or cls._approval_authorizer is None:
             raise BrowserApprovalRequired("mutating browser action requires explicit control-plane approval")
         decision = cls._approval_authorizer(action, approval_token)
@@ -189,6 +183,7 @@ class AgentRunner:
             decision = await decision
         if decision is not True:
             raise BrowserApprovalRequired("mutating browser action approval was denied")
+        return replace(action, approval_task_id=str(approval_token).strip())
 
     @classmethod
     def _require_pinned_executor(cls) -> BrowserExecutor:
@@ -196,9 +191,7 @@ class AgentRunner:
         if executor is None:
             raise BrowserAutomationUnavailable("browser automation executor is not configured")
         if getattr(executor, "enforces_resolved_addresses", False) is not True:
-            raise BrowserAutomationUnavailable(
-                "browser executor must enforce policy-validated resolved addresses"
-            )
+            raise BrowserAutomationUnavailable("browser executor must enforce policy-validated resolved addresses")
         return executor
 
     @classmethod
@@ -222,14 +215,12 @@ class AgentRunner:
 
         validated = tuple(cls._validate_action(item) for item in requested)
         steps: list[dict[str, Any]] = []
-        for index, action in enumerate(validated):
+        for index, original_action in enumerate(validated):
+            action = original_action
             if action.kind in MUTATING_ACTIONS:
-                await cls._authorize_mutation(action, approval_token)
+                action = await cls._authorize_mutation(action, approval_token)
             try:
-                result = await asyncio.wait_for(
-                    executor.execute(action),
-                    timeout=cls._timeout_seconds,
-                )
+                result = await asyncio.wait_for(executor.execute(action), timeout=cls._timeout_seconds)
             except asyncio.TimeoutError as exc:
                 raise BrowserAutomationUnavailable(
                     f"browser action timed out after {cls._timeout_seconds}s"
@@ -246,9 +237,4 @@ class AgentRunner:
                 }
             )
 
-        return {
-            "status": "completed",
-            "goal": objective,
-            "model": str(model or ""),
-            "steps": steps,
-        }
+        return {"status": "completed", "goal": objective, "model": str(model or ""), "steps": steps}
