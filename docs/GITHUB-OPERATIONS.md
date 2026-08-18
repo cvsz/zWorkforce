@@ -32,6 +32,14 @@ repository-side desired state: it must be reconciled with GitHub Rulesets by an
 operator or automation that has repository administration permission. Merely
 committing the JSON does not prove the server-side ruleset is applied.
 
+As of 2026-08-18 the server-side ruleset is applied on the default branch as
+ruleset ID **`20988030`** (`zWorkforce main release protection`, enforcement
+`active`) and is regression-checked against the committed contract. A
+Copilot-review ruleset (ID `20673774`) also applies to the default branch.
+If the server-side ruleset is recreated, replaced, or drifted, verify the
+committed JSON still matches the applied rules before relying on release
+gates.
+
 Global required checks must only include checks that are emitted for every pull
 request. In particular, `ZARVIS` uses path filters and its package-specific jobs
 must **not** be configured as global required contexts; they are mandatory when

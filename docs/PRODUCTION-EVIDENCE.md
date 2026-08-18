@@ -10,6 +10,7 @@ This ledger is the evidence boundary between repository-complete release readine
 | --- | --- |
 | Candidate version | `3.0.3` |
 | Candidate branch | `main` |
+| Default-branch ruleset | `zWorkforce main release protection` applied server-side, ruleset ID `20988030` (verified 2026-08-18) |
 | Reconciliation baseline | `4f8935759bda02a89bd0bc2eeb5b9a3ab6777045` |
 | Latest fully verified PR head | `c89076e6453babda328387958b5cbf3ca8ae80bd` (PR #157; merged as `4f8935759bda02a89bd0bc2eeb5b9a3ab6777045`) |
 | Final release candidate SHA | _record after the final candidate PR is merged and all mandatory checks rerun on that exact candidate_ |
