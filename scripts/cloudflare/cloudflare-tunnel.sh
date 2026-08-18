@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 ENV_FILE="${CLOUDFLARE_ENV_FILE:-$ROOT/.env.cloudflare}"
-CF_BIN="${CLOUDFLARED_BIN:-$ROOT/tools/bin/cloudflared}"
+CF_BIN="${CLOUDFLARED_BIN:-$ROOT/bin/cloudflared}"
 
 [[ -f "$ENV_FILE" ]] || { echo "Missing $ENV_FILE; copy .env.cloudflare.example first." >&2; exit 1; }
 set -a

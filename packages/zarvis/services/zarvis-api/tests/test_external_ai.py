@@ -4,6 +4,9 @@ import importlib.util
 import json
 from pathlib import Path
 
+import warnings
+warnings.filterwarnings("ignore", message=".*starlette.testclient.*")
+
 from fastapi.testclient import TestClient
 from prometheus_client import REGISTRY
 

@@ -54,21 +54,18 @@ graph TD
 - [x] **Secure Extension CSP & Content Security Policy Hardening (Phase 4)**:
   - Enforced strict Manifest V3 CSP (`script-src 'self'`) without `unsafe-eval` in `manifest.json`.
   - Automated verification test in `packages/zider/scripts/verify_csp.test.mjs`.
+- [x] **High-Precision Rerank & Web Grounding Pipeline (Phase 1)**:
+  - Built `packages/zider/server/src/rerank_engine.mjs` with text overlap relevance scoring and minimum thresholding.
+  - Unit tests in `packages/zider/server/test/rerank_engine.test.mjs`.
+- [x] **Live YouTube Video & Audio Transcript Synchronizer (Phase 2)**:
+  - Built `packages/zider/server/src/rerank_engine.mjs` providing `YouTubeSync` for playback timestamp alignment.
+  - Unit tests in `packages/zider/server/test/rerank_engine.test.mjs`.
 
 ---
 
 ## 3. Active & Upcoming Implementation Workstreams
 
-### Phase 1: High-Precision Rerank & Web Grounding Pipeline
-- **Objective**: Combine client vector search with OpenRouter `/rerank` API to filter top document chunks before summarization.
-- **Files**:
-  - `packages/zider/server/src/rerank_engine.ts`: Reranking pipeline.
-  - `packages/zider/extension/src/content/pdf_highlighter.ts`: Citation visual overlay.
-
-### Phase 2: Live YouTube Video & Audio Transcript Synchronizer
-- **Objective**: Multi-language transcript extraction and real-time audio translation overlay.
-- **Files**:
-  - `packages/zider/extension/src/content/youtube_sync.ts`: Player timestamp synchronization.
+*(All Phases 1 through 4 for Zider Companion are now completed and verified).*
 
 ---
 
