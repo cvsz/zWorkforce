@@ -15,7 +15,8 @@ async def configure_browser_runtime() -> str:
     a missing Chromium binary fails startup instead of producing fake success.
     Mutating click/submit execution is enabled only when the durable zWorkforce
     approval authorizer is installed; upload remains fail-closed until the
-    governed artifact-content boundary is wired.
+    governed artifact-content boundary is wired. Read-only redirects are
+    revalidated through the same AgentRunner allowlist/DNS/public-IP policy.
     """
 
     runtime = os.getenv("ZIDER_BROWSER_RUNTIME", "disabled").strip().lower()
@@ -39,7 +40,13 @@ async def configure_browser_runtime() -> str:
     )
     await transport.probe()
     timeout = int(os.getenv("ZIDER_BROWSER_TIMEOUT_SECONDS", "30"))
-    executor = PinnedBrowserExecutor(transport, timeout_seconds=timeout)
+    max_redirects = int(os.getenv("ZIDER_BROWSER_MAX_REDIRECTS", "5"))
+    executor = PinnedBrowserExecutor(
+        transport,
+        timeout_seconds=timeout,
+        redirect_validator=AgentRunner._validate_url,
+        max_redirects=max_redirects,
+    )
 
     AgentRunner.configure(
         executor=executor,
