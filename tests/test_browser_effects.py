@@ -143,6 +143,19 @@ class BrowserEffectLedgerTests(unittest.TestCase):
                 approval_task_id=task["id"],
             )
 
+    def test_claim_revalidates_approval_and_denies_canceled_task(self):
+        approval = self.approved_task("cancel race")
+        effect = self.db.begin_browser_effect(
+            "default",
+            idempotency_key="cancel-race-1",
+            action_sha256=ACTION_A,
+            approval_task_id=approval["id"],
+        )
+        self.db.update_task(approval["id"], cancel_requested=1, status="canceled")
+        current, should_execute = self.db.claim_browser_effect("default", effect["id"])
+        self.assertFalse(should_execute)
+        self.assertEqual(current["status"], "not_started")
+
 
 if __name__ == "__main__":
     unittest.main()
