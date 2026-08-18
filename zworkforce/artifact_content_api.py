@@ -22,14 +22,17 @@ class ArtifactContentApp(BrowserEffectApp):
                 match = _ARTIFACT_CONTENT.fullmatch(path)
                 if not match:
                     return super()._get_api(path)
-                ctx, response = self._principal("operator", "task:write")
+                ctx, response = self._principal("operator", "artifact:read")
                 if response:
                     return response
                 principal, tenant_id = ctx
                 artifact = app.db.get_artifact(tenant_id, match.group(1))
                 if not artifact:
                     return self._error(404, "artifact_not_found", "artifact not found")
-                configured = int(os.getenv("ZWORKFORCE_BROWSER_UPLOAD_MAX_BYTES", str(_DEFAULT_MAX_BYTES)))
+                try:
+                    configured = int(os.getenv("ZWORKFORCE_BROWSER_UPLOAD_MAX_BYTES", str(_DEFAULT_MAX_BYTES)))
+                except ValueError:
+                    configured = _DEFAULT_MAX_BYTES
                 max_bytes = max(1, min(configured, 16 * 1024 * 1024))
                 size = int(artifact.get("size_bytes") or 0)
                 if size < 0 or size > max_bytes:
