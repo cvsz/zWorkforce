@@ -1,14 +1,23 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
 
-test('zider extension manifest.json meets strict Manifest V3 invariants', () => {
-  const manifestPath = path.resolve('extension/manifest.json');
-  assert.ok(fs.existsSync(manifestPath), 'manifest.json must exist');
-  
-  const content = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  assert.equal(content.manifest_version, 3, 'Must be Manifest V3');
-  assert.ok(content.background && content.background.service_worker, 'Must declare service_worker');
-  assert.ok(content.name.includes('zider'), 'Must contain zider name');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const manifestPath = path.resolve(__dirname, "../extension/manifest.json");
+
+test("Manifest V3 enforces strict CSP without unsafe directives", () => {
+  const raw = fs.readFileSync(manifestPath, "utf-8");
+  const manifest = JSON.parse(raw);
+
+  assert.equal(manifest.manifest_version, 3);
+  assert.ok(manifest.name.includes("zider"), "Must contain zider name");
+  assert.ok(manifest.background && manifest.background.service_worker, "Must declare service_worker");
+  assert.ok(manifest.content_security_policy);
+  const csp = manifest.content_security_policy.extension_pages;
+
+  assert.ok(csp.includes("script-src 'self'"));
+  assert.ok(!csp.includes("'unsafe-eval'"));
+  assert.ok(csp.includes("object-src 'self'"));
 });
