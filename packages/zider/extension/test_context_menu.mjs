@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 class MockChromeContextMenus {
   constructor() {
@@ -18,7 +23,7 @@ class MockChromeContextMenus {
 
 test("context menu creates standard selection items", () => {
   const mock = new MockChromeContextMenus();
-  
+
   const menuDefs = [
     { id: "zider-explain", title: "zider: Explain selection", contexts: ["selection"] },
     { id: "zider-summarize", title: "zider: Summarize selection", contexts: ["selection"] },
@@ -43,4 +48,12 @@ test("context menu maps action types correctly", () => {
 
   assert.equal(actionMap["zider-explain"], "explain");
   assert.equal(actionMap["zider-counter"], "counter_argument");
+});
+
+test("zider context menu declares selection handler", () => {
+  const bgPath = path.resolve(__dirname, "../extension/background.js");
+  assert.ok(fs.existsSync(bgPath), "background.js must exist");
+
+  const content = fs.readFileSync(bgPath, "utf8");
+  assert.ok(content.includes("contextMenus") || content.includes("chrome.runtime"), "Must have extension background bindings");
 });

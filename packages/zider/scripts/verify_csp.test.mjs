@@ -12,6 +12,8 @@ test("Manifest V3 enforces strict CSP without unsafe directives", () => {
   const manifest = JSON.parse(raw);
 
   assert.equal(manifest.manifest_version, 3);
+  assert.ok(manifest.name.includes("zider"), "Must contain zider name");
+  assert.ok(manifest.background && manifest.background.service_worker, "Must declare service_worker");
   assert.ok(manifest.content_security_policy);
   const csp = manifest.content_security_policy.extension_pages;
 

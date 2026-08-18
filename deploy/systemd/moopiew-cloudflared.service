@@ -1,0 +1,18 @@
+[Unit]
+Description=Moopiew Cloudflare Tunnel connector
+After=network-online.target moopiew.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/zeaz
+ExecStart=%h/zeaz/scripts/cloudflare-tunnel.sh
+Restart=always
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=default.target
