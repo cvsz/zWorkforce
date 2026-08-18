@@ -70,11 +70,7 @@ async def _execute_approved_mutation(page, action: BrowserAction, timeout_ms: in
 
 
 class PlaywrightReadOnlyTransport:
-    """Playwright Chromium adapter for governed browser actions.
-
-    Mutation execution is disabled by default and is enabled only by startup
-    wiring that also installs the durable zWorkforce approval authorizer.
-    """
+    """Playwright Chromium adapter for governed browser actions."""
 
     enforces_pinned_destination = True
     disables_automatic_redirects = True
@@ -101,15 +97,8 @@ class PlaywrightReadOnlyTransport:
         except Exception as exc:
             raise BrowserAutomationUnavailable("Playwright Chromium is unavailable") from exc
 
-    async def request(
-        self,
-        *,
-        action: BrowserAction,
-        connect_ip: str,
-        host_header: str,
-        tls_server_name: str,
-        timeout_seconds: int,
-    ) -> Mapping[str, object]:
+    async def request(self, *, action: BrowserAction, connect_ip: str, host_header: str,
+                      tls_server_name: str, timeout_seconds: int) -> Mapping[str, object]:
         if action.kind in MUTATING_ACTIONS and not self.allow_mutations:
             raise BrowserPolicyError("browser mutations require the zWorkforce approval adapter")
         if action.kind not in READ_ONLY_ACTIONS | MUTATING_ACTIONS:
@@ -129,39 +118,41 @@ class PlaywrightReadOnlyTransport:
         async_playwright = self._loader()
         timeout_ms = max(1, int(timeout_seconds)) * 1000
         resolver = f"MAP {tls_server_name} {connect_ip}"
+        blocked_navigation_url = ""
         try:
             async with async_playwright() as runtime:
-                browser = await runtime.chromium.launch(
-                    headless=self.headless,
-                    args=[f"--host-resolver-rules={resolver}"],
-                )
+                browser = await runtime.chromium.launch(headless=self.headless, args=[f"--host-resolver-rules={resolver}"])
                 try:
                     context = await browser.new_context(ignore_https_errors=False)
                     page = await context.new_page()
                     initial_navigation_complete = False
 
                     async def guard(route, request):
-                        nonlocal initial_navigation_complete
+                        nonlocal initial_navigation_complete, blocked_navigation_url
+                        if request.is_navigation_request():
+                            if not initial_navigation_complete and request.url == action.url:
+                                await route.continue_(); return
+                            blocked_navigation_url = request.url
+                            await route.abort(); return
                         target = urlsplit(request.url)
                         try:
                             target_origin = _origin(target)
                         except BrowserPolicyError:
-                            await route.abort()
-                            return
+                            await route.abort(); return
                         if target_origin != approved_origin:
-                            await route.abort()
-                            return
-                        if request.is_navigation_request():
-                            if not initial_navigation_complete and request.url == action.url:
-                                await route.continue_()
-                                return
-                            await route.abort()
-                            return
+                            await route.abort(); return
                         await route.continue_()
 
                     await context.route("**/*", guard)
-                    response = await page.goto(action.url, wait_until="domcontentloaded", timeout=timeout_ms)
+                    try:
+                        response = await page.goto(action.url, wait_until="domcontentloaded", timeout=timeout_ms)
+                    except Exception:
+                        if blocked_navigation_url:
+                            return {"redirect_url": blocked_navigation_url}
+                        raise
                     initial_navigation_complete = True
+                    if blocked_navigation_url:
+                        return {"redirect_url": blocked_navigation_url}
                     if page.url != action.url:
                         return {"redirect_url": page.url}
                     if action.kind == "navigate":
@@ -170,7 +161,14 @@ class PlaywrightReadOnlyTransport:
                         screenshot = await page.screenshot(type="png", full_page=True, timeout=timeout_ms)
                         return {**_encode_screenshot(screenshot), "title": (await page.title())[:500]}
                     if action.kind in MUTATING_ACTIONS:
-                        result = dict(await _execute_approved_mutation(page, action, timeout_ms))
+                        try:
+                            result = dict(await _execute_approved_mutation(page, action, timeout_ms))
+                        except Exception:
+                            if blocked_navigation_url:
+                                return {"redirect_url": blocked_navigation_url, "mutation_redirect_blocked": True}
+                            raise
+                        if blocked_navigation_url:
+                            return {"redirect_url": blocked_navigation_url, "mutation_redirect_blocked": True}
                         result["title"] = (await page.title())[:500]
                         result["navigation_blocked_until_revalidated"] = True
                         return result
