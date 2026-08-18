@@ -38,7 +38,8 @@ class BrowserEffectApp(WorkspaceGrantApp):
                     return super().do_POST()
                 self._prepare()
                 try:
-                    ctx, response = self._principal("operator", "task:write")
+                    required_role = "admin" if action and action.group(2) == "reconcile" else "operator"
+                    ctx, response = self._principal(required_role, "task:write")
                     if response:
                         return response
                     principal, tenant_id = ctx
@@ -59,11 +60,7 @@ class BrowserEffectApp(WorkspaceGrantApp):
                             "browser.effect.begin",
                             "browser_effect",
                             effect["id"],
-                            {
-                                "status": effect["status"],
-                                "approval_task_id": effect["approval_task_id"],
-                                "action_sha256": effect["action_sha256"],
-                            },
+                            {"status": effect["status"], "approval_task_id": effect["approval_task_id"], "action_sha256": effect["action_sha256"]},
                         )
                         return self._json(201 if effect["status"] == "not_started" else 200, effect)
 
@@ -74,14 +71,7 @@ class BrowserEffectApp(WorkspaceGrantApp):
 
                     if operation == "claim":
                         effect, claimed = app.db.claim_browser_effect(tenant_id, effect_id)
-                        app.db.audit(
-                            tenant_id,
-                            principal.name,
-                            "browser.effect.claim",
-                            "browser_effect",
-                            effect_id,
-                            {"status": effect["status"], "claimed": claimed},
-                        )
+                        app.db.audit(tenant_id, principal.name, "browser.effect.claim", "browser_effect", effect_id, {"status": effect["status"], "claimed": claimed})
                         return self._json(200, {"effect": effect, "claimed": claimed})
 
                     if operation == "finish":
@@ -92,14 +82,7 @@ class BrowserEffectApp(WorkspaceGrantApp):
                             result_sha256=str(body.get("result_sha256") or ""),
                             error_code=str(body.get("error_code") or ""),
                         )
-                        app.db.audit(
-                            tenant_id,
-                            principal.name,
-                            "browser.effect.finish",
-                            "browser_effect",
-                            effect_id,
-                            {"status": effect["status"], "result_sha256": effect["result_sha256"]},
-                        )
+                        app.db.audit(tenant_id, principal.name, "browser.effect.finish", "browser_effect", effect_id, {"status": effect["status"], "result_sha256": effect["result_sha256"]})
                         return self._json(200, effect)
 
                     effect = app.db.reconcile_browser_effect(
@@ -109,14 +92,7 @@ class BrowserEffectApp(WorkspaceGrantApp):
                         result_sha256=str(body.get("result_sha256") or ""),
                         error_code=str(body.get("error_code") or ""),
                     )
-                    app.db.audit(
-                        tenant_id,
-                        principal.name,
-                        "browser.effect.reconcile",
-                        "browser_effect",
-                        effect_id,
-                        {"status": effect["status"], "result_sha256": effect["result_sha256"]},
-                    )
+                    app.db.audit(tenant_id, principal.name, "browser.effect.reconcile", "browser_effect", effect_id, {"status": effect["status"], "result_sha256": effect["result_sha256"]})
                     return self._json(200, effect)
                 except (ValueError, TypeError) as exc:
                     return self._error(400, "invalid_browser_effect", str(exc))
