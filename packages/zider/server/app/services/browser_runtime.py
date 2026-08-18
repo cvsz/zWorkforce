@@ -2,12 +2,29 @@ from __future__ import annotations
 
 import os
 
-from .agent_runner import AgentRunner, BrowserAutomationUnavailable
+from .agent_runner import AgentRunner, BrowserAction, BrowserAutomationUnavailable
 from .artifact_content import GovernedArtifactContentLoader
 from .browser_approval import ZWorkforceMutationApprovalAdapter
 from .browser_effects import DurableBrowserEffectExecutor
 from .browser_executor import PinnedBrowserExecutor
 from .playwright_runtime import PlaywrightReadOnlyTransport
+from .zworkforce_bridge import ZWorkforceBridge
+
+_CANCELED_TASK_STATES = {"canceled", "failed", "dead_letter"}
+
+
+async def _approval_cancel_observer(action: BrowserAction) -> bool:
+    """Observe a task cancellation that raced with browser mutation execution.
+
+    Fail-soft by design: this is a post-execution race-window guard, not an
+    authorization gate, so an unreachable control plane must not block a
+    completed mutation from being recorded.
+    """
+    try:
+        task = await ZWorkforceBridge.get_task(action.approval_task_id)
+    except Exception:
+        return False
+    return bool(task.get("cancel_requested")) or str(task.get("status") or "").strip().lower() in _CANCELED_TASK_STATES
 
 
 async def configure_browser_runtime() -> str:
@@ -50,7 +67,7 @@ async def configure_browser_runtime() -> str:
         max_redirects=max_redirects,
     )
     if approval_authorizer is not None:
-        executor = DurableBrowserEffectExecutor(executor)
+        executor = DurableBrowserEffectExecutor(executor, cancel_checker=_approval_cancel_observer)
 
     AgentRunner.configure(
         executor=executor,

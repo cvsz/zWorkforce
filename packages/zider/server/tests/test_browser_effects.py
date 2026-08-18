@@ -77,6 +77,55 @@ class DurableBrowserEffectExecutorTests(unittest.IsolatedAsyncioTestCase):
             await DurableBrowserEffectExecutor(delegate, FakeController()).execute(mutation(approval_task_id=""))
         self.assertEqual(delegate.calls, 0)
 
+    async def test_cancel_during_execution_marks_unknown_and_fails_closed(self):
+        delegate = FakeDelegate()
+        controller = FakeController()
+
+        async def canceled(action):
+            return True
+
+        with self.assertRaisesRegex(BrowserAutomationUnavailable, "canceled during execution"):
+            await DurableBrowserEffectExecutor(delegate, controller, cancel_checker=canceled).execute(mutation())
+        self.assertEqual(delegate.calls, 1)
+        self.assertEqual(controller.finished[-1][0], "unknown")
+        self.assertEqual(controller.finished[-1][2], "canceled_during_execution")
+
+    async def test_cancel_checker_false_finishes_succeeded(self):
+        controller = FakeController()
+
+        async def not_canceled(action):
+            return False
+
+        result = await DurableBrowserEffectExecutor(
+            FakeDelegate(), controller, cancel_checker=not_canceled
+        ).execute(mutation())
+        self.assertEqual(controller.finished[-1][0], "succeeded")
+        self.assertEqual(result["effect_id"], "123e4567-e89b-12d3-a456-426614174001")
+
+    async def test_cancel_checker_failure_does_not_block_success(self):
+        controller = FakeController()
+
+        async def broken(action):
+            raise OSError("control plane unreachable")
+
+        result = await DurableBrowserEffectExecutor(
+            FakeDelegate(), controller, cancel_checker=broken
+        ).execute(mutation())
+        self.assertEqual(controller.finished[-1][0], "succeeded")
+        self.assertTrue(result["ok"])
+
+    async def test_cancel_never_replays_unknown_effect(self):
+        delegate = FakeDelegate()
+
+        async def canceled(action):
+            return True
+
+        with self.assertRaises(BrowserAutomationUnavailable):
+            await DurableBrowserEffectExecutor(
+                delegate, FakeController(status="unknown"), cancel_checker=canceled
+            ).execute(mutation())
+        self.assertEqual(delegate.calls, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
