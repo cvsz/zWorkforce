@@ -121,6 +121,11 @@ Release-state vocabulary:
 - **external evidence** — operator-owned validation that cannot be inferred
   from repository implementation or CI.
 
+`planning/RELEASE-SCOPE-STATUS.md` is the normalized subsystem classification
+overlay for this vocabulary. It does not replace subsystem Definitions of
+Complete; it prevents broad feature-plan labels from being misread as current
+release blockers or as evidence that forward work is complete.
+
 ## Remaining production/operator work
 
 These are external operational concerns, not unimplemented in-process features:
