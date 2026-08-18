@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import replace
 import ipaddress
-from typing import Mapping, Protocol
+from typing import Callable, Mapping, Protocol
 from urllib.parse import urlsplit
 
-from .agent_runner import BrowserAction, BrowserAutomationUnavailable, BrowserPolicyError
+from .agent_runner import BrowserAction, BrowserAutomationUnavailable, BrowserPolicyError, MUTATING_ACTIONS
 
 
 class BrowserTransport(Protocol):
@@ -24,14 +25,33 @@ class BrowserTransport(Protocol):
     ) -> Mapping[str, object]: ...
 
 
+RedirectValidator = Callable[[str], tuple[str, tuple[str, ...]]]
+
+
 class PinnedBrowserExecutor:
-    """Execute only against policy-validated public destination addresses."""
+    """Execute only against policy-validated public destination addresses.
+
+    Redirects are never followed by the transport. Read-only redirects are fed
+    back through the same AgentRunner URL policy, DNS resolution, and public-IP
+    checks before a new pinned request is made. Redirects triggered by a browser
+    mutation remain fail-closed until durable side-effect reconciliation lands;
+    replaying the mutation merely to follow a redirect would be unsafe.
+    """
 
     enforces_resolved_addresses = True
 
-    def __init__(self, transport: BrowserTransport, *, timeout_seconds: int = 30) -> None:
+    def __init__(
+        self,
+        transport: BrowserTransport,
+        *,
+        timeout_seconds: int = 30,
+        redirect_validator: RedirectValidator | None = None,
+        max_redirects: int = 5,
+    ) -> None:
         self.transport = transport
         self.timeout_seconds = max(1, min(int(timeout_seconds), 120))
+        self.redirect_validator = redirect_validator
+        self.max_redirects = max(0, min(int(max_redirects), 10))
 
     def _require_transport_contract(self) -> None:
         if getattr(self.transport, "enforces_pinned_destination", False) is not True:
@@ -80,8 +100,7 @@ class PinnedBrowserExecutor:
             return bracketed, host
         return f"{bracketed}:{port}", host
 
-    async def execute(self, action: BrowserAction) -> Mapping[str, object]:
-        self._require_transport_contract()
+    async def _execute_once(self, action: BrowserAction) -> Mapping[str, object]:
         host_header, tls_server_name = self._origin_authority(action)
         last_error: Exception | None = None
         for connect_ip in self._addresses(action):
@@ -101,9 +120,35 @@ class PinnedBrowserExecutor:
                 continue
             if not isinstance(result, Mapping):
                 raise BrowserAutomationUnavailable("browser transport returned an invalid result")
-            if result.get("redirect_url"):
-                raise BrowserPolicyError("browser redirects require policy revalidation before following")
             return dict(result)
         raise BrowserAutomationUnavailable(
             "browser transport could not connect to an approved destination"
         ) from last_error
+
+    async def execute(self, action: BrowserAction) -> Mapping[str, object]:
+        self._require_transport_contract()
+        current = action
+        redirects = 0
+
+        while True:
+            result = dict(await self._execute_once(current))
+            redirect_url = str(result.get("redirect_url") or "").strip()
+            if not redirect_url:
+                if redirects:
+                    result["redirect_count"] = redirects
+                return result
+
+            if current.kind in MUTATING_ACTIONS:
+                raise BrowserPolicyError(
+                    "browser mutation redirect was blocked; side-effect reconciliation is required before following"
+                )
+            if self.redirect_validator is None:
+                raise BrowserPolicyError("browser redirects require policy revalidation before following")
+            if redirects >= self.max_redirects:
+                raise BrowserPolicyError("browser redirect limit exceeded")
+
+            validated_url, addresses = self.redirect_validator(redirect_url)
+            if not addresses:
+                raise BrowserPolicyError("browser redirect did not produce policy-validated pinned addresses")
+            current = replace(current, url=validated_url, resolved_addresses=tuple(addresses))
+            redirects += 1
