@@ -11,8 +11,8 @@ This ledger is the evidence boundary between repository-complete release readine
 | Candidate version | `3.0.3` |
 | Candidate branch | `main` |
 | Default-branch ruleset | `zWorkforce main release protection` applied server-side, ruleset ID `20988030` (verified 2026-08-18) |
-| Reconciliation baseline | `4f8935759bda02a89bd0bc2eeb5b9a3ab6777045` |
-| Latest fully verified PR head | `c89076e6453babda328387958b5cbf3ca8ae80bd` (PR #157; merged as `4f8935759bda02a89bd0bc2eeb5b9a3ab6777045`) |
+| Reconciliation baseline | `3c8bf2c0b067d09687fd986c3255ae8569f8f21c` |
+| Latest fully verified PR head | `05e959112050b0d398a8a6fc593a66750056fc61` (PR #160; merged as `3c8bf2c0b067d09687fd986c3255ae8569f8f21c`) |
 | Final release candidate SHA | _record after the final candidate PR is merged and all mandatory checks rerun on that exact candidate_ |
 | Release tag | _create only after merge and all mandatory evidence_ |
 | OCI image digest | _record immutable GHCR digest after publication_ |
@@ -20,19 +20,19 @@ This ledger is the evidence boundary between repository-complete release readine
 
 ## Repository gates
 
-The rows below record repository regression evidence observed on exact PR #157 head `c89076e6453babda328387958b5cbf3ca8ae80bd` on 2026-08-18. The head was merged to `main` as `4f8935759bda02a89bd0bc2eeb5b9a3ab6777045`. Prior fully verified PR #154 head `e63083e2d4fa8f9423cc64d4d142196f8069d6c9` (merged as `affd5143df15498ca08c1d3bfb21ea35dc149bf7`) remains in repository history as earlier evidence. These PASS results are not a production GO decision and do not waive the requirement to rerun mandatory checks on the final release-candidate SHA after subsequent repository changes.
+The rows below record repository regression evidence observed on exact PR #160 head `05e959112050b0d398a8a6fc593a66750056fc61` on 2026-08-18. The head was merged to `main` as `3c8bf2c0b067d09687fd986c3255ae8569f8f21c`. Prior fully verified PR #157 head `c89076e6453babda328387958b5cbf3ca8ae80bd` (merged as `4f8935759bda02a89bd0bc2eeb5b9a3ab6777045`) remains in repository history as earlier evidence. These PASS results are not a production GO decision and do not waive the requirement to rerun mandatory checks on the final release-candidate SHA after subsequent repository changes.
 
 | Gate | Verified evidence | Status |
 | --- | --- | --- |
-| Python 3.12 / 3.13 / 3.14 | CI run `32133161200`: `test (3.12)`, `test (3.13)`, `test (3.14)` all completed successfully | PASS on `c89076e6453babda328387958b5cbf3ca8ae80bd` |
-| PostgreSQL integration | CI run `32133161200`: `postgres-integration` completed successfully, including PostgreSQL backup/restore regression drill | PASS on verified PR head; **not external PITR evidence** |
-| Documentation / ruleset contract | CI run `32133161200`: `documentation-contract` completed successfully | PASS on verified PR head |
-| Release integrity | CI run `32133161200`: `release-integrity` completed successfully | PASS on verified PR head |
-| Container build | CI run `32133161200`: `container` completed successfully | PASS on verified PR head |
-| Security invariants | CI run `32133161200`: `security-invariants` completed successfully; runtime `shell=True` and static provider-secret guards passed | PASS on verified PR head |
-| Dependency review | Dependency Review run `32133161193` completed successfully | PASS on verified PR head |
-| CodeQL | CodeQL run `32133161194`: `Analyze (python)`, `Analyze (actions)`, and summary `CodeQL` all completed successfully | PASS on verified PR head |
-| Windows client | Windows client run `32133161218`: `build-test-package` completed successfully, including package, Z.A.R.V.I.S. Windows tests/build, packaged launch smoke and artifact upload | PASS on verified PR head; **not trusted production-signing/live-endpoint evidence** |
+| Python 3.12 / 3.13 / 3.14 | CI run `32138626757`: `test (3.12)`, `test (3.13)`, `test (3.14)` all completed successfully | PASS on `05e959112050b0d398a8a6fc593a66750056fc61` |
+| PostgreSQL integration | CI run `32138626757`: `postgres-integration` completed successfully, including PostgreSQL backup/restore regression drill | PASS on verified PR head; **not external PITR evidence** |
+| Documentation / ruleset contract | CI run `32138626757`: `documentation-contract` completed successfully | PASS on verified PR head |
+| Release integrity | CI run `32138626757`: `release-integrity` completed successfully | PASS on verified PR head |
+| Container build | CI run `32138626757`: `container` completed successfully | PASS on verified PR head |
+| Security invariants | CI run `32138626757`: `security-invariants` completed successfully; runtime `shell=True` and static provider-secret guards passed | PASS on verified PR head |
+| Dependency review | Dependency Review run `32138626664` completed successfully | PASS on verified PR head |
+| CodeQL | CodeQL run `32138626642`: `Analyze (python)`, `Analyze (actions)`, and summary `CodeQL` all completed successfully | PASS on verified PR head |
+| Windows client | Windows client run `32138626617`: `build-test-package` completed successfully, including package, Z.A.R.V.I.S. Windows tests/build, packaged launch smoke and artifact upload | PASS on verified PR head; **not trusted production-signing/live-endpoint evidence** |
 
 Additional repository execution evidence recorded by PR #154: 241/241 Python tests PASS, 36/36 Z.A.R.V.I.S. tests PASS, `zworkforce doctor` HEALTHY, and 7/7 connector tests PASS. These are repository/test evidence only.
 
