@@ -9,25 +9,31 @@ This ledger is the evidence boundary between repository-complete release readine
 | Field | Value |
 | --- | --- |
 | Candidate version | `3.0.3` |
-| Candidate branch | `agent/exec-plan-v3.0.3-readiness` |
-| Commit SHA | _record after final candidate commit_ |
+| Candidate branch | `main` |
+| Reconciliation baseline | `affd5143df15498ca08c1d3bfb21ea35dc149bf7` |
+| Latest fully verified PR head | `e63083e2d4fa8f9423cc64d4d142196f8069d6c9` (PR #154; merged as `affd5143df15498ca08c1d3bfb21ea35dc149bf7`) |
+| Final release candidate SHA | _record after the final candidate PR is merged and all mandatory checks rerun on that exact candidate_ |
 | Release tag | _create only after merge and all mandatory evidence_ |
 | OCI image digest | _record immutable GHCR digest after publication_ |
 | Python artifact checksums | _record from release workflow_ |
 
 ## Repository gates
 
-| Gate | Required evidence | Status |
+The rows below record repository regression evidence observed on exact PR #154 head `e63083e2d4fa8f9423cc64d4d142196f8069d6c9` on 2026-08-18. The head was merged to `main` as `affd5143df15498ca08c1d3bfb21ea35dc149bf7`. These PASS results are not a production GO decision and do not waive the requirement to rerun mandatory checks on the final release-candidate SHA after subsequent repository changes.
+
+| Gate | Verified evidence | Status |
 | --- | --- | --- |
-| Python 3.12 / 3.13 / 3.14 | GitHub check URLs for `test (3.12)`, `test (3.13)`, `test (3.14)` | PENDING CI |
-| PostgreSQL integration | `postgres-integration` check URL | PENDING CI |
-| Documentation / ruleset contract | `documentation-contract` check URL | PENDING CI |
-| Release integrity | `release-integrity` check URL | PENDING CI |
-| Container build | `container` check URL | PENDING CI |
-| Security invariants | `security-invariants` check URL | PENDING CI |
-| Dependency review | `dependency-review` check URL | PENDING CI |
-| CodeQL | `Analyze (python)`, `Analyze (actions)`, and PR `CodeQL` result | PENDING CI |
-| Windows client | `build-test-package` check URL and MSIX artifact name | PENDING CI |
+| Python 3.12 / 3.13 / 3.14 | CI run `32107380703`: `test (3.12)`, `test (3.13)`, `test (3.14)` all completed successfully | PASS on `e63083e2d4fa8f9423cc64d4d142196f8069d6c9` |
+| PostgreSQL integration | CI run `32107380703`: `postgres-integration` completed successfully, including PostgreSQL backup/restore regression drill | PASS on verified PR head; **not external PITR evidence** |
+| Documentation / ruleset contract | CI run `32107380703`: `documentation-contract` completed successfully | PASS on verified PR head |
+| Release integrity | CI run `32107380703`: `release-integrity` completed successfully | PASS on verified PR head |
+| Container build | CI run `32107380703`: `container` completed successfully | PASS on verified PR head |
+| Security invariants | CI run `32107380703`: `security-invariants` completed successfully; runtime `shell=True` and static provider-secret guards passed | PASS on verified PR head |
+| Dependency review | Dependency Review run `32107380719` completed successfully | PASS on verified PR head |
+| CodeQL | CodeQL run `32107381362`: `Analyze (python)`, `Analyze (actions)`, and summary `CodeQL` all completed successfully | PASS on verified PR head |
+| Windows client | Windows client run `32107380711`: `build-test-package` completed successfully, including package, Z.A.R.V.I.S. Windows tests/build, packaged launch smoke and artifact upload | PASS on verified PR head; **not trusted production-signing/live-endpoint evidence** |
+
+Additional repository execution evidence recorded by PR #154: 241/241 Python tests PASS, 36/36 Z.A.R.V.I.S. tests PASS, `zworkforce doctor` HEALTHY, and 7/7 connector tests PASS. These are repository/test evidence only.
 
 ## Stage A — staging topology and secrets
 
@@ -188,7 +194,7 @@ Dashboard/run URL:
 
 Status: **PENDING EXTERNAL EVIDENCE**
 
-Verify the signed/approved Windows package against the deployed HTTPS endpoint:
+Repository CI proves build/test/package and an ephemeral packaged launch smoke on the GitHub-hosted runner. Production readiness still requires the signed/approved Windows package against the deployed HTTPS endpoint:
 - install/upgrade/uninstall path;
 - credential storage and tenant selection;
 - health/readiness/overview/task/agent/automation/governance operations;
@@ -210,7 +216,7 @@ Artifact/reference:
 Status: **PENDING EXTERNAL EVIDENCE**
 
 Before tag creation:
-- all required GitHub checks are green on the exact candidate SHA;
+- all required GitHub checks are green on the exact final candidate SHA;
 - review threads are resolved and required approval exists;
 - no open release-blocking CodeQL, secret-scanning, dependency-review, or known-critical dependency finding remains;
 - rollback target and database recovery procedure are identified;
@@ -228,4 +234,4 @@ Rollback target:
 Notes:
 ```
 
-A `GO` decision authorizes merging the candidate, creating immutable tag `v3.0.3`, running the tag-driven release workflow, and recording release artifact checksums and GHCR digest back into this ledger or the release record.
+A `GO` decision authorizes creating immutable tag `v3.0.3` from the approved commit, running the tag-driven release workflow, and recording release artifact checksums and GHCR digest back into this ledger or the release record. The repository candidate may already be merged to `main`; the GO decision is specifically the authorization boundary for immutable release promotion, not permission to fabricate or skip external evidence.
