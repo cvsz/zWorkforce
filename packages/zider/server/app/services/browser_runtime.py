@@ -52,10 +52,12 @@ async def configure_browser_runtime() -> str:
         approval_authorizer = ZWorkforceMutationApprovalAdapter(ttl_seconds=approval_ttl).authorize
 
     artifact_loader = GovernedArtifactContentLoader() if approval_authorizer is not None else None
+    evidence_screenshots = os.getenv("ZIDER_BROWSER_EVIDENCE_SCREENSHOTS", "0").strip().lower() in {"1", "true", "yes", "on"}
     transport = PlaywrightReadOnlyTransport(
         headless=os.getenv("ZIDER_BROWSER_HEADLESS", "1").strip().lower() not in {"0", "false", "no"},
         allow_mutations=approval_authorizer is not None,
         artifact_loader=artifact_loader,
+        evidence_screenshots=evidence_screenshots,
     )
     await transport.probe()
     timeout = int(os.getenv("ZIDER_BROWSER_TIMEOUT_SECONDS", "30"))

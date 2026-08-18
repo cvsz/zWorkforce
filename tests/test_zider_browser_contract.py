@@ -1,3 +1,4 @@
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -74,7 +75,7 @@ class ZiderBrowserContractRequiredCiTests(unittest.IsolatedAsyncioTestCase):
         executor = FakeExecutor()
         AgentRunner.configure(
             executor=executor,
-            approval_authorizer=lambda action, token: token == "approved",
+            approval_authorizer=lambda action, token: token == "123e4567-e89b-12d3-a456-426614174000",
             allowed_hosts=["example.com"],
             resolver=lambda host: ["93.184.216.34"],
         )
@@ -87,11 +88,84 @@ class ZiderBrowserContractRequiredCiTests(unittest.IsolatedAsyncioTestCase):
                 "selector": "form#settings",
                 "idempotency_key": "submit-1",
             }],
-            approval_token="approved",
+            approval_token="123e4567-e89b-12d3-a456-426614174000",
         )
         self.assertEqual(result["steps"][0]["url"], "https://example.com/form")
         self.assertTrue(result["steps"][0]["mutating"])
         self.assertEqual(len(executor.actions), 1)
+
+    async def test_step_evidence_envelope_is_whitelisted_and_redacts_secrets(self):
+        executor = FakeExecutor()
+        AgentRunner.configure(
+            executor=executor,
+            approval_authorizer=lambda action, token: token == "123e4567-e89b-12d3-a456-426614174000",
+            allowed_hosts=["example.com"],
+            resolver=lambda host: ["93.184.216.34"],
+        )
+        result = await AgentRunner.run_claw_task(
+            "save",
+            "test",
+            actions=[{
+                "kind": "submit",
+                "url": "https://example.com/form?session=canary-password-xyz&token=canary-bearer-abc",
+                "selector": "form#settings",
+                "idempotency_key": "submit-1",
+            }],
+            approval_token="123e4567-e89b-12d3-a456-426614174000",
+        )
+        evidence = result["steps"][0]["evidence"]
+        self.assertEqual(evidence["idempotency_key"], "submit-1")
+        self.assertRegex(evidence["approval_task_id"], r"^[0-9a-fA-F-]{36}$")
+        self.assertIn("started_at", evidence)
+        self.assertIn("finished_at", evidence)
+        self.assertEqual(evidence["effect_id"], "")
+        self.assertEqual(evidence["redirect_count"], 0)
+        self.assertIn("browser_version", evidence)
+        self.assertNotIn("before", evidence)
+        self.assertNotIn("after", evidence)
+
+        rendered = json.dumps(result, sort_keys=True)
+        self.assertNotIn("canary-password-xyz", rendered)
+        self.assertNotIn("canary-bearer-abc", rendered)
+        self.assertNotIn("?session=", rendered)
+        self.assertNotIn("?token=", rendered)
+
+    async def test_mutation_evidence_carries_effect_reference_and_digest(self):
+        class EvidenceExecutor(FakeExecutor):
+            async def execute(self, action):
+                self.actions.append(action)
+                return {
+                    "ok": True,
+                    "effect_id": "123e4567-e89b-12d3-a456-426614174099",
+                    "result_sha256": "d" * 64,
+                    "browser_version": "chromium-138.0.0.0",
+                    "redirect_count": 1,
+                }
+
+        executor = EvidenceExecutor()
+        AgentRunner.configure(
+            executor=executor,
+            approval_authorizer=lambda action, token: token == "123e4567-e89b-12d3-a456-426614174000",
+            allowed_hosts=["example.com"],
+            resolver=lambda host: ["93.184.216.34"],
+        )
+        result = await AgentRunner.run_claw_task(
+            "save",
+            "test",
+            actions=[{
+                "kind": "click",
+                "url": "https://example.com/settings",
+                "selector": "button#save",
+                "idempotency_key": "click-evidence-1",
+            }],
+            approval_token="123e4567-e89b-12d3-a456-426614174000",
+        )
+        evidence = result["steps"][0]["evidence"]
+        self.assertEqual(evidence["effect_id"], "123e4567-e89b-12d3-a456-426614174099")
+        self.assertEqual(evidence["result_sha256"], "d" * 64)
+        self.assertEqual(evidence["redirect_count"], 1)
+        self.assertEqual(evidence["browser_version"], "chromium-138.0.0.0")
+        self.assertNotEqual(evidence["started_at"], evidence["finished_at"])
 
 
 if __name__ == "__main__":
