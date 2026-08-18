@@ -5,7 +5,7 @@
 **Agent Identity:** Arin  
 **Local Origin:** `http://127.0.0.1:3005`  
 **Public Edge:** `https://studio.zeaz.dev`  
-**Control Plane:** `zWorkforce` (v3.0.2 / v3.0.3-rc)  
+**Control Plane:** `zWorkforce` (v3.0.3 repository candidate on `main`)  
 **Parent Plan:** [`exec-planning.master.md`](exec-planning.master.md)
 
 ---

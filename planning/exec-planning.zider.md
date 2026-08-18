@@ -2,7 +2,7 @@
 
 **Updated:** 2026-08-16  
 **Package:** `packages/zider` (AI Browser Sidebar, ChatPDF, Summarizer, Multi-Model Group Chat & Web Assistant)  
-**Control Plane:** `zWorkforce` (v3.0.2 / v3.0.3-rc)  
+**Control Plane:** `zWorkforce` (v3.0.3 repository candidate on `main`)  
 **Parent Plan:** [`exec-planning.master.md`](exec-planning.master.md)
 
 ---

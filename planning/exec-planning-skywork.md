@@ -218,6 +218,10 @@ The UI can render main chat + review + file preview + side discussion without du
 
 ### Phase SW5 — Scoped local workspace sandbox
 
+**Status:** SW5A durable workspace grants and SW5B process enforcement IMPLEMENTED on `main` (PRs #96, #97, #98)
+
+SW5A merged as PR #96 (`workspace_grants6` schema, `WorkspaceGrantService`, admin `workspace:grant` API, re-resolved roots on every use). SW5B merged as PR #97 (durable grant enforcement on local file tools) and PR #98 (probed production process containment): command membership and argument-array execution (no `shell=True`), cwd and environment sanitization, memory/process/open-file/fsize/cpu bounds via `prlimit`, network policy `deny`, timeouts, output caps and fail-closed sandbox availability probing. `network_policy=allowlisted` remains explicitly unimplemented and is refused at runtime. External sandbox/runtime drills remain operator-owned `external evidence` per `docs/PRODUCTION-EVIDENCE.md`.
+
 New workspace grant contract:
 
 ```json
