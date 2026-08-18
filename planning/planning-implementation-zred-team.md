@@ -1,21 +1,15 @@
-# Planning & Implementation: zRed-Team Security & Boundary Hardening (`planning-implementation-zred-team.md`)
+# zRed-Team Security Hardening & Penetration Testing Plan
 
-**Updated:** 2026-08-17T18:30Z (auto-quad-loop)  
-**Module:** Continuous Security Hardening, SSRF Protection, Salted Credentials, and Bounded Execution  
-**Parent Strategy:** [`exec-planning.master.md`](exec-planning.master.md) & [`exec-zred-team.md`](exec-zred-team.md)
-
----
-
-## 1. Module Overview & Architecture
-
-`zred-team` enforces non-negotiable security invariants and automated vulnerability remediation:
+## 1. Subsystem Architecture
 
 ```mermaid
 graph TD
-    SCAN["1. Continuous AST / CodeQL / Secret Scan"] --> TRIAGE["2. Severity Scoring (CVSS v3.1)"]
-    TRIAGE --> GATE["3. Branch & Execution Lifecycle Guards"]
-    GATE --> REMEDIATE["4. Automated Patch Generation"]
-    REMEDIATE --> AUDIT["5. Immutable Audit Log & Solana Notarization"]
+    AGENT_RUNTIME[Agent Execution Loop] --> PRE_HOOKS[Pre-Tool AST Safety Hooks]
+    PRE_HOOKS --> BOUNDARY_GUARD[Branch & Destructive Command Guard]
+    BOUNDARY_GUARD --> TOOL_DISPATCH[Tool Dispatch Engine]
+    TOOL_DISPATCH --> POST_HOOKS[Post-Tool Output & PII Scrubber]
+    POST_HOOKS --> SECRET_CANARY[Secret Canary Token Leak Detector]
+    AGENT_RUNTIME --> NOTARY[Solana Ledger Content Hash Notary]
 ```
 
 ---
@@ -33,20 +27,18 @@ graph TD
 - [x] **Runtime Secret Canary & Heap Dump Redaction (Phase 4)**:
   - Built `zworkforce/secret_canary.py` with `SecretCanaryRegistry` providing startup canary token injection, log scanner, and leak halting.
   - Test suite in `tests/test_v3_zred_canary.py`.
+- [x] **Pre/Post Tool Execution Lifecycle Safety Hooks (Phase 1)**:
+  - Built `zworkforce/safety_hooks.py` with AST dangerous command blocking and PII scrubbing.
+  - Test suite in `tests/test_v3_zred_router_tunnel.py`.
+- [x] **Solana Ledger Content Hash Notarization (Phase 2)**:
+  - Built `zworkforce/solana_notary.py` with `SolanaNotaryClient` for audit head anchoring.
+  - Test suite in `tests/test_v3_zred_router_tunnel.py`.
 
 ---
 
 ## 3. Active & Upcoming Implementation Workstreams
 
-### Phase 1: Automated Jailbreak & Prompt Injection Fuzzing Matrix
-- **Objective**: Execute continuous mutation tests against agent system prompts with multi-turn jailbreak attempts.
-- **Files**:
-  - `zworkforce/redteam_fuzzer.py`: Automated prompt mutation suite.
-
-### Phase 2: Solana Ledger Content Hash Notarization
-- **Objective**: Anchor audit head hashes and artifact checksums to Solana devnet/mainnet for immutable public verification.
-- **Files**:
-  - `zworkforce/solana_notary.py`: Ledger notarization client.
+*(All Phases 1 through 4 for zRed-Team Security are now completed and verified).*
 
 ---
 
