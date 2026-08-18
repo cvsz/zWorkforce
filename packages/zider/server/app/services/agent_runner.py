@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass, replace
+from datetime import datetime, timezone
 import inspect
 import ipaddress
 import os
@@ -64,6 +65,10 @@ def _configured_hosts() -> tuple[str, ...]:
 def _safe_url_metadata(raw_url: str) -> str:
     parsed = urlsplit(raw_url)
     return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, "", ""))
+
+
+def _utc_iso() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
 
 
 class AgentRunner:
@@ -220,6 +225,7 @@ class AgentRunner:
             action = original_action
             if action.kind in MUTATING_ACTIONS:
                 action = await cls._authorize_mutation(action, approval_token)
+            started_at = _utc_iso()
             try:
                 result = await asyncio.wait_for(executor.execute(action), timeout=cls._timeout_seconds)
             except asyncio.TimeoutError as exc:
@@ -234,6 +240,17 @@ class AgentRunner:
                     "kind": action.kind,
                     "url": _safe_url_metadata(action.url),
                     "mutating": action.kind in MUTATING_ACTIONS,
+                    "evidence": {
+                        "idempotency_key": action.idempotency_key,
+                        "approval_task_id": action.approval_task_id,
+                        "artifact_id": action.artifact_id,
+                        "effect_id": str(result.get("effect_id") or ""),
+                        "result_sha256": str(result.get("result_sha256") or ""),
+                        "redirect_count": int(result.get("redirect_count") or 0),
+                        "browser_version": str(result.get("browser_version") or ""),
+                        "started_at": started_at,
+                        "finished_at": _utc_iso(),
+                    },
                     "result": dict(result),
                 }
             )

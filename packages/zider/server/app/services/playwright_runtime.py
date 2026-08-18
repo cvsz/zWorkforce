@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 from typing import Any, Awaitable, Callable, Mapping
 from urllib.parse import urlsplit
 
@@ -34,7 +35,7 @@ def _origin(parsed) -> tuple[str, str, int]:
     )
 
 
-def _encode_screenshot(data: bytes) -> dict[str, object]:
+def _screenshot_bytes(data: bytes) -> bytes:
     if not isinstance(data, (bytes, bytearray)):
         raise BrowserAutomationUnavailable("Playwright screenshot returned invalid data")
     raw = bytes(data)
@@ -42,11 +43,26 @@ def _encode_screenshot(data: bytes) -> dict[str, object]:
         raise BrowserAutomationUnavailable("Playwright screenshot returned empty data")
     if len(raw) > MAX_SCREENSHOT_BYTES:
         raise BrowserAutomationUnavailable("Playwright screenshot exceeds the configured response bound")
+    return raw
+
+
+def _encode_screenshot(data: bytes) -> dict[str, object]:
+    raw = _screenshot_bytes(data)
     return {
         "ok": True,
         "mime_type": "image/png",
         "bytes": len(raw),
         "image_base64": base64.b64encode(raw).decode("ascii"),
+    }
+
+
+def _screenshot_evidence(data: bytes) -> dict[str, object]:
+    """Return bounded screenshot provenance without persisting page pixels."""
+    raw = _screenshot_bytes(data)
+    return {
+        "mime_type": "image/png",
+        "bytes": len(raw),
+        "sha256": hashlib.sha256(raw).hexdigest(),
     }
 
 
@@ -107,10 +123,12 @@ class PlaywrightReadOnlyTransport:
         headless: bool = True,
         allow_mutations: bool = False,
         artifact_loader: ArtifactLoader | None = None,
+        evidence_screenshots: bool = False,
     ) -> None:
         self.headless = bool(headless)
         self.allow_mutations = bool(allow_mutations)
         self.artifact_loader = artifact_loader
+        self.evidence_screenshots = bool(evidence_screenshots)
 
     @staticmethod
     def _loader():
@@ -155,6 +173,7 @@ class PlaywrightReadOnlyTransport:
             async with async_playwright() as runtime:
                 browser = await runtime.chromium.launch(headless=self.headless, args=[f"--host-resolver-rules={resolver}"])
                 try:
+                    browser_version = str(await browser.version())[:128]
                     context = await browser.new_context(ignore_https_errors=False)
                     page = await context.new_page()
                     initial_navigation_complete = False
@@ -188,11 +207,19 @@ class PlaywrightReadOnlyTransport:
                     if page.url != action.url:
                         return {"redirect_url": page.url}
                     if action.kind == "navigate":
-                        return {"ok": True, "status": response.status if response else 0, "title": (await page.title())[:500]}
+                        return {"ok": True, "status": response.status if response else 0, "title": (await page.title())[:500], "browser_version": browser_version}
                     if action.kind == "screenshot":
                         screenshot = await page.screenshot(type="png", full_page=True, timeout=timeout_ms)
-                        return {**_encode_screenshot(screenshot), "title": (await page.title())[:500]}
+                        return {**_encode_screenshot(screenshot), "title": (await page.title())[:500], "browser_version": browser_version}
                     if action.kind in MUTATING_ACTIONS:
+                        before_evidence = None
+                        if self.evidence_screenshots:
+                            try:
+                                before_evidence = _screenshot_evidence(
+                                    await page.screenshot(type="png", full_page=True, timeout=timeout_ms)
+                                )
+                            except Exception:
+                                before_evidence = None
                         try:
                             result = dict(await _execute_approved_mutation(page, action, timeout_ms, self.artifact_loader))
                         except Exception:
@@ -203,10 +230,22 @@ class PlaywrightReadOnlyTransport:
                             return {"redirect_url": blocked_navigation_url, "mutation_redirect_blocked": True}
                         result["title"] = (await page.title())[:500]
                         result["navigation_blocked_until_revalidated"] = True
+                        result["browser_version"] = browser_version
+                        if self.evidence_screenshots:
+                            evidence = {"browser_version": browser_version}
+                            if before_evidence is not None:
+                                evidence["before"] = before_evidence
+                            try:
+                                evidence["after"] = _screenshot_evidence(
+                                    await page.screenshot(type="png", full_page=True, timeout=timeout_ms)
+                                )
+                            except Exception:
+                                pass
+                            result["evidence_screenshots"] = evidence
                         return result
                     selector = action.selector or "body"
                     text = await page.locator(selector).first.inner_text(timeout=timeout_ms)
-                    return {"ok": True, "title": (await page.title())[:500], "text": text[:20000], "truncated": len(text) > 20000}
+                    return {"ok": True, "title": (await page.title())[:500], "text": text[:20000], "truncated": len(text) > 20000, "browser_version": browser_version}
                 finally:
                     await browser.close()
         except (BrowserPolicyError, BrowserAutomationUnavailable):

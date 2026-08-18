@@ -1,3 +1,4 @@
+import hashlib
 import sys
 import unittest
 from pathlib import Path
@@ -7,7 +8,7 @@ if str(ZIDER_ROOT) not in sys.path:
     sys.path.insert(0, str(ZIDER_ROOT))
 
 from app.services.agent_runner import BrowserAction, BrowserPolicyError
-from app.services.playwright_runtime import _execute_approved_mutation
+from app.services.playwright_runtime import _execute_approved_mutation, _screenshot_evidence
 
 
 class FakeLocator:
@@ -82,6 +83,15 @@ class ApprovedMutationExecutionTests(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaisesRegex(BrowserPolicyError, "artifact-content adapter"):
             await _execute_approved_mutation(page, action, 5000, None)
+
+    def test_screenshot_evidence_contains_digest_not_raw_pixels(self):
+        raw = b"sensitive-rendered-page-pixels"
+        evidence = _screenshot_evidence(raw)
+        self.assertEqual(evidence["sha256"], hashlib.sha256(raw).hexdigest())
+        self.assertEqual(evidence["bytes"], len(raw))
+        self.assertEqual(evidence["mime_type"], "image/png")
+        self.assertNotIn("image_base64", evidence)
+        self.assertNotIn(raw.decode(), repr(evidence))
 
 
 if __name__ == "__main__":
