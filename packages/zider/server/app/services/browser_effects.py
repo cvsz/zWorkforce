@@ -1,12 +1,20 @@
 from __future__ import annotations
 
-from typing import Any, Mapping
+import hashlib
+import json
+from typing import Any, Mapping, Protocol
 
 import httpx
 
-from .agent_runner import BrowserAction
+from .agent_runner import BrowserAction, BrowserAutomationUnavailable, MUTATING_ACTIONS
 from .browser_approval import browser_action_binding
 from .zworkforce_bridge import ZWorkforceBridge, ZWorkforceBridgeError
+
+
+class BrowserEffectDelegate(Protocol):
+    enforces_resolved_addresses: bool
+
+    async def execute(self, action: BrowserAction) -> Mapping[str, Any]: ...
 
 
 class ZWorkforceBrowserEffectController:
@@ -61,10 +69,61 @@ class ZWorkforceBrowserEffectController:
     ) -> dict[str, Any]:
         return await self._post(
             f"/api/v1/browser-effects/{effect_id}/finish",
-            {
-                "status": status,
-                "result_sha256": result_sha256,
-                "error_code": error_code,
-            },
+            {"status": status, "result_sha256": result_sha256, "error_code": error_code},
             "browser effect finish",
         )
+
+
+class DurableBrowserEffectExecutor:
+    """Fence every mutating browser action through the durable control-plane ledger."""
+
+    enforces_resolved_addresses = True
+
+    def __init__(self, delegate: BrowserEffectDelegate, controller: ZWorkforceBrowserEffectController | None = None) -> None:
+        if getattr(delegate, "enforces_resolved_addresses", False) is not True:
+            raise BrowserAutomationUnavailable("browser effect delegate must enforce resolved addresses")
+        self.delegate = delegate
+        self.controller = controller or ZWorkforceBrowserEffectController()
+
+    @staticmethod
+    def _result_digest(result: Mapping[str, Any]) -> str:
+        encoded = json.dumps(dict(result), sort_keys=True, separators=(",", ":"), default=str)
+        return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+    async def execute(self, action: BrowserAction) -> Mapping[str, Any]:
+        if action.kind not in MUTATING_ACTIONS:
+            return await self.delegate.execute(action)
+        if not action.approval_task_id:
+            raise BrowserAutomationUnavailable("browser mutation is missing its durable approval task binding")
+
+        effect = await self.controller.begin(action, action.approval_task_id)
+        effect_id = str(effect.get("id") or "")
+        status = str(effect.get("status") or "")
+        if not effect_id:
+            raise BrowserAutomationUnavailable("browser effect begin returned an invalid effect")
+        if status == "succeeded":
+            return {"ok": True, "deduplicated": True, "effect_id": effect_id, "result_sha256": effect.get("result_sha256", "")}
+        if status in {"executing", "unknown"}:
+            raise BrowserAutomationUnavailable("browser effect requires reconciliation before retry")
+        if status in {"failed", "canceled"}:
+            raise BrowserAutomationUnavailable("browser effect is terminal and cannot be replayed")
+
+        claimed_effect, claimed = await self.controller.claim(effect_id)
+        if not claimed or str(claimed_effect.get("status") or "") != "executing":
+            raise BrowserAutomationUnavailable("browser effect could not be atomically claimed")
+        try:
+            result = await self.delegate.execute(action)
+        except Exception:
+            try:
+                await self.controller.finish(effect_id, status="unknown", error_code="execution_ambiguous")
+            except Exception:
+                pass
+            raise
+        if not isinstance(result, Mapping):
+            try:
+                await self.controller.finish(effect_id, status="unknown", error_code="invalid_result")
+            finally:
+                raise BrowserAutomationUnavailable("browser executor returned an invalid result")
+        digest = self._result_digest(result)
+        await self.controller.finish(effect_id, status="succeeded", result_sha256=digest)
+        return {**dict(result), "effect_id": effect_id, "result_sha256": digest}
