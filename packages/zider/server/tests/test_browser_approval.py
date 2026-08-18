@@ -13,7 +13,7 @@ from app.services.zworkforce_bridge import ZWorkforceBridgeError
 
 
 TASK_ID = "123e4567-e89b-12d3-a456-426614174000"
-NOW = datetime(2026, 8, 18, 0, 0, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 8, 18, 0, 2, 0, tzinfo=timezone.utc)
 
 
 def action(**overrides):
@@ -128,6 +128,13 @@ class BrowserApprovalAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("sensitive-form-value", prompt)
         self.assertNotIn("form#profile", prompt)
 
+        credential_url = action(url="https://user:pass@example.com/account?token=secret")
+        credential_prompt = self.adapter.envelope(credential_url).prompt()
+        self.assertIn("https://example.com/account", credential_prompt)
+        self.assertNotIn("user", credential_prompt)
+        self.assertNotIn("pass", credential_prompt)
+        self.assertNotIn("token=secret", credential_prompt)
+
     async def test_mismatched_action_cannot_reuse_approval(self):
         browser_action = action()
         self.approved_task(browser_action)
@@ -135,7 +142,7 @@ class BrowserApprovalAdapterTests(unittest.IsolatedAsyncioTestCase):
         changed = action(selector="button#delete")
         self.assertFalse(await self.adapter.authorize(changed, TASK_ID))
 
-    async def test_unapproved_rejected_canceled_or_expired_task_fails_closed(self):
+    async def test_unapproved_rejected_canceled_future_or_expired_task_fails_closed(self):
         browser_action = action()
         self.approved_task(browser_action)
 
@@ -151,6 +158,11 @@ class BrowserApprovalAdapterTests(unittest.IsolatedAsyncioTestCase):
         FakeBridge.task["cancel_requested"] = 1
         self.assertFalse(await self.adapter.authorize(browser_action, TASK_ID))
 
+        self.approved_task(browser_action)
+        FakeBridge.task["approved_at"] = "2026-08-18T00:03:00+00:00"
+        self.assertFalse(await self.adapter.authorize(browser_action, TASK_ID))
+
+        self.approved_task(browser_action)
         expired_adapter = ZWorkforceMutationApprovalAdapter(
             bridge=FakeBridge,
             ttl_seconds=60,
