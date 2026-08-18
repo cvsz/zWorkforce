@@ -138,47 +138,54 @@ Artifact/reference:
 
 ## Stage D — provider routing, failover, and bounded execution
 
-Status: **PARTIAL — routing + circuit open/deny/recover PASS on local stack (see local drills); external provider failover/circuit metrics PENDING**
+Status: **PARTIAL — Luna/Terra/Sol routing verified on real NVIDIA NIM provider; successful real requests for all tiers; circuit behavior validated locally with drill-bad provider; external failure injection/circuit metrics PENDING**
 
 Verify with configured external providers:
-- Luna/Terra/Sol routing resolves to intended models;
-- primary provider failure opens the expected circuit/fallback path;
-- retry and timeout budgets remain bounded;
-- mutating tools remain deny-by-default unless explicit grant/approval exists;
-- provider credentials remain server-side.
+- Luna/Terra/Sol routing resolves to intended models: **VERIFIED** — luna→`nvidia/nemotron-3-nano-30b-a3b`, terra→`nvidia/nemotron-3-ultra-550b-a55b`, sol→`nvidia/nemotron-3-super-120b-a12b` (all via NVIDIA NIM `primary` provider at `https://integrate.api.nvidia.com/v1`)
+- primary provider failure opens the expected circuit/fallback path: **LOCAL DRILL VERIFIED** — drill-bad provider (3 failures → circuit open → deny → recovery via healthy primary); **EXTERNAL FAILURE INJECTION PENDING** — requires secondary provider or controlled NVIDIA failure injection
+- retry and timeout budgets remain bounded: max_attempts=3 enforced; circuit threshold=3 failures; dead_letter after exhaustion
+- mutating tools remain deny-by-default unless explicit grant/approval exists: **VERIFIED** (local)
+- provider credentials remain server-side: **VERIFIED** — NVIDIA API key only in `.env`/container env, never in responses/logs
 
 ```text
-Provider set:
-Failure injected:
-Fallback observed:
-Circuit/metric evidence:
-Bounded timeout/retry evidence:
-Result:
-Artifact/reference:
+Provider set: primary (NVIDIA NIM, live, 102 models) — verified 2026-08-18
+Failure injected: drill-bad (local PG shared circuit table, 3 failures → circuit open_until set, threshold 3)
+Fallback observed: recovery via healthy primary provider, task succeeded
+Circuit/metric evidence: provider_health2 rows (consecutive_failures, open_until, last_error); external NVIDIA failure injection PENDING
+Bounded timeout/retry evidence: max_attempts=3 → dead_letter; circuit threshold=3; local drill: 3 failures → open_until set → deny → recovery
+Result: All three tiers (luna/terra/sol) route to correct NVIDIA models and succeed; circuit behavior locally validated
+Artifact/reference: tasks 3afe7b4e (luna), 799c25be (terra), 1eea9e89 (sol); provider_health2 rows; local drill evidence in /tmp/opencode/
 ```
 
 ## Stage E — scheduler, worker, outbox, and HA leases
 
-Status: **PARTIAL — single-lease-leader and failover PASS on local stack (see local drills); outbox dispatch/failover and task-lease reclaim drills PENDING**
+Status: **PENDING EXTERNAL EVIDENCE — single-replica local stack only; multi-replica HA requires operator-deployed replicas**
 
 With at least two eligible replicas where the deployment topology supports it:
-- prove only one scheduler lease holder performs each due action;
-- prove only one outbox lease holder dispatches each event;
-- terminate the current leader and record failover time;
-- verify task lease expiry/reclaim after worker interruption;
-- verify webhook dedupe, HMAC signature, retry/backoff, and dead-letter behavior.
+- prove only one scheduler lease holder performs each due action: **SINGLE REPLICA** — local stack has 1 scheduler (`scheduler-ccdf45651854`), lease active, heartbeat current; no replica contention possible
+- prove only one outbox lease holder dispatches each event: **NOT TESTED** — no outbox events in local stack; no outbox lease holder observed
+- terminate the current leader and record failover time: **LOCAL DRILL ONLY** — prior drill: leader stop → takeover ~28.2s; **EXTERNAL MULTI-REPLICA FAILOVER PENDING**
+- verify task lease expiry/reclaim after worker interruption: **SINGLE WORKER** — local stack has 1 worker; no replica to reclaim lease
+- verify webhook dedupe, HMAC signature, retry/backoff, and dead-letter behavior: **NO OUTBOX EVENTS** — outbox3 empty; no dispatches recorded
 
 ```text
-Replica counts:
-Leader before failure:
-Failure time (UTC):
-New leader time (UTC):
-Observed failover:
-Duplicate count:
-Dead-letter/retry evidence:
-Result:
-Artifact/reference:
+Replica counts: 1 scheduler, 1 worker (single-host compose)
+Leader before failure: scheduler-ccdf45651854 (single replica)
+Failure time (UTC): N/A — requires multi-replica deployment
+New leader time (UTC): N/A
+Observed failover: N/A — local drill ~28.2s only
+Duplicate count: N/A
+Dead-letter/retry evidence: N/A — no outbox events
+Result: Single-replica local stack; multi-replica HA PENDING EXTERNAL EVIDENCE
+Artifact/reference: service_leases3 row (scheduler); prior local drill recorded in ledger
 ```
+
+**Operator action needed:** Deploy at least 2 scheduler replicas and 2 worker replicas (e.g., via Kubernetes with leader election, or docker-compose with multiple replicas sharing the same PostgreSQL). Then:
+1. Verify only one scheduler lease holder at a time (contention on `service_leases3`)
+2. Terminate leader scheduler and measure takeover time
+3. Verify outbox lease holder uniqueness and dispatch
+4. Submit tasks, interrupt worker, verify lease expiry/reclaim by another worker
+5. Generate outbox events, verify HMAC signature, dedupe, retry/backoff, dead-letter behavior
 
 ## Stage F — artifacts, memory, and external storage
 
