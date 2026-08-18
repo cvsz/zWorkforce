@@ -6,7 +6,7 @@ ZIDER_ROOT = Path(__file__).resolve().parent.parent
 if str(ZIDER_ROOT) not in sys.path:
     sys.path.insert(0, str(ZIDER_ROOT))
 
-from app.services.agent_runner import BrowserAction, BrowserAutomationUnavailable, BrowserPolicyError
+from app.services.agent_runner import AgentRunner, BrowserAction, BrowserAutomationUnavailable, BrowserPolicyError
 from app.services.browser_executor import PinnedBrowserExecutor
 
 
@@ -131,6 +131,70 @@ class BrowserExecutorTests(unittest.IsolatedAsyncioTestCase):
             await executor.execute(action)
         self.assertFalse(validator_called)
         self.assertEqual(len(transport.calls), 1)
+
+    async def test_https_redirect_scheme_downgrade_is_rejected(self):
+        transport = FakeTransport({"redirect_url": "http://example.com/plain"})
+        executor = PinnedBrowserExecutor(transport, redirect_validator=lambda url: (url, ("93.184.216.34",)))
+        action = BrowserAction(kind="navigate", url="https://example.com/start", resolved_addresses=("93.184.216.34",))
+        with self.assertRaisesRegex(BrowserPolicyError, "downgrade"):
+            await executor.execute(action)
+        self.assertEqual(len(transport.calls), 1)
+
+    async def test_http_redirect_https_upgrade_is_allowed(self):
+        transport = FakeTransport(results=[
+            {"redirect_url": "https://example.com/secure"},
+            {"ok": True},
+        ])
+        executor = PinnedBrowserExecutor(transport, redirect_validator=lambda url: (url, ("93.184.216.34",)))
+        action = BrowserAction(kind="navigate", url="http://example.com/start", resolved_addresses=("93.184.216.34",))
+        result = await executor.execute(action)
+        self.assertEqual(result["redirect_count"], 1)
+        self.assertEqual(len(transport.calls), 2)
+
+    async def test_redirect_hop_is_revalidated_repinned_and_canonicalized(self):
+        def resolver(hostname):
+            return {"example.com": ["93.184.216.34"], "next.example.com": ["93.184.216.35"]}[hostname]
+        AgentRunner.configure(allowed_hosts=["example.com", "next.example.com"], resolver=resolver)
+        try:
+            transport = FakeTransport(results=[
+                {"redirect_url": "https://NEXT.Example.com/final#fragment"},
+                {"ok": True, "title": "done"},
+            ])
+            executor = PinnedBrowserExecutor(transport, redirect_validator=AgentRunner._validate_url)
+            action = BrowserAction(kind="navigate", url="https://example.com/start", resolved_addresses=("93.184.216.34",))
+            result = await executor.execute(action)
+            self.assertEqual(result["redirect_count"], 1)
+            self.assertEqual(transport.calls[1]["action"].url, "https://next.example.com/final")
+            self.assertEqual(transport.calls[1]["connect_ip"], "93.184.216.35")
+            self.assertEqual(transport.calls[1]["host_header"], "next.example.com")
+            self.assertEqual(transport.calls[1]["tls_server_name"], "next.example.com")
+        finally:
+            AgentRunner.reset()
+
+    async def test_https_redirect_to_private_destination_is_rejected_by_real_policy(self):
+        def resolver(hostname):
+            return {"example.com": ["93.184.216.34"], "internal.example.com": ["10.0.0.5"]}[hostname]
+        AgentRunner.configure(allowed_hosts=["example.com", "internal.example.com"], resolver=resolver)
+        try:
+            transport = FakeTransport({"redirect_url": "https://internal.example.com/private"})
+            executor = PinnedBrowserExecutor(transport, redirect_validator=AgentRunner._validate_url)
+            action = BrowserAction(kind="navigate", url="https://example.com/start", resolved_addresses=("93.184.216.34",))
+            with self.assertRaisesRegex(BrowserPolicyError, "non-public"):
+                await executor.execute(action)
+            self.assertEqual(len(transport.calls), 1)
+        finally:
+            AgentRunner.reset()
+
+    async def test_url_policy_canonicalizes_and_strips_fragments(self):
+        def resolver(hostname):
+            return ["93.184.216.34"]
+        AgentRunner.configure(allowed_hosts=["example.com"], resolver=resolver)
+        try:
+            url, addresses = AgentRunner._validate_url("HTTPS://Example.COM:443/a#fragment")
+            self.assertEqual(url, "https://example.com:443/a")
+            self.assertEqual(addresses, ("93.184.216.34",))
+        finally:
+            AgentRunner.reset()
 
 
 if __name__ == "__main__":

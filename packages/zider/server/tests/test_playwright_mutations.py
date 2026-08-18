@@ -44,7 +44,7 @@ class ApprovedMutationExecutionTests(unittest.IsolatedAsyncioTestCase):
             resolved_addresses=("93.184.216.34",),
         )
 
-        result = await _execute_approved_mutation(page, action, 5000)
+        result = await _execute_approved_mutation(page, action, 5000, None)
 
         self.assertEqual(result, {"ok": True, "action": "click"})
         self.assertEqual(page.selectors, ["button#save"])
@@ -61,7 +61,7 @@ class ApprovedMutationExecutionTests(unittest.IsolatedAsyncioTestCase):
             resolved_addresses=("93.184.216.34",),
         )
 
-        result = await _execute_approved_mutation(page, action, 5000)
+        result = await _execute_approved_mutation(page, action, 5000, None)
 
         self.assertEqual(result, {"ok": True, "action": "submit"})
         self.assertEqual(page.selectors, ["form#profile"])
@@ -81,7 +81,7 @@ class ApprovedMutationExecutionTests(unittest.IsolatedAsyncioTestCase):
         )
 
         with self.assertRaisesRegex(BrowserPolicyError, "artifact-content adapter"):
-            await _execute_approved_mutation(page, action, 5000)
+            await _execute_approved_mutation(page, action, 5000, None)
 
 
 if __name__ == "__main__":

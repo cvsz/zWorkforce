@@ -33,7 +33,10 @@ class PinnedBrowserExecutor:
 
     Redirects are never followed by the transport. Read-only redirects are fed
     back through the same AgentRunner URL policy, DNS resolution, and public-IP
-    checks before a new pinned request is made. Redirects triggered by a browser
+    checks before a new pinned request is made; each hop is canonicalized,
+    re-validated against the host allowlist, re-resolved to public addresses,
+    and pinned anew, while an approved https destination is never downgraded
+    to http. Redirects triggered by a browser
     mutation remain fail-closed until durable side-effect reconciliation lands;
     replaying the mutation merely to follow a redirect would be unsafe.
     """
@@ -129,6 +132,7 @@ class PinnedBrowserExecutor:
         self._require_transport_contract()
         current = action
         redirects = 0
+        original_scheme = urlsplit(action.url).scheme
 
         while True:
             result = dict(await self._execute_once(current))
@@ -150,5 +154,7 @@ class PinnedBrowserExecutor:
             validated_url, addresses = self.redirect_validator(redirect_url)
             if not addresses:
                 raise BrowserPolicyError("browser redirect did not produce policy-validated pinned addresses")
+            if original_scheme == "https" and urlsplit(validated_url).scheme != "https":
+                raise BrowserPolicyError("browser redirect must not downgrade the approved https destination")
             current = replace(current, url=validated_url, resolved_addresses=tuple(addresses))
             redirects += 1
