@@ -93,6 +93,34 @@ candidate preparation. It is authorized only after the candidate is merged to
 is reconciled server-side, mandatory external evidence is recorded, and a GO
 decision is approved.
 
+### v3.0.3 release-scope authority
+
+For release triage, the current-release boundary is defined by this `v3.0.3`
+section together with `planning/exec-planning-zwf.md` and
+`docs/PRODUCTION-EVIDENCE.md`. Required GitHub checks, actionable security
+findings, and explicit release-blocking requirements in those sources override
+older or broader status labels elsewhere.
+
+Subsystem execution plans are intentionally allowed to continue beyond the
+`v3.0.3` candidate. Z.A.R.V.I.S., Zeto, Zider, zsp-aitool, router,
+Hermes/Spawn, and Skywork-inspired workspace plans therefore represent
+**forward roadmap scope unless an item is explicitly bound to v3.0.3** by the
+release sources above. An `Active`, `Production Target`, or similar subsystem
+status must not by itself downgrade the `v3.0.3` repository candidate, and it
+must not be rewritten to `complete` unless its own documented Definition of
+Complete is actually satisfied.
+
+Release-state vocabulary:
+
+- **v3.0.3 required / complete** — implemented and verified repository work in
+  the candidate scope;
+- **v3.0.3 required / incomplete** — a current release blocker that must be
+  resolved before immutable promotion;
+- **forward roadmap** — planned or active product work outside the current
+  release boundary;
+- **external evidence** — operator-owned validation that cannot be inferred
+  from repository implementation or CI.
+
 ## Remaining production/operator work
 
 These are external operational concerns, not unimplemented in-process features:
