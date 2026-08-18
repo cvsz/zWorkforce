@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS browser_effects3(
     updated_at TEXT NOT NULL,
     started_at TEXT NULL,
     finished_at TEXT NULL,
-    UNIQUE(tenant_id,idempotency_key)
+    UNIQUE(tenant_id,idempotency_key),
+    UNIQUE(tenant_id,approval_task_id)
 );
 CREATE INDEX IF NOT EXISTS idx_browser_effects3_tenant_status
 ON browser_effects3(tenant_id,status,updated_at);
