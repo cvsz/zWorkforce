@@ -4,7 +4,13 @@ import base64
 from typing import Mapping
 from urllib.parse import urlsplit
 
-from .agent_runner import BrowserAction, BrowserAutomationUnavailable, BrowserPolicyError, READ_ONLY_ACTIONS
+from .agent_runner import (
+    BrowserAction,
+    BrowserAutomationUnavailable,
+    BrowserPolicyError,
+    MUTATING_ACTIONS,
+    READ_ONLY_ACTIONS,
+)
 
 
 MAX_SCREENSHOT_BYTES = 4 * 1024 * 1024
@@ -43,15 +49,40 @@ def _encode_screenshot(data: bytes) -> dict[str, object]:
     }
 
 
+async def _execute_approved_mutation(page, action: BrowserAction, timeout_ms: int) -> Mapping[str, object]:
+    locator = page.locator(action.selector).first
+    if action.kind == "click":
+        await locator.click(timeout=timeout_ms)
+        return {"ok": True, "action": "click"}
+    if action.kind == "submit":
+        await locator.evaluate(
+            """el => {
+                const form = el.tagName === 'FORM' ? el : el.form;
+                if (!form) throw new Error('submit selector must resolve to a form or form control');
+                if (typeof form.requestSubmit === 'function') form.requestSubmit();
+                else form.submit();
+            }"""
+        )
+        return {"ok": True, "action": "submit"}
+    if action.kind == "upload":
+        raise BrowserPolicyError("browser upload requires the governed artifact-content adapter")
+    raise BrowserPolicyError("unsupported browser mutation")
+
+
 class PlaywrightReadOnlyTransport:
-    """Playwright Chromium adapter for governed read-only browser actions."""
+    """Playwright Chromium adapter for governed browser actions.
+
+    Mutation execution is disabled by default and is enabled only by startup
+    wiring that also installs the durable zWorkforce approval authorizer.
+    """
 
     enforces_pinned_destination = True
     disables_automatic_redirects = True
     verifies_tls_server_identity = True
 
-    def __init__(self, *, headless: bool = True) -> None:
+    def __init__(self, *, headless: bool = True, allow_mutations: bool = False) -> None:
         self.headless = bool(headless)
+        self.allow_mutations = bool(allow_mutations)
 
     @staticmethod
     def _loader():
@@ -79,8 +110,11 @@ class PlaywrightReadOnlyTransport:
         tls_server_name: str,
         timeout_seconds: int,
     ) -> Mapping[str, object]:
-        if action.kind not in READ_ONLY_ACTIONS:
+        if action.kind in MUTATING_ACTIONS and not self.allow_mutations:
             raise BrowserPolicyError("browser mutations require the zWorkforce approval adapter")
+        if action.kind not in READ_ONLY_ACTIONS | MUTATING_ACTIONS:
+            raise BrowserPolicyError("unsupported browser action")
+
         parsed = urlsplit(action.url)
         approved_origin = _origin(parsed)
         hostname = approved_origin[1]
@@ -104,8 +138,10 @@ class PlaywrightReadOnlyTransport:
                 try:
                     context = await browser.new_context(ignore_https_errors=False)
                     page = await context.new_page()
+                    initial_navigation_complete = False
 
                     async def guard(route, request):
+                        nonlocal initial_navigation_complete
                         target = urlsplit(request.url)
                         try:
                             target_origin = _origin(target)
@@ -115,13 +151,17 @@ class PlaywrightReadOnlyTransport:
                         if target_origin != approved_origin:
                             await route.abort()
                             return
-                        if request.is_navigation_request() and request.url != action.url:
+                        if request.is_navigation_request():
+                            if not initial_navigation_complete and request.url == action.url:
+                                await route.continue_()
+                                return
                             await route.abort()
                             return
                         await route.continue_()
 
                     await context.route("**/*", guard)
                     response = await page.goto(action.url, wait_until="domcontentloaded", timeout=timeout_ms)
+                    initial_navigation_complete = True
                     if page.url != action.url:
                         return {"redirect_url": page.url}
                     if action.kind == "navigate":
@@ -129,6 +169,11 @@ class PlaywrightReadOnlyTransport:
                     if action.kind == "screenshot":
                         screenshot = await page.screenshot(type="png", full_page=True, timeout=timeout_ms)
                         return {**_encode_screenshot(screenshot), "title": (await page.title())[:500]}
+                    if action.kind in MUTATING_ACTIONS:
+                        result = dict(await _execute_approved_mutation(page, action, timeout_ms))
+                        result["title"] = (await page.title())[:500]
+                        result["navigation_blocked_until_revalidated"] = True
+                        return result
                     selector = action.selector or "body"
                     text = await page.locator(selector).first.inner_text(timeout=timeout_ms)
                     return {"ok": True, "title": (await page.title())[:500], "text": text[:20000], "truncated": len(text) > 20000}
@@ -137,4 +182,4 @@ class PlaywrightReadOnlyTransport:
         except (BrowserPolicyError, BrowserAutomationUnavailable):
             raise
         except Exception as exc:
-            raise BrowserAutomationUnavailable("Playwright read-only browser action failed") from exc
+            raise BrowserAutomationUnavailable("Playwright browser action failed") from exc
