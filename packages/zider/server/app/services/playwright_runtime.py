@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 from typing import Any, Awaitable, Callable, Mapping
 from urllib.parse import urlsplit
 
@@ -34,7 +35,7 @@ def _origin(parsed) -> tuple[str, str, int]:
     )
 
 
-def _encode_screenshot(data: bytes) -> dict[str, object]:
+def _screenshot_bytes(data: bytes) -> bytes:
     if not isinstance(data, (bytes, bytearray)):
         raise BrowserAutomationUnavailable("Playwright screenshot returned invalid data")
     raw = bytes(data)
@@ -42,11 +43,26 @@ def _encode_screenshot(data: bytes) -> dict[str, object]:
         raise BrowserAutomationUnavailable("Playwright screenshot returned empty data")
     if len(raw) > MAX_SCREENSHOT_BYTES:
         raise BrowserAutomationUnavailable("Playwright screenshot exceeds the configured response bound")
+    return raw
+
+
+def _encode_screenshot(data: bytes) -> dict[str, object]:
+    raw = _screenshot_bytes(data)
     return {
         "ok": True,
         "mime_type": "image/png",
         "bytes": len(raw),
         "image_base64": base64.b64encode(raw).decode("ascii"),
+    }
+
+
+def _screenshot_evidence(data: bytes) -> dict[str, object]:
+    """Return bounded screenshot provenance without persisting page pixels."""
+    raw = _screenshot_bytes(data)
+    return {
+        "mime_type": "image/png",
+        "bytes": len(raw),
+        "sha256": hashlib.sha256(raw).hexdigest(),
     }
 
 
@@ -196,14 +212,14 @@ class PlaywrightReadOnlyTransport:
                         screenshot = await page.screenshot(type="png", full_page=True, timeout=timeout_ms)
                         return {**_encode_screenshot(screenshot), "title": (await page.title())[:500], "browser_version": browser_version}
                     if action.kind in MUTATING_ACTIONS:
-                        before_screenshot = None
+                        before_evidence = None
                         if self.evidence_screenshots:
                             try:
-                                before_screenshot = _encode_screenshot(
+                                before_evidence = _screenshot_evidence(
                                     await page.screenshot(type="png", full_page=True, timeout=timeout_ms)
                                 )
                             except Exception:
-                                before_screenshot = None
+                                before_evidence = None
                         try:
                             result = dict(await _execute_approved_mutation(page, action, timeout_ms, self.artifact_loader))
                         except Exception:
@@ -217,10 +233,10 @@ class PlaywrightReadOnlyTransport:
                         result["browser_version"] = browser_version
                         if self.evidence_screenshots:
                             evidence = {"browser_version": browser_version}
-                            if before_screenshot is not None:
-                                evidence["before"] = before_screenshot
+                            if before_evidence is not None:
+                                evidence["before"] = before_evidence
                             try:
-                                evidence["after"] = _encode_screenshot(
+                                evidence["after"] = _screenshot_evidence(
                                     await page.screenshot(type="png", full_page=True, timeout=timeout_ms)
                                 )
                             except Exception:
