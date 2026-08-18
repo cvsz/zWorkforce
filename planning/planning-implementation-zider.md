@@ -1,7 +1,7 @@
 # Planning & Implementation: Zider AI Browser Companion (`planning-implementation-zider.md`)
 
-**Updated:** 2026-08-18T00:30Z (auto-quad-loop)  
-**Module:** `packages/zider/` Manifest V3 Browser Sidebar, Shadow DOM Isolation, ChatPDF, and YouTube Translator  
+**Updated:** 2026-08-18T06:18Z  
+**Module:** `packages/zider/` Manifest V3 Browser Sidebar, Shadow DOM Isolation, ChatPDF, YouTube Translator, and Governed Browser Automation  
 **Parent Strategy:** [`exec-planning.master.md`](exec-planning.master.md) & [`exec-planning.zider.md`](exec-planning.zider.md)
 
 ---
@@ -27,7 +27,8 @@ graph TD
     subgraph "Gateway & Intelligence"
         GATEWAY["Zider Local Gateway (:8085)"]
         GROUP_AI["Group AI Multi-Model Streaming Compare"]
-        ZWF_CORE["zWorkforce Model Router (:9569)"]
+        BROWSER["Governed Playwright Browser Runtime"]
+        ZWF_CORE["zWorkforce Control Plane (:9569)"]
     end
 
     PAGE --> TOOLBAR
@@ -37,7 +38,9 @@ graph TD
     SW --> PDF_ENGINE
     SW --> GATEWAY
     GATEWAY --> GROUP_AI
+    GATEWAY --> BROWSER
     GROUP_AI --> ZWF_CORE
+    BROWSER --> ZWF_CORE
 ```
 
 ---
@@ -60,12 +63,22 @@ graph TD
 - [x] **Live YouTube Video & Audio Transcript Synchronizer (Phase 2)**:
   - Built `packages/zider/server/src/rerank_engine.mjs` providing `YouTubeSync` for playback timestamp alignment.
   - Unit tests in `packages/zider/server/test/rerank_engine.test.mjs`.
+- [x] **SW7 Governed Browser Automation**:
+  - Pinned public destinations and preserved Host/TLS identity.
+  - Durable zWorkforce mutation approval binding for `click`, `submit`, and governed artifact `upload`.
+  - Read-only redirect-hop revalidation/repinning with downgrade protection and bounded hops.
+  - Tenant-scoped durable per-action browser-effect ledger with exactly-once claim, replay dedupe, `unknown` quarantine, and admin-only reconciliation.
+  - Cancellation/timeout/crash ambiguity is fail-closed and non-replayable.
+  - Sanitized evidence envelope with digest-only optional mutation screenshot provenance.
+  - Full E2E/security regression matrix delivered by PR #153; repository-side completion remains gated on its required exact-head checks and merge.
+
+See [`SW7-P6B-BROWSER-EFFECT-WIRING.md`](SW7-P6B-BROWSER-EFFECT-WIRING.md) for the consolidated SW7 completion ledger and safety invariants.
 
 ---
 
 ## 3. Active & Upcoming Implementation Workstreams
 
-*(All Phases 1 through 4 for Zider Companion are now completed and verified).*
+All documented Zider Phases 1 through 4 and the SW7 governed-browser repository implementation are complete candidates. External production/staging validation remains governed by `docs/PRODUCTION-EVIDENCE.md` and must not be inferred from repository tests.
 
 ---
 
@@ -75,4 +88,12 @@ graph TD
 # 1. Zider Build & Test
 pnpm --dir packages/zider test
 pnpm --dir packages/zider build
+
+# 2. Root cross-package browser security matrix
+python -m pip install '.[test]'
+PYTHONPATH=. python -m unittest tests.test_browser_e2e_security -v
+
+# 3. Required repository gates
+PYTHONPATH=. python -m unittest discover -s tests -v
+python scripts/verify_release.py
 ```
