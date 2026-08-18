@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 
 from .agent_runner import AgentRunner, BrowserAutomationUnavailable
+from .artifact_content import GovernedArtifactContentLoader
 from .browser_approval import ZWorkforceMutationApprovalAdapter
 from .browser_effects import DurableBrowserEffectExecutor
 from .browser_executor import PinnedBrowserExecutor
@@ -12,10 +13,10 @@ from .playwright_runtime import PlaywrightReadOnlyTransport
 async def configure_browser_runtime() -> str:
     """Configure the explicitly selected browser runtime.
 
-    Disabled is the safe default. Mutating click/submit execution requires both
-    durable zWorkforce approval validation and durable browser-effect fencing.
-    Unknown effects are never automatically replayed. Upload remains fail-closed
-    until the governed artifact-content boundary is wired.
+    Disabled is the safe default. Mutations require durable zWorkforce approval
+    validation and durable browser-effect fencing. Upload content is retrieved
+    only through the authenticated tenant-scoped artifact-content API; raw host
+    filesystem paths are never accepted.
     """
 
     runtime = os.getenv("ZIDER_BROWSER_RUNTIME", "disabled").strip().lower()
@@ -33,9 +34,11 @@ async def configure_browser_runtime() -> str:
         approval_ttl = int(os.getenv("ZIDER_BROWSER_APPROVAL_TTL_SECONDS", "600"))
         approval_authorizer = ZWorkforceMutationApprovalAdapter(ttl_seconds=approval_ttl).authorize
 
+    artifact_loader = GovernedArtifactContentLoader() if approval_authorizer is not None else None
     transport = PlaywrightReadOnlyTransport(
         headless=os.getenv("ZIDER_BROWSER_HEADLESS", "1").strip().lower() not in {"0", "false", "no"},
         allow_mutations=approval_authorizer is not None,
+        artifact_loader=artifact_loader,
     )
     await transport.probe()
     timeout = int(os.getenv("ZIDER_BROWSER_TIMEOUT_SECONDS", "30"))
