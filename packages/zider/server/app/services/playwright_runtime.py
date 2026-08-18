@@ -129,17 +129,17 @@ class PlaywrightReadOnlyTransport:
 
                     async def guard(route, request):
                         nonlocal initial_navigation_complete, blocked_navigation_url
+                        if request.is_navigation_request():
+                            if not initial_navigation_complete and request.url == action.url:
+                                await route.continue_(); return
+                            blocked_navigation_url = request.url
+                            await route.abort(); return
                         target = urlsplit(request.url)
                         try:
                             target_origin = _origin(target)
                         except BrowserPolicyError:
                             await route.abort(); return
                         if target_origin != approved_origin:
-                            await route.abort(); return
-                        if request.is_navigation_request():
-                            if not initial_navigation_complete and request.url == action.url:
-                                await route.continue_(); return
-                            blocked_navigation_url = request.url
                             await route.abort(); return
                         await route.continue_()
 
