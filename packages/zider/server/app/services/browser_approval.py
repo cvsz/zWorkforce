@@ -19,6 +19,9 @@ _ALLOWED_TASK_STATES = frozenset({"queued", "running", "succeeded"})
 
 class BrowserApprovalBridge(Protocol):
     @classmethod
+    async def get_agents(cls) -> list[Mapping[str, Any]]: ...
+
+    @classmethod
     async def request_browser_approval(
         cls,
         *,
@@ -119,9 +122,11 @@ class ZWorkforceMutationApprovalAdapter:
     """Validate browser mutations against durable zWorkforce task approvals.
 
     zWorkforce remains the approval authority. Zider stores no approval decision
-    locally. The approved task prompt contains only a digest of sensitive action
-    fields plus a sanitized destination so approval evidence can be reviewed
-    without persisting form values, selectors, query parameters, or credentials.
+    locally. Approval request tasks are accepted only when the configured agent
+    is enabled, requires mutation approval, and has no tools or skills, so the
+    approval carrier cannot itself perform external side effects after approval.
+    The task prompt stores only hashes of sensitive action fields plus a sanitized
+    destination.
     """
 
     def __init__(
@@ -144,14 +149,30 @@ class ZWorkforceMutationApprovalAdapter:
             expires_at=expires.isoformat(timespec="seconds"),
         )
 
+    async def _require_safe_approval_agent(self, agent_id: str) -> Mapping[str, Any]:
+        target = str(agent_id or "").strip()
+        if not target:
+            raise ZWorkforceBridgeError("browser approval agent id is required", status_code=400)
+        agents = await self.bridge.get_agents()
+        agent = next((item for item in agents if str(item.get("id") or "") == target), None)
+        if not agent or not bool(agent.get("enabled")):
+            raise ZWorkforceBridgeError("configured browser approval agent is unavailable")
+        if not bool(agent.get("requires_approval_for_mutations")) or int(agent.get("required_approvals") or 0) < 1:
+            raise ZWorkforceBridgeError("configured browser approval agent does not require mutation approval")
+        if list(agent.get("allowed_tools") or []) or list(agent.get("skill_ids") or []):
+            raise ZWorkforceBridgeError("browser approval agent must not have tools or skills")
+        return agent
+
     async def request(self, action: BrowserAction, *, agent_id: str) -> Mapping[str, Any]:
         if not action.idempotency_key:
             raise ValueError("browser mutation approval requires an idempotency key")
+        await self._require_safe_approval_agent(agent_id)
         envelope = self.envelope(action)
+        approval_key = "browser-approval:" + _sha256(action.idempotency_key)[:48]
         task = await self.bridge.request_browser_approval(
-            agent_id=str(agent_id or "").strip(),
+            agent_id=str(agent_id).strip(),
             prompt=envelope.prompt(),
-            idempotency_key=f"browser-approval:{action.idempotency_key}",
+            idempotency_key=approval_key,
         )
         if str(task.get("status") or "") != "waiting_approval" or int(task.get("required_approvals") or 0) < 1:
             task_id = str(task.get("id") or "")
