@@ -162,6 +162,13 @@ class ZKnowbaseClient:
     def health(self) -> dict[str, Any]:
         return self._request("GET", "/api/v1/health", api_key=self.config.api_key)
 
+    def health_for_tenant(self, tenant_id: str) -> dict[str, Any]:
+        return self._request(
+            "GET",
+            "/api/v1/health",
+            api_key=self.config.key_for_tenant(tenant_id),
+        )
+
     @staticmethod
     def _top_k(value: int) -> int:
         value = int(value)
@@ -207,9 +214,10 @@ class ZKnowbaseClient:
         if body is not None:
             headers["Content-Type"] = "application/json"
         if context is not None:
+            request_id = context.request_id.strip() or os.urandom(16).hex()
             headers.update(
                 {
-                    "X-Request-ID": _header(context.request_id, 128),
+                    "X-Request-ID": _header(request_id, 128),
                     "X-ZWorkforce-Actor": _header(context.actor),
                     "X-ZWorkforce-Agent": _header(context.agent_id),
                     "X-ZWorkforce-Tool": _header(context.tool, 64),
