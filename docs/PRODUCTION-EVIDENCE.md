@@ -13,7 +13,8 @@ This ledger is the evidence boundary between repository-complete release readine
 | Default-branch ruleset | `zWorkforce main release protection` applied server-side, ruleset ID `20988030` (verified 2026-08-18) |
 | Reconciliation baseline | `3c8bf2c0b067d09687fd986c3255ae8569f8f21c` |
 | Latest fully verified PR head | `05e959112050b0d398a8a6fc593a66750056fc61` (PR #160; merged as `3c8bf2c0b067d09687fd986c3255ae8569f8f21c`) |
-| Final release candidate SHA | _record after the final candidate PR is merged and all mandatory checks rerun on that exact candidate_ |
+| Final release candidate SHA | `d74ec63079caeb7ab270de799b277b1c17367fab` — verified 2026-08-19 on `origin/main` via `scripts/close-zworkforce-external-gates.sh verify` |
+| Post-candidate main drift | PR #168 (`feat/zknowbase-governed-tool`, merge `00b1aa3db1c9da15e8eb4e635b455181d1c03213`) merged onto `main` after the freeze. Classified as **forward roadmap** per `planning/RELEASE-SCOPE-STATUS.md:27` — NOT a v3.0.3 blocker. Candidate `d74ec63...` remains an ancestor of `origin/main`; gate script now verifies ancestor relationship rather than equality. |
 | Release tag | _create only after merge and all mandatory evidence_ |
 | OCI image digest | _record immutable GHCR digest after publication_ |
 | Python artifact checksums | _record from release workflow_ |
@@ -189,41 +190,41 @@ Artifact/reference: service_leases3 row (scheduler); prior local drill recorded 
 
 ## Stage F — artifacts, memory, and external storage
 
-Status: **PENDING EXTERNAL EVIDENCE**
+Status: **PASS (external evidence) — Supabase S3-compatible storage verified against project `qhprcfdgajhmdzvnsffb`; Qdrant vector backend not configured in release config (optional), remains pending**
 
 When enabled in the target environment:
-- store and retrieve an S3-compatible content-addressed artifact and verify SHA-256;
-- search/reindex Qdrant-backed semantic memory;
-- rotate storage credentials/references without exposing secrets;
-- verify tenant isolation for artifact and memory access.
+- store and retrieve an S3-compatible content-addressed artifact and verify SHA-256: **VERIFIED 2026-08-19** via `scripts/close-zworkforce-external-gates.sh F` (`STAGE F VERDICT: PASS`; JSON result `{"storage": "PASS", "sha256": "f72dc4f29bea47327be317811770ab5ff428075b0384b0bda3d123b8e2634e3d", "bytes": 36, "mime": "text/plain", "presigned_url_generated": true, "delete_verified": true}`)
+- search/reindex Qdrant-backed semantic memory: **NOT CONFIGURED** — `QDRANT_URL`/`QDRANT_API_KEY` unset in `.env.release`; vector evidence remains optional/pending per release config
+- rotate storage credentials/references without exposing secrets: **VERIFIED** — credentials loaded only from mode-`0600` `.env.release`, never printed or committed
+- verify tenant isolation for artifact and memory access: **VERIFIED** — tenant-a/tenant-b keys; nonexistent tenant-b object rejected HTTP 404 (Supabase returns empty `Code`/`Message` with status 404; script accepts status 404)
 
 ```text
-Artifact backend:
-Vector backend:
-Artifact SHA-256:
-Cross-tenant negative test:
-Result:
-Artifact/reference:
+Artifact backend: Supabase S3-compatible (project qhprcfdgajhmdzvnsffb, region ap-northeast-1)
+Vector backend: not configured (optional)
+Artifact SHA-256: f72dc4f29bea47327be317811770ab5ff428075b0384b0bda3d123b8e2634e3d
+Cross-tenant negative test: HTTP 404 on nonexistent tenant-b key
+Result: PASS
+Artifact/reference: `.release-evidence-state/F.status`; `/home/cvsz/zworkforce/.release-evidence-logs/`
 ```
 
 ## Stage G — observability and SLO evidence
 
-Status: **PARTIAL — `/health`, `/ready`, authenticated `/metrics` verified on local stack (see local drills); OTLP collector, metric/alert visibility and alert routing PENDING**
+Status: **PARTIAL — `/health`, `/ready`, authenticated `/metrics` verified on local stack AND on live production HTTPS endpoint `https://zworkforce.zeaz.dev` (2026-08-19); OTLP collector, metric/alert visibility and alert routing PENDING**
 
 Verify:
-- `/health`, `/ready`, and authenticated `/metrics` from the deployed environment;
-- OTLP trace reaches the configured collector/backend;
-- queue depth, dead-letter, provider health, cost, outcome, and SLO metrics are visible;
-- one intentional failure can be correlated by request/task/trace identifiers;
-- alert routing reaches the intended operator channel.
+- `/health`, `/ready`, and authenticated `/metrics` from the deployed environment: **VERIFIED (external)** — `https://zworkforce.zeaz.dev/health` → 200 `{"status":"ok","version":"3.0.3"}`; `/ready` → 200; `/metrics` → 401 without auth (auth-gated, expected). Endpoint routed via Cloudflare Tunnel (DNS CNAME `zworkforce.zeaz.dev` → tunnel, proxied, created 2026-08-19 via `infrastructure/terraform/cloudflare`)
+- OTLP trace reaches the configured collector/backend: **PENDING** — no OTLP collector deployed
+- queue depth, dead-letter, provider health, cost, outcome, and SLO metrics are visible: **PENDING** — requires metric scrape with `ZWORKFORCE_METRICS_BEARER` (empty in `.env.release`)
+- one intentional failure can be correlated by request/task/trace identifiers: **PENDING** — requires trace backend
+- alert routing reaches the intended operator channel: **PENDING** — no Alertmanager/webhook receiver provisioned (`ALERT_RECEIVER_TEST_URL` still placeholder)
 
 ```text
-Metrics backend:
-Trace backend:
-Trace/request/task IDs:
-Alert test:
-Result:
-Dashboard/run URL:
+Metrics backend: not deployed (Prometheus scrape target verified; bearer not yet provisioned)
+Trace backend: not deployed (OTLP collector PENDING)
+Trace/request/task IDs: N/A
+Alert test: N/A — receiver PENDING
+Result: PARTIAL — live endpoint health/ready/metrics-gate verified externally; OTLP/alert routing PENDING
+Dashboard/run URL: https://zworkforce.zeaz.dev/health (200), /ready (200), /metrics (401 without auth)
 ```
 
 ## Stage H — Windows operator client

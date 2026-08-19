@@ -38,3 +38,8 @@ terraform.tfvars
 tfplan
 tfplan.*
 .terraform/
+.env.openai
+.env.release
+.env.supabase
+.release-evidence-logs/
+.release-evidence-state/
