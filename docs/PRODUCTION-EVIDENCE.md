@@ -189,7 +189,7 @@ Artifact/reference: service_leases3 row (scheduler); prior local drill recorded 
 
 ## Stage F — artifacts, memory, and external storage
 
-Status: **PENDING EXTERNAL EVIDENCE**
+Status: **PENDING EXTERNAL EVIDENCE** — S3/Multi-tenancy not configured in local compose; requires external S3-compatible storage, Qdrant vector backend, or operator-deployed vector/search infrastructure.
 
 When enabled in the target environment:
 - store and retrieve an S3-compatible content-addressed artifact and verify SHA-256;
@@ -197,14 +197,46 @@ When enabled in the target environment:
 - rotate storage credentials/references without exposing secrets;
 - verify tenant isolation for artifact and memory access.
 
+The local compose stack (api/worker/scheduler/outbox + PostgreSQL) has no S3 endpoint, no MinIO, and no Qdrant container. Artifact backend and vector backend are both unset/empty in the deployed environment.
+
 ```text
-Artifact backend:
-Vector backend:
-Artifact SHA-256:
-Cross-tenant negative test:
-Result:
-Artifact/reference:
+Artifact backend: (not configured — local only)
+Vector backend: local (ZWORKFORCE_VECTOR_BACKEND=local)
+Artifact SHA-256: N/A — no S3 backend initialized
+Cross-tenant negative test: N/A — no multi-tenant artifact bucket configured
+Result: S3/Qdrant external storage PENDING EXTERNAL EVIDENCE — requires operator-deployed S3-compatible bucket and/or Qdrant vector backend
+Artifact/reference: ZUML local drills only; no S3 artifact or Qdrant vector dispatch recorded
 ```
+
+**Operator action needed:** Deploy S3-compatible storage (e.g., MinIO) with `ZWORKFORCE_S3_BUCKET`, `ZWORKFORCE_S3_ENDPOINT_URL`, and configure `ZWORKFORCE_ARTIFACT_BACKEND=s3`. Deploy Qdrant vector backend with `ZWORKFORCE_QDRANT_URL` and `ZWORKFORCE_QDRANT_API_KEY` if semantic memory search is required. Then record: artifact store/retrieve with SHA-256 verification, cross-tenant negative test, Qdrant index/search/reindex, tenant isolation proof, and credential rotation without secret exposure.
+
+## Stage G — observability and SLO evidence
+
+Status: **PARTIAL — `/health`, `/ready`, authenticated `/metrics` verified on local stack (see local drills); OTLP collector, metric/alert visibility and alert routing PENDING**
+
+Verify from the deployed environment:
+- `/health`, `/ready`, and authenticated `/metrics` from the deployed environment;
+- OTLP trace reaches the configured collector/backend;
+- queue depth, dead-letter, provider health, cost, outcome, and SLO metrics are visible;
+- one intentional failure can be correlated by request/task/trace identifiers;
+- alert routing reaches the intended operator channel.
+
+The local compose stack has `/health` 200, `/ready` 200, and `/metrics` with auth 200 (Prometheus text format with zworkforce_active_tasks, provider health metrics). No OTLP collector is running; no Prometheus or Alertmanager is deployed. No intentional failure injection or correlation has been performed in the external environment.
+
+```text
+Metrics backend: (not deployed — local only; Prometheus/text metrics available at /metrics with auth)
+Trace backend: (not deployed — no OTLP collector configured)
+Trace/request/task IDs: N/A — no distributed trace observed
+Alert test: N/A — no Alertmanager/alert routing deployed
+Result: OTLP/metrics/alert external PENDING EXTERNAL EVIDENCE — requires operator-deployed observability stack
+Dashboard/run URL: N/A
+```
+
+**Operator action needed:** Deploy observability stack:
+- OTLP collector (e.g., otelcol) configured to receive traces from the API
+- Prometheus server scraping `/metrics` endpoint with API-key auth
+- Alertmanager configured for alert routing to operator channel (Slack, email, etc.)
+- Then record: health/metrics endpoints, OTLP trace correlation, intentional failure injection, and alert delivery proof
 
 ## Stage G — observability and SLO evidence
 
