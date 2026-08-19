@@ -12,19 +12,23 @@ ingress:
   - hostname: zwf.zeaz.dev
     service: http://127.0.0.1:9570
 
-  # 2. Z.A.R.V.I.S. Voice & Hotkey Gateway
+  # 2. Z.A.R.V.I.S. Voice & Hotkey Gateway (same governed control-plane gateway)
   - hostname: zarvis.zeaz.dev
-    service: http://127.0.0.1:8080
+    service: http://127.0.0.1:9570
 
-  # 3. OpenWebUI Multi-Model AI Interface
+  # 3. ZSP AI Studio & Video Renderer
+  - hostname: studio.zeaz.dev
+    service: http://127.0.0.1:3005
+
+  # 4. zider AI Browser Companion Gateway
+  - hostname: zider.zeaz.dev
+    service: http://127.0.0.1:8085
+
+  # 5. OpenWebUI Multi-Model AI Interface
   - hostname: chat.zeaz.dev
     service: http://127.0.0.1:8080
 
-  # 4. ZSP AI Studio & Video Renderer
-  - hostname: studio.zeaz.dev
-    service: http://127.0.0.1:8080
-
-  # 5. Autonomous Agent & Assistant Services
+  # 6. Autonomous Agent & Assistant Services
   - hostname: arin.zeaz.dev
     service: http://127.0.0.1:8080
   - hostname: nextchat.zeaz.dev
@@ -34,7 +38,7 @@ ingress:
   - hostname: zai.zeaz.dev
     service: http://127.0.0.1:8765
 
-  # 6. Enterprise ERP & Dashboards
+  # 7. Enterprise ERP & Dashboards
   - hostname: zerp.zeaz.dev
     service: http://127.0.0.1:80
   - hostname: zdash.zeaz.dev

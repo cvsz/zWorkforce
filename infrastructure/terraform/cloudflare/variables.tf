@@ -137,8 +137,8 @@ variable "chat_origin" {
   default     = "http://127.0.0.1:3000"
   description = "Host-loopback origin published by the OpenWebUI container."
   validation {
-    condition     = var.chat_origin == "http://127.0.0.1:3000"
-    error_message = "chat_origin must use the reviewed OpenWebUI host port at http://127.0.0.1:3000."
+    condition     = var.chat_origin == "http://127.0.0.1:3000" || var.chat_origin == "http://127.0.0.1:3080"
+    error_message = "chat_origin must use the reviewed OpenWebUI host port at http://127.0.0.1:3000 or the deployed host port at http://127.0.0.1:3080."
   }
 }
 
