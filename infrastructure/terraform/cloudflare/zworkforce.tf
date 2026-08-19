@@ -90,6 +90,28 @@ variable "zider_origin" {
   }
 }
 
+variable "zworkforce_hostname" {
+  type        = string
+  default     = "zworkforce.zeaz.dev"
+  description = "Public hostname for the zWorkforce production HTTPS endpoint used by release gate verification."
+
+  validation {
+    condition     = endswith(lower(var.zworkforce_hostname), ".${lower(var.zone_name)}")
+    error_message = "zworkforce_hostname must be a subdomain of zone_name."
+  }
+}
+
+variable "zworkforce_origin" {
+  type        = string
+  default     = "http://127.0.0.1:9570"
+  description = "Loopback origin published by the zWorkforce API service."
+
+  validation {
+    condition     = can(regex("^http://127\\.0\\.0\\.1:[0-9]+$", var.zworkforce_origin))
+    error_message = "zworkforce_origin must use a loopback address."
+  }
+}
+
 # Canonical zWorkforce-family ingress. Keeping the host/origin pairs next to the
 # DNS declarations prevents the local cloudflared manifest and managed tunnel
 # configuration from silently diverging.
@@ -99,6 +121,7 @@ locals {
     { hostname = var.studio_hostname, service = var.studio_origin },
     { hostname = var.zarvis_hostname, service = var.zarvis_origin },
     { hostname = var.zider_hostname, service = var.zider_origin },
+    { hostname = var.zworkforce_hostname, service = var.zworkforce_origin },
   ]
 }
 
@@ -142,6 +165,16 @@ resource "cloudflare_dns_record" "zider" {
   comment = "zider AI Browser Sidebar & Multi-Model Workspace via Cloudflare Tunnel"
 }
 
+resource "cloudflare_dns_record" "zworkforce" {
+  zone_id = var.cloudflare_zone_id
+  name    = var.zworkforce_hostname
+  type    = "CNAME"
+  content = local.tunnel_cname
+  ttl     = 1
+  proxied = true
+  comment = "zWorkforce production HTTPS endpoint via Cloudflare Tunnel"
+}
+
 output "zwf_url" {
   value       = "https://${var.zwf_hostname}"
   description = "Public zWorkforce Control Plane URL."
@@ -159,5 +192,10 @@ output "zarvis_url" {
 
 output "zider_url" {
   value       = "https://${var.zider_hostname}"
-  description = "Public zider AI Sidebar & Workspace URL."
+  description = "Public zider AI Browser Sidebar & Workspace URL."
+}
+
+output "zworkforce_url" {
+  value       = "https://${var.zworkforce_hostname}"
+  description = "Public zWorkforce production HTTPS endpoint URL."
 }
