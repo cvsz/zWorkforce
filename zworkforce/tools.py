@@ -69,6 +69,14 @@ TOOL_DEFINITIONS: dict[str, dict[str, Any]] = {
         "mutating": True,
         "schema": {"type": "function", "function": {"name": "shop_connector", "description": "Execute e-commerce provider shop operations across Shopee Open Platform v2, TikTok Shop Seller API, and Facebook Commerce / Catalog Manager (order fetching, SKU stock updates, price updates, and catalog synchronization). Price, stock, and listing mutations require task approval.", "parameters": {"type": "object", "properties": {"provider": {"type": "string", "enum": ["shopee_seller", "tiktok_shop", "facebook_commerce"]}, "action": {"type": "string", "description": "Shop capability (e.g. shopee_get_order_list, shopee_update_stock, shopee_update_price, shopee_add_item, tiktok_shop_get_orders, tiktok_shop_update_inventory, tiktok_shop_update_price, facebook_commerce_sync_catalog, facebook_commerce_get_orders)"}, "params": {"type": "object", "description": "Operation payload including item_id, sku_id, price, stock, order_status, logistics, catalog_id"}}, "required": ["provider", "action"]}}},
     },
+    "knowledge_search": {
+        "mutating": False,
+        "schema": {"type": "function", "function": {"name": "knowledge_search", "description": "Search tenant-scoped organizational knowledge through the governed zknowbase service boundary.", "parameters": {"type": "object", "properties": {"query": {"type": "string"}, "top_k": {"type": "integer", "minimum": 1, "maximum": 20}}, "required": ["query"], "additionalProperties": False}}},
+    },
+    "knowledge_ask": {
+        "mutating": False,
+        "schema": {"type": "function", "function": {"name": "knowledge_ask", "description": "Ask a grounded tenant-scoped question through zknowbase and return source citations.", "parameters": {"type": "object", "properties": {"question": {"type": "string"}, "top_k": {"type": "integer", "minimum": 1, "maximum": 20}}, "required": ["question"], "additionalProperties": False}}},
+    },
     "agent_delegate": {
         "mutating": False,
         "schema": {"type": "function", "function": {"name": "agent_delegate", "description": "Delegate a bounded subtask to another agent.", "parameters": {"type": "object", "properties": {"agent_id": {"type": "string"}, "prompt": {"type": "string"}, "mutating": {"type": "boolean"}}, "required": ["agent_id", "prompt"]}}},
@@ -108,18 +116,38 @@ class ToolExecutor:
             raise ToolError("path escapes workspace root")
         return p
 
-    def execute(self, name: str, args: dict[str, Any], *, tenant_id: str, agent_id: str, actor: str) -> Any:
+    def execute(
+        self,
+        name: str,
+        args: dict[str, Any],
+        *,
+        tenant_id: str,
+        agent_id: str,
+        actor: str,
+        request_id: str = "",
+        policy_context: str = "agent_tool_grant",
+    ) -> Any:
         from .safety_hooks import SafetyLifecycleHooks, SafetyHookError
 
         if name not in TOOL_DEFINITIONS or name == "agent_delegate":
             raise ToolError(f"unknown or runtime-managed tool: {name}")
-        
+
         is_mutating = TOOL_DEFINITIONS.get(name, {}).get("mutating", False)
         try:
             SafetyLifecycleHooks.pre_tool_execute(name, args, mutating=is_mutating)
         except SafetyHookError as exc:
             raise ToolError(str(exc)) from exc
 
+        if name in {"knowledge_search", "knowledge_ask"}:
+            return self._knowledge(
+                name,
+                args,
+                tenant_id=tenant_id,
+                agent_id=agent_id,
+                actor=actor,
+                request_id=request_id,
+                policy_context=policy_context,
+            )
         if name == "social_connector":
             from .connectors import SocialShopConnectorExecutor
             executor = SocialShopConnectorExecutor(self.settings, self.db)
@@ -187,6 +215,50 @@ class ToolExecutor:
                 actor=actor,
             )
         raise ToolError(f"unknown tool: {name}")
+
+    def _knowledge(
+        self,
+        name: str,
+        args: dict[str, Any],
+        *,
+        tenant_id: str,
+        agent_id: str,
+        actor: str,
+        request_id: str,
+        policy_context: str,
+    ) -> dict[str, Any]:
+        from .zknowbase_client import (
+            ZKnowbaseClient,
+            ZKnowbaseConfig,
+            ZKnowbaseError,
+            ZKnowbaseRequestContext,
+        )
+
+        config = ZKnowbaseConfig.from_env()
+        if config is None:
+            raise ToolError("zknowbase integration is not configured")
+        field = "query" if name == "knowledge_search" else "question"
+        value = str(args.get(field, "")).strip()
+        if not value:
+            raise ToolError(f"{field} is required")
+        if len(value.encode("utf-8")) > min(self.settings.max_request_bytes, 65_536):
+            raise ToolError(f"{field} exceeds knowledge tool size limit")
+        top_k = int(args.get("top_k", 5))
+        context = ZKnowbaseRequestContext(
+            tenant_id=tenant_id,
+            actor=actor,
+            agent_id=agent_id,
+            tool=name,
+            request_id=request_id,
+            policy_context=policy_context,
+        )
+        try:
+            client = ZKnowbaseClient(config)
+            if name == "knowledge_search":
+                return client.search_for_tenant(context, value, top_k=top_k)
+            return client.ask_for_tenant(context, value, top_k=top_k)
+        except (ZKnowbaseError, ValueError) as exc:
+            raise ToolError(str(exc)) from exc
 
     def _workspace_list(self, raw: str) -> list[dict[str, Any]]:
         p = self._safe_path(raw)
@@ -348,14 +420,12 @@ class ToolExecutor:
         target_dir = self._safe_path(raw_cwd)
         if not target_dir.is_dir():
             raise ToolError("target workspace directory does not exist")
-        # Prefer the in-repo zktcoder free-model CLI; fall back to the legacy zwf-coder binary.
         executable = shutil.which("zktcoder") or shutil.which("zwf-coder") or "/usr/local/bin/zwf-coder"
         if not os.path.exists(executable):
             raise ToolError("zWorkforce coding engine executable (zwf-coder) was not found on system")
         env = {key: os.environ[key] for key in self.settings.shell_env_allowlist if key in os.environ}
         env.setdefault("PATH", "/usr/local/bin:/usr/bin:/bin")
         env.setdefault("HOME", os.path.expanduser("~"))
-        # Execute zwf-coder boundedly with shell disabled
         proc = subprocess.run(
             [executable, "--cwd", str(target_dir)],
             input=prompt,
@@ -408,35 +478,14 @@ class ToolExecutor:
                 )
             data_bytes = raw_text.encode("utf-8")
         elif media_type == "image" and (name.lower().endswith(".bmp") or name.lower().endswith(".png")):
-            # Generate uncompressed raster BMP container with colored header
             width = min(max(int(options.get("width", 256)), 16), 1920)
             height = min(max(int(options.get("height", 256)), 16), 1080)
             row_padding = (4 - (width * 3) % 4) % 4
             image_size = (width * 3 + row_padding) * height
             file_size = 54 + image_size
             import struct
-            header = struct.pack(
-                "<2sIHHI",
-                b"BM",
-                file_size,
-                0,
-                0,
-                54,
-            )
-            dib = struct.pack(
-                "<IiiHHIIiiII",
-                40,
-                width,
-                height,
-                1,
-                24,
-                0,
-                image_size,
-                2835,
-                2835,
-                0,
-                0,
-            )
+            header = struct.pack("<2sIHHI", b"BM", file_size, 0, 0, 54)
+            dib = struct.pack("<IiiHHIIiiII", 40, width, height, 1, 24, 0, image_size, 2835, 2835, 0, 0)
             r = min(int(options.get("r", 40)), 255)
             g = min(int(options.get("g", 120)), 255)
             b = min(int(options.get("b", 220)), 255)
@@ -444,7 +493,6 @@ class ToolExecutor:
             row = (pixel * width) + (b"\x00" * row_padding)
             data_bytes = header + dib + (row * height)
         elif media_type == "video":
-            # Generate video composition timeline, storyboard manifest or WebVTT subtitle track
             if name.lower().endswith(".vtt"):
                 content_type = "text/vtt"
                 vtt_text = f"WEBVTT - {options.get('title', 'Video Track')}\n\n00:00:00.000 --> 00:00:05.000\n{content}\n"
@@ -456,16 +504,7 @@ class ToolExecutor:
                     "duration_seconds": float(options.get("duration", 10.0)),
                     "fps": int(options.get("fps", 30)),
                     "resolution": {"width": int(options.get("width", 1920)), "height": int(options.get("height", 1080))},
-                    "scenes": [
-                        {
-                            "id": "scene-1",
-                            "start_time": 0.0,
-                            "end_time": float(options.get("duration", 10.0)),
-                            "prompt": content,
-                            "audio_track": options.get("audio_track", "synthesized_voiceover"),
-                            "visual_style": options.get("style", "cinematic"),
-                        }
-                    ],
+                    "scenes": [{"id": "scene-1", "start_time": 0.0, "end_time": float(options.get("duration", 10.0)), "prompt": content, "audio_track": options.get("audio_track", "synthesized_voiceover"), "visual_style": options.get("style", "cinematic")}],
                     "metadata": options,
                 }
                 data_bytes = json.dumps(manifest, indent=2, ensure_ascii=False).encode("utf-8")
@@ -490,7 +529,6 @@ class ToolExecutor:
             }
             data_bytes = json.dumps(composition, indent=2, ensure_ascii=False).encode("utf-8")
         elif media_type in ("content", "marketing"):
-            # Multi-channel content (articles, social media posts, marketing copywriting)
             if name.lower().endswith(".json"):
                 content_type = "application/json"
                 post_payload = {
@@ -525,7 +563,7 @@ class ToolExecutor:
                 f"</head><body>{content}</body></html>"
             )
             data_bytes = html_doc.encode("utf-8")
-        else: # document / markdown
+        else:
             data_bytes = content.encode("utf-8")
 
         if len(data_bytes) > self.settings.workspace_write_max_bytes:
