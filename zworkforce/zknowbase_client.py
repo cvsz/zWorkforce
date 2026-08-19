@@ -23,7 +23,10 @@ def _tenant(value: str) -> str:
 
 
 def _header(value: str, limit: int = 160) -> str:
-    return " ".join(str(value).split())[:limit]
+    normalized = " ".join(str(value).split())
+    if not normalized or len(normalized) > limit:
+        raise ZKnowbaseError("zknowbase execution context contains an invalid header value")
+    return normalized
 
 
 @dataclass(frozen=True)
@@ -34,6 +37,7 @@ class ZKnowbaseRequestContext:
     tool: str
     request_id: str
     policy_context: str = "agent_tool_grant"
+    trace_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -78,7 +82,10 @@ class ZKnowbaseConfig:
                 "ZWORKFORCE_ZKNOWBASE_API_KEY or ZWORKFORCE_ZKNOWBASE_TENANT_KEYS_JSON is required"
             )
 
-        timeout = max(1.0, min(float(os.getenv("ZWORKFORCE_ZKNOWBASE_TIMEOUT_SECONDS", "30")), 120.0))
+        timeout = max(
+            1.0,
+            min(float(os.getenv("ZWORKFORCE_ZKNOWBASE_TIMEOUT_SECONDS", "30")), 120.0),
+        )
         bound_tenant = _tenant(
             os.getenv(
                 "ZWORKFORCE_ZKNOWBASE_TENANT_ID",
@@ -215,13 +222,19 @@ class ZKnowbaseClient:
             headers["Content-Type"] = "application/json"
         if context is not None:
             request_id = context.request_id.strip() or os.urandom(16).hex()
+            trace_id = context.trace_id.strip() or request_id
+            tenant_id = _tenant(context.tenant_id)
             headers.update(
                 {
                     "X-Request-ID": _header(request_id, 128),
-                    "X-ZWorkforce-Actor": _header(context.actor),
-                    "X-ZWorkforce-Agent": _header(context.agent_id),
-                    "X-ZWorkforce-Tool": _header(context.tool, 64),
+                    "X-ZWorkforce-Context-Version": "1",
+                    "X-ZWorkforce-Tenant-ID": tenant_id,
+                    "X-ZWorkforce-Actor-ID": _header(context.actor),
+                    "X-ZWorkforce-Agent-ID": _header(context.agent_id),
+                    "X-ZWorkforce-Tool-ID": _header(context.tool, 64),
                     "X-ZWorkforce-Policy-Context": _header(context.policy_context),
+                    "X-ZWorkforce-Request-ID": _header(request_id, 128),
+                    "X-ZWorkforce-Trace-ID": _header(trace_id, 128),
                 }
             )
         req = request.Request(
