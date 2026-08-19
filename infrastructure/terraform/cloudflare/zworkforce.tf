@@ -90,6 +90,18 @@ variable "zider_origin" {
   }
 }
 
+# Canonical zWorkforce-family ingress. Keeping the host/origin pairs next to the
+# DNS declarations prevents the local cloudflared manifest and managed tunnel
+# configuration from silently diverging.
+locals {
+  zworkforce_ingress = [
+    { hostname = var.zwf_hostname, service = var.zwf_origin },
+    { hostname = var.studio_hostname, service = var.studio_origin },
+    { hostname = var.zarvis_hostname, service = var.zarvis_origin },
+    { hostname = var.zider_hostname, service = var.zider_origin },
+  ]
+}
+
 resource "cloudflare_dns_record" "zwf" {
   zone_id = var.cloudflare_zone_id
   name    = var.zwf_hostname
