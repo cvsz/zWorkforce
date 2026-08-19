@@ -1,6 +1,6 @@
 # v3.0.3 Release-Scope Status Registry
 
-**Updated:** 2026-08-18  
+**Updated:** 2026-08-19  
 **Candidate line:** `v3.0.3`  
 **Authority:** `ROADMAP.md`, `planning/exec-planning-zwf.md`, `docs/PRODUCTION-EVIDENCE.md`
 
@@ -24,6 +24,7 @@ This registry normalizes subsystem planning language for release triage without 
 | Zeto — `exec-planning-zato.md` | `forward roadmap` | Targets the separate `cvsz/zeto` product line and retains its own incomplete product DoD; that incompleteness is not silently converted into a zWorkforce v3.0.3 blocker. |
 | zsp-aitool — `exec-planning.zsp-aitool.md` | `forward roadmap` | Monorepo integration exists, while subsequent studio/tenant/render/affiliate milestones remain forward product work unless explicitly rebound to the current release. |
 | Zider — `exec-planning.zider.md` | `forward roadmap` | Browser-companion feature roadmap continues independently; security/reliability fixes already merged into the candidate remain part of repository history, not evidence that the entire Zider plan is complete. |
+| zknowbase native client — `docs/ZKNOWBASE-INTEGRATION.md` | `forward roadmap` | PR #166 adds an optional server-side read-only client boundary. Wiring it into governed agent/tool execution or tenant/policy-aware knowledge retrieval is follow-on feature work unless a current-release authority explicitly promotes it. |
 | Security loop — `exec-zred-team.md` | continuous governance; actionable release findings become `v3.0.3 required / incomplete` | Continuous hardening is not a finite feature-completion flag. Any current critical/high actionable finding is a release blocker until resolved or explicitly accepted by policy. |
 | Router — `exec-planning-router.md` | `forward roadmap` | Free-model routing, smart variants, gateway and observability expansion continue beyond the current release unless explicitly bound by release authorities. |
 | Hermes / Spawn integration | `forward roadmap` plus `external evidence` for host/runtime proof | Repository integration does not imply external host installation or provider/runtime evidence. |
