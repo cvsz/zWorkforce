@@ -68,17 +68,22 @@ class ZKnowbaseClientTests(unittest.TestCase):
         req = urlopen.call_args.args[0]
         self.assertEqual(req.full_url, "http://zkb:8000/api/v1/query")
         self.assertEqual(req.get_header("X-api-key"), "secret-key")
-        self.assertEqual(json.loads(req.data), {"question": "What is the leave policy?", "top_k": 3, "stream": False})
+        self.assertEqual(
+            json.loads(req.data),
+            {"question": "What is the leave policy?", "top_k": 3, "stream": False},
+        )
 
     @patch("zworkforce.zknowbase_client.request.urlopen")
     def test_search_contract(self, urlopen):
-        urlopen.return_value = _Response({"results": [{"document_name": "hr.md", "score": 0.91}]})
+        urlopen.return_value = _Response(
+            {"results": [{"document_name": "hr.md", "score": 0.91}]}
+        )
         client = ZKnowbaseClient(ZKnowbaseConfig("http://zkb:8000", "secret-key"))
         result = client.search("annual leave", top_k=2)
         self.assertEqual(result["results"][0]["document_name"], "hr.md")
 
     @patch("zworkforce.zknowbase_client.request.urlopen")
-    def test_tenant_search_sends_context_and_validates_tenant(self, urlopen):
+    def test_tenant_search_sends_governed_context_and_validates_tenant(self, urlopen):
         urlopen.return_value = _Response(
             {"results": [{"document_name": "hr.md", "score": 0.91, "tenant_id": "tenant-a"}]}
         )
@@ -94,15 +99,21 @@ class ZKnowbaseClientTests(unittest.TestCase):
             agent_id="hr-agent",
             tool="knowledge_search",
             request_id="task-123",
+            trace_id="tool-call-456",
         )
         result = client.search_for_tenant(context, "annual leave", top_k=2)
         self.assertEqual(result["results"][0]["tenant_id"], "tenant-a")
         req = urlopen.call_args.args[0]
         self.assertEqual(req.get_header("X-api-key"), "read-only-a")
         self.assertEqual(req.get_header("X-request-id"), "task-123")
-        self.assertEqual(req.get_header("X-zworkforce-agent"), "hr-agent")
-        self.assertEqual(req.get_header("X-zworkforce-tool"), "knowledge_search")
+        self.assertEqual(req.get_header("X-zworkforce-context-version"), "1")
+        self.assertEqual(req.get_header("X-zworkforce-tenant-id"), "tenant-a")
+        self.assertEqual(req.get_header("X-zworkforce-actor-id"), "user@example")
+        self.assertEqual(req.get_header("X-zworkforce-agent-id"), "hr-agent")
+        self.assertEqual(req.get_header("X-zworkforce-tool-id"), "knowledge_search")
         self.assertEqual(req.get_header("X-zworkforce-policy-context"), "agent_tool_grant")
+        self.assertEqual(req.get_header("X-zworkforce-request-id"), "task-123")
+        self.assertEqual(req.get_header("X-zworkforce-trace-id"), "tool-call-456")
 
     @patch("zworkforce.zknowbase_client.request.urlopen")
     def test_tenant_payload_mismatch_fails_closed(self, urlopen):
@@ -127,9 +138,29 @@ class ZKnowbaseClientTests(unittest.TestCase):
         with self.assertRaises(ZKnowbaseError):
             client.search("policy", top_k=21)
 
+    def test_context_header_values_fail_closed_when_oversized(self):
+        client = ZKnowbaseClient(
+            ZKnowbaseConfig("http://zkb:8000", tenant_api_keys={"tenant-a": "key-a"})
+        )
+        context = ZKnowbaseRequestContext(
+            tenant_id="tenant-a",
+            actor="a" * 161,
+            agent_id="agent",
+            tool="knowledge_search",
+            request_id="task-1",
+        )
+        with self.assertRaises(ZKnowbaseError):
+            client.search_for_tenant(context, "policy")
+
     @patch("zworkforce.zknowbase_client.request.urlopen")
     def test_http_error_is_bounded_and_wrapped(self, urlopen):
-        urlopen.side_effect = error.HTTPError("http://zkb", 401, "Unauthorized", {}, io.BytesIO(b'{"detail":"bad key"}'))
+        urlopen.side_effect = error.HTTPError(
+            "http://zkb",
+            401,
+            "Unauthorized",
+            {},
+            io.BytesIO(b'{"detail":"bad key"}'),
+        )
         client = ZKnowbaseClient(ZKnowbaseConfig("http://zkb:8000", "secret-key"))
         with self.assertRaises(ZKnowbaseError) as ctx:
             client.health()
@@ -168,6 +199,8 @@ class ZKnowbaseClientTests(unittest.TestCase):
         self.assertEqual(result["results"][0]["tenant_id"], "tenant-a")
         req = urlopen.call_args.args[0]
         self.assertEqual(req.get_header("X-request-id"), "task-55")
+        self.assertEqual(req.get_header("X-zworkforce-tenant-id"), "tenant-a")
+        self.assertEqual(req.get_header("X-zworkforce-trace-id"), "task-55")
         self.assertEqual(req.get_header("X-api-key"), "read-a")
 
     def test_tool_executor_fails_closed_without_tenant_credential(self):
