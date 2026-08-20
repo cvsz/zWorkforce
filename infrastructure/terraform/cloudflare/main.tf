@@ -142,6 +142,46 @@ resource "cloudflare_dns_record" "laps" {
   comment = "ZEAZ LAPS service via Cloudflare Tunnel"
 }
 
+resource "cloudflare_dns_record" "ha_a" {
+  zone_id = var.cloudflare_zone_id
+  name    = var.ha_a_hostname
+  type    = "A"
+  content = var.ha_a_ip
+  ttl     = 1
+  proxied = false
+  comment = "HA node A private IP"
+}
+
+resource "cloudflare_dns_record" "ha_b" {
+  zone_id = var.cloudflare_zone_id
+  name    = var.ha_b_hostname
+  type    = "A"
+  content = var.ha_b_ip
+  ttl     = 1
+  proxied = false
+  comment = "HA node B private IP"
+}
+
+resource "cloudflare_dns_record" "obs" {
+  zone_id = var.cloudflare_zone_id
+  name    = var.obs_hostname
+  type    = "A"
+  content = var.obs_ip
+  ttl     = 1
+  proxied = false
+  comment = "Observability host private IP"
+}
+
+resource "cloudflare_dns_record" "core" {
+  zone_id = var.cloudflare_zone_id
+  name    = var.core_hostname
+  type    = "A"
+  content = var.core_ip
+  ttl     = 1
+  proxied = false
+  comment = "Windows build host private IP"
+}
+
 # This is deliberately opt-in: applying it without first importing a live
 # tunnel configuration could replace unrelated ingress rules.
 resource "cloudflare_zero_trust_tunnel_cloudflared_config" "moopiew" {
@@ -166,10 +206,6 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "moopiew" {
         { hostname = var.autoc_hostname, service = var.autoc_origin },
         { hostname = var.auth_hostname, service = var.auth_origin },
         { hostname = var.laps_hostname, service = var.laps_origin },
-        { hostname = var.zwf_hostname, service = var.zwf_origin },
-        { hostname = var.studio_hostname, service = var.studio_origin },
-        { hostname = var.zarvis_hostname, service = var.zarvis_origin },
-        { hostname = var.zworkforce_hostname, service = var.zworkforce_origin },
       ],
       local.zworkforce_ingress,
       local.zeaz_one_ingress,

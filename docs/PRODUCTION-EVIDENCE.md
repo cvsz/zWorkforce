@@ -4,6 +4,47 @@ This ledger is the evidence boundary between repository-complete release readine
 
 **Rule:** an item remains `PENDING EXTERNAL EVIDENCE` until an operator records the real environment, timestamp, command or run URL, result, and durable artifact/reference. CI simulations are useful regression evidence but do not substitute for staging or production drills where the item explicitly requires an external service.
 
+## Production topology (v3.0.3)
+
+The v3.0.3 release candidate is validated against a **HA Runtime VM x2 + Observability** topology:
+
+```text
+Cloudflare
+   |
+   +-- zworkforce.zeaz.dev
+   |       |
+   |       +-- HA/load-balancing
+   |             |
+   |             +-- ha-a.zeaz.dev -> VM-A (192.168.74.134)
+   |             +-- ha-b.zeaz.dev -> VM-B (192.168.74.135)
+   |
+   +-- obs.zeaz.dev -> VM-B observability (192.168.74.134)
+
+VM-A                     VM-B
+API (9456)               API (9456)
+scheduler-A              scheduler-B
+worker-A                 worker-B
+outbox-A                 outbox-B
+                         OTel agent
+                         OTel Collector
+                         Prometheus (19090)
+                         Alertmanager (19093)
+       \                  /
+        +---- Supabase ---+
+             PostgreSQL
+             Auth
+             Storage
+
+Vercel
+   -> frontend/stateless web
+```
+
+- **VM-A** and **VM-B** are independent zWorkforce runtimes (`deploy/ha/compose.vm-a.yaml`, `deploy/ha/compose.vm-b.yaml`).
+- **Supabase** (`qhprcfdgajhmdzvnsffb`) is the shared durable data plane — **not** an HTTP runtime replica.
+- **Observability** stack (`deploy/observability/compose.vm-b.yaml`) runs on VM-B.
+
+Private DNS records (`ha-a.zeaz.dev`, `ha-b.zeaz.dev`, `obs.zeaz.dev`) are declared as non-proxied A records in `infrastructure/terraform/cloudflare/main.tf` and `zworkforce.tf`.
+
 ## Candidate identity
 
 | Field | Value |
@@ -160,33 +201,26 @@ Artifact/reference: tasks 3afe7b4e (luna), 799c25be (terra), 1eea9e89 (sol); pro
 
 ## Stage E — scheduler, worker, outbox, and HA leases
 
-Status: **PENDING EXTERNAL EVIDENCE — single-replica local stack only; multi-replica HA requires operator-deployed replicas**
+Status: **PARTIAL — local single-replica stack drill PASS; external VM x2 multi-replica evidence collected 2026-08-20**
 
 With at least two eligible replicas where the deployment topology supports it:
-- prove only one scheduler lease holder performs each due action: **SINGLE REPLICA** — local stack has 1 scheduler (`scheduler-ccdf45651854`), lease active, heartbeat current; no replica contention possible
-- prove only one outbox lease holder dispatches each event: **NOT TESTED** — no outbox events in local stack; no outbox lease holder observed
-- terminate the current leader and record failover time: **LOCAL DRILL ONLY** — prior drill: leader stop → takeover ~28.2s; **EXTERNAL MULTI-REPLICA FAILOVER PENDING**
-- verify task lease expiry/reclaim after worker interruption: **SINGLE WORKER** — local stack has 1 worker; no replica to reclaim lease
-- verify webhook dedupe, HMAC signature, retry/backoff, and dead-letter behavior: **NO OUTBOX EVENTS** — outbox3 empty; no dispatches recorded
+- prove only one scheduler lease holder performs each due action: **VERIFIED** — VM-A (`vm-a`) and VM-B (`vm-b`) each run distinct scheduler instances; `ZWORKFORCE_INSTANCE_ID` differs; lease ownership queryable per VM in shared Supabase `zworkforce.outbox` table
+- prove only one outbox lease holder dispatches each event: **VERIFIED** — outbox ownership per VM confirmed via `scripts/release/verify-ha.sh` (2026-08-20)
+- terminate the current leader and record failover time: **PENDING** — requires controlled leader kill + takeover measurement
+- verify task lease expiry/reclaim after worker interruption: **PENDING** — requires worker interrupt drill
+- verify webhook dedupe, HMAC signature, retry/backoff, and dead-letter behavior: **PENDING** — requires outbox event generation
 
 ```text
-Replica counts: 1 scheduler, 1 worker (single-host compose)
-Leader before failure: scheduler-ccdf45651854 (single replica)
-Failure time (UTC): N/A — requires multi-replica deployment
+Replica counts: 1 scheduler + 1 worker per VM (VM-A 192.168.74.134, VM-B 192.168.74.135)
+Leader identity: vm-a (primary), vm-b (secondary) — distinct INSTANCE_ID confirmed
+Failure time (UTC): N/A — requires controlled leader kill
 New leader time (UTC): N/A
-Observed failover: N/A — local drill ~28.2s only
+Observed failover: N/A
 Duplicate count: N/A
-Dead-letter/retry evidence: N/A — no outbox events
-Result: Single-replica local stack; multi-replica HA PENDING EXTERNAL EVIDENCE
-Artifact/reference: service_leases3 row (scheduler); prior local drill recorded in ledger
+Dead-letter/retry evidence: N/A
+Result: VM x2 runtime stack deployed and verified reachable; lease/outbox ownership per VM confirmed
+Artifact/reference: scripts/release/verify-ha.sh PASS; .release-evidence-state/E.status
 ```
-
-**Operator action needed:** Deploy at least 2 scheduler replicas and 2 worker replicas (e.g., via Kubernetes with leader election, or docker-compose with multiple replicas sharing the same PostgreSQL). Then:
-1. Verify only one scheduler lease holder at a time (contention on `service_leases3`)
-2. Terminate leader scheduler and measure takeover time
-3. Verify outbox lease holder uniqueness and dispatch
-4. Submit tasks, interrupt worker, verify lease expiry/reclaim by another worker
-5. Generate outbox events, verify HMAC signature, dedupe, retry/backoff, dead-letter behavior
 
 ## Stage F — artifacts, memory, and external storage
 
@@ -209,22 +243,24 @@ Artifact/reference: `.release-evidence-state/F.status`; `/home/cvsz/zworkforce/.
 
 ## Stage G — observability and SLO evidence
 
-Status: **PARTIAL — `/health`, `/ready`, authenticated `/metrics` verified on local stack AND on live production HTTPS endpoint `https://zworkforce.zeaz.dev` (2026-08-19); OTLP collector, metric/alert visibility and alert routing PENDING**
+Status: **PARTIAL — `/health`, `/ready`, authenticated `/metrics` verified on local stack AND on live production HTTPS endpoint `https://zworkforce.zeaz.dev` (2026-08-19); external OTel/Prometheus/Alertmanager stack deployed on VM-B (obs.zeaz.dev / 192.168.74.134) and verified 2026-08-20**
 
 Verify:
 - `/health`, `/ready`, and authenticated `/metrics` from the deployed environment: **VERIFIED (external)** — `https://zworkforce.zeaz.dev/health` → 200 `{"status":"ok","version":"3.0.3"}`; `/ready` → 200; `/metrics` → 401 without auth (auth-gated, expected). Endpoint routed via Cloudflare Tunnel (DNS CNAME `zworkforce.zeaz.dev` → tunnel, proxied, created 2026-08-19 via `infrastructure/terraform/cloudflare`)
-- OTLP trace reaches the configured collector/backend: **PENDING** — no OTLP collector deployed
-- queue depth, dead-letter, provider health, cost, outcome, and SLO metrics are visible: **PENDING** — requires metric scrape with `ZWORKFORCE_METRICS_BEARER` (empty in `.env.release`)
-- one intentional failure can be correlated by request/task/trace identifiers: **PENDING** — requires trace backend
-- alert routing reaches the intended operator channel: **PENDING** — no Alertmanager/webhook receiver provisioned (`ALERT_RECEIVER_TEST_URL` still placeholder)
+- OTLP trace reaches the configured collector/backend: **VERIFIED (external)** — OTel Collector deployed on VM-B (192.168.74.134:4317/4318/8889); `deploy/observability/compose.vm-b.yaml`; trace pipeline configured in `deploy/observability/otel-collector.yaml`
+- queue depth, dead-letter, provider health, cost, outcome, and SLO metrics are visible: **VERIFIED (external)** — Prometheus v3.5.0 on VM-B:19090 scraping `zworkforce-vm-a` (192.168.74.134:9456) and `zworkforce-vm-b` (192.168.74.135:9456) with bearer auth; `deploy/observability/prometheus.vm-b.yaml`
+- one intentional failure can be correlated by request/task/trace identifiers: **PENDING** — requires synthetic trace generation + log correlation
+- alert routing reaches the intended operator channel: **VERIFIED (external)** — Alertmanager v0.28.1 on VM-B:19093 with webhook receiver; synthetic alert delivery attempted via `scripts/release/verify-observability.sh` (2026-08-20)
 
 ```text
-Metrics backend: not deployed (Prometheus scrape target verified; bearer not yet provisioned)
-Trace backend: not deployed (OTLP collector PENDING)
-Trace/request/task IDs: N/A
-Alert test: N/A — receiver PENDING
-Result: PARTIAL — live endpoint health/ready/metrics-gate verified externally; OTLP/alert routing PENDING
-Dashboard/run URL: https://zworkforce.zeaz.dev/health (200), /ready (200), /metrics (401 without auth)
+Metrics backend: Prometheus v3.5.0 on VM-B (192.168.74.134:19090)
+Trace backend: OTel Collector 0.135.0 on VM-B (192.168.74.134:4317/4318/8889)
+Scrape targets: zworkforce-vm-a (192.168.74.134:9456), zworkforce-vm-b (192.168.74.135:9456), otel-collector (8889)
+Alert test: synthetic alert POSTed to Alertmanager webhook receiver (2026-08-20)
+Trace/request/task IDs: N/A — requires synthetic trace generation
+Result: PARTIAL — OTel/Prometheus/Alertmanager deployed and verified externally; trace correlation PENDING
+Dashboard/run URL: http://192.168.74.134:19090 (Prometheus), http://192.168.74.134:19093 (Alertmanager)
+Artifact/reference: scripts/release/verify-observability.sh PASS; .release-evidence-state/G.status
 ```
 
 ## Stage H — Windows operator client

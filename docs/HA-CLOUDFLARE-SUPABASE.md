@@ -1,40 +1,133 @@
-# HA-A Cloudflare + HA-B Supabase
+# HA Runtime VM x2 + Observability Topology
 
 ## Production topology
 
-zWorkforce uses two complementary HA boundaries rather than treating Supabase as a replacement application runtime.
+zWorkforce uses two independent runtime VMs behind a shared Supabase durable data plane, plus a dedicated observability runtime on VM-B.
 
-- **HA-A — Cloudflare:** public DNS, proxied edge, Cloudflare Tunnel, access controls, and optional managed tunnel configuration. The canonical public zWorkforce endpoint is `https://zwf.zeaz.dev`.
-- **HA-B — Supabase:** durable PostgreSQL and Supabase Storage data plane. Production project ref: `qhprcfdgajhmdzvnsffb` (`zWorkforce`, `ap-northeast-1`). Project API URL: `https://qhprcfdgajhmdzvnsffb.supabase.co`.
-- **Runtime HA:** a second zWorkforce runtime is still required for application-runtime active/passive failover. Supabase is not an HTTP origin substitute for the zWorkforce API.
-- **Semantic memory:** Qdrant remains the vector-memory backend when configured; this HA change does not migrate semantic memory to pgvector.
+- **VM-A (ha-a.zeaz.dev / 192.168.74.134):** primary zWorkforce runtime — API/control plane, scheduler, worker, outbox.
+- **VM-B (ha-b.zeaz.dev / 192.168.74.135):** secondary zWorkforce runtime — API/control plane, scheduler, worker, outbox.
+- **Observability (obs.zeaz.dev / 192.168.74.134):** OTel Collector, Prometheus, Alertmanager. Co-located on VM-B for this release.
+- **Supabase (qhprcfdgajhmdzvnsffb):** shared durable PostgreSQL and Supabase Storage data plane. **Not an HTTP origin substitute.**
+- **Vercel:** frontend / stateless web compute.
 
-## Canonical HA-A routes
+```text
+Cloudflare
+   |
+   +-- zworkforce.zeaz.dev
+   |       |
+   |       +-- HA/load-balancing
+   |             |
+   |             +-- ha-a.zeaz.dev -> VM-A (192.168.74.134)
+   |             +-- ha-b.zeaz.dev -> VM-B (192.168.74.135)
+   |
+   +-- obs.zeaz.dev -> VM-B observability (192.168.74.134)
 
-| Public host | Loopback origin | Role |
-| --- | --- | --- |
-| `zwf.zeaz.dev` | `http://127.0.0.1:9570` | zWorkforce API/control plane |
-| `studio.zeaz.dev` | `http://127.0.0.1:3005` | ZSP AI Studio |
-| `zarvis.zeaz.dev` | `http://127.0.0.1:9570` | governed Z.A.R.V.I.S. gateway |
-| `zider.zeaz.dev` | `http://127.0.0.1:8085` | zider BFF |
+VM-A                     VM-B
+API (9456)               API (9456)
+scheduler-A              scheduler-B
+worker-A                 worker-B
+outbox-A                 outbox-B
+                         OTel agent
+                         OTel Collector
+                         Prometheus (19090)
+                         Alertmanager (19093)
+       \                  /
+        +---- Supabase ---+
+             PostgreSQL
+             Auth
+             Storage
 
-These mappings are declared in `infrastructure/terraform/cloudflare/zworkforce.tf`, included in the optional managed tunnel configuration in `main.tf`, and mirrored by `deploy/cloudflare/tunnel-ingress.yml`. CI fails if these copies drift.
-
-`MANAGE_TUNNEL_CONFIG` remains `false` in automated production jobs. This is deliberate: the existing shared tunnel must first be imported into Terraform state and reviewed before Terraform is authorized to replace its complete ingress configuration. DNS reconciliation and apply remain automated without weakening that guard.
-
-## HA-B Supabase production state
-
-The connected production project is healthy and uses PostgreSQL 17. The existing Supabase Storage bucket is named `zworkforce`.
-
-The GitHub production workflow performs a read-only PostgreSQL preflight before any Cloudflare apply:
-
-```sql
-select 1;
+Vercel
+   -> frontend/stateless web
 ```
 
-Use the Supabase Postgres connection string as `SUPABASE_DATABASE_URL` in the GitHub `production` Environment. Application deployments should supply the same managed connection through `ZWORKFORCE_DATABASE_URL`; do not commit the password or connection string.
+## Runtime identity and failover
 
-Supabase Storage credentials are intentionally not generated or committed by this repository. Where the zWorkforce S3 artifact adapter is used with Supabase Storage's S3-compatible interface, store endpoint/access credentials only in the deployment secret boundary and map them to the existing `ZWORKFORCE_S3_*` settings.
+Each VM must set a distinct `ZWORKFORCE_INSTANCE_ID`:
+
+| VM | Hostname | INSTANCE_ID | Role |
+| --- | --- | --- | --- |
+| VM-A | ha-a.zeaz.dev | `vm-a` | primary runtime |
+| VM-B | ha-b.zeaz.dev | `vm-b` | secondary runtime |
+
+Scheduler leases and outbox ownership are held in the shared Supabase PostgreSQL database. Active/passive failover is implemented by the runtime lease mechanism, **not** by pointing traffic at Supabase.
+
+Duplicate prevention is enforced by distinct `INSTANCE_ID` values. If both VMs claim the same identity, the release gate fails.
+
+## Canonical routes
+
+| Public host | Private origin | Role |
+| --- | --- | --- |
+| `zworkforce.zeaz.dev` | Cloudflare Tunnel → primary runtime | zWorkforce production HTTPS endpoint |
+| `ha-a.zeaz.dev` | `192.168.74.134:9456` | VM-A direct API |
+| `ha-b.zeaz.dev` | `192.168.74.135:9456` | VM-B direct API |
+| `obs.zeaz.dev` | `192.168.74.134:19090` | Prometheus API |
+| `studio.zeaz.dev` | Cloudflare Tunnel → loopback | ZSP Studio |
+| `zarvis.zeaz.dev` | Cloudflare Tunnel → loopback | Z.A.R.V.I.S. gateway |
+| `zider.zeaz.dev` | Cloudflare Tunnel → loopback | zider BFF |
+
+## Terraform / DNS
+
+The private A records are declared in `infrastructure/terraform/cloudflare/main.tf` and `zworkforce.tf`:
+
+```hcl
+resource "cloudflare_dns_record" "ha_a" {
+  zone_id = var.cloudflare_zone_id
+  name    = var.ha_a_hostname   # ha-a.zeaz.dev
+  type    = "A"
+  content = var.ha_a_ip         # 192.168.74.134
+  ttl     = 1
+  proxied = false               # private origin — NOT tunnel CNAME
+}
+
+resource "cloudflare_dns_record" "ha_b" { ... }
+resource "cloudflare_dns_record" "obs"  { ... }
+```
+
+These records are **not** part of the Cloudflare Tunnel ingress. They resolve only inside the trusted private network.
+
+## Deployment
+
+Each VM runs an independent Docker Compose stack from `deploy/ha/`:
+
+- `compose.vm-a.yaml` — deployed on VM-A
+- `compose.vm-b.yaml` — deployed on VM-B
+
+Shared environment template: `deploy/ha/compose.shared.env.example`
+
+Both stacks point to the same Supabase PostgreSQL DSN and S3-compatible artifact backend.
+
+## Observability
+
+The observability stack on VM-B (`deploy/observability/compose.vm-b.yaml`) scrapes:
+
+- `zworkforce-vm-a` → `192.168.74.134:9456/metrics` (bearer-authenticated)
+- `zworkforce-vm-b` → `192.168.74.135:9456/metrics` (bearer-authenticated)
+- `otel-collector` → internal OTLP metrics
+
+Alertmanager is configured with a test webhook receiver for release evidence.
+
+## Stage E verification
+
+`scripts/release/verify-ha.sh` proves:
+
+1. Both VMs are reachable via SSH.
+2. Both VMs run `serve`, `worker`, `scheduler`, `outbox`.
+3. API `/health` returns 200 on both VMs.
+4. `ZWORKFORCE_INSTANCE_ID` differs between VMs (no identity collision).
+5. Scheduler lease connectivity verified via shared Supabase DB.
+6. Outbox ownership queryable per VM.
+7. `/metrics` exports expected series on both VMs.
+
+## Stage G verification
+
+`scripts/release/verify-observability.sh` proves:
+
+1. Prometheus targets `up` for `zworkforce-vm-a`, `zworkforce-vm-b`, `otel-collector`.
+2. Metrics query returns series from both runtimes.
+3. Alertmanager HTTP API ready.
+4. Synthetic alert delivery attempted to configured webhook.
+5. OTel Collector metrics endpoint reachable.
 
 ## GitHub Environment secrets
 
@@ -42,34 +135,25 @@ Create a protected GitHub Environment named `production` and set these secrets:
 
 | Secret | Purpose |
 | --- | --- |
+| `SUPABASE_DATABASE_URL` | TLS Supabase Postgres connection string (shared by both VMs) |
+| `ZWORKFORCE_API_KEYS` | zWorkforce API key(s) |
+| `ZWORKFORCE_PROVIDER_API_KEY` | LLM provider API key |
+| `ZWORKFORCE_METRICS_BEARER` | bearer token for `/metrics` |
+| `ZWORKFORCE_OUTBOX_SIGNING_SECRET` | outbox webhook signing secret |
+| `AWS_ACCESS_KEY_ID` | Supabase Storage S3 access key |
+| `AWS_SECRET_ACCESS_KEY` | Supabase Storage S3 secret |
+| `ALERTMANAGER_WEBHOOK_URL` | operator webhook for release evidence |
 | `CLOUDFLARE_API_TOKEN` | scoped DNS/Tunnel API token |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account containing the tunnel |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
 | `CLOUDFLARE_ZONE_ID` | `zeaz.dev` zone ID |
 | `CLOUDFLARE_TUNNEL_ID` | existing tunnel UUID |
-| `PIEWDASH_ACCESS_ALLOWED_EMAILS` | JSON array required by the existing Access policy |
 | `CLOUDFLARE_TF_STATE_BUCKET` | private R2 Terraform-state bucket |
 | `CLOUDFLARE_R2_S3_ENDPOINT` | R2 S3 API endpoint |
 | `CLOUDFLARE_R2_ACCESS_KEY_ID` | bucket-scoped state key |
 | `CLOUDFLARE_R2_SECRET_ACCESS_KEY` | bucket-scoped state secret |
-| `SUPABASE_DATABASE_URL` | TLS Supabase Postgres connection string |
 
-The workflow materializes these values only into a mode-`0600` ignored `.env.cloudflare` file on the ephemeral runner and removes it in an `always()` cleanup step.
+## Constraints
 
-## Automated flow
-
-`.github/workflows/ha-infrastructure.yml` implements:
-
-1. **Every relevant PR:** Terraform format, backend-free init, validate, and canonical route drift checks. No production secrets are required.
-2. **Manual `plan`:** protected `production` Environment, Supabase DB preflight, R2-backed Terraform state, Cloudflare DNS reconciliation/import, then saved Terraform plan.
-3. **Manual `apply`:** same preflights and state controls, followed by apply and a public `https://zwf.zeaz.dev/health` smoke check.
-4. **Failure behavior:** missing secrets, unavailable Supabase, Terraform drift/validation failure, DNS ambiguity, or state/backend errors stop the workflow before mutation.
-
-## Enabling full tunnel ownership
-
-Do not set `MANAGE_TUNNEL_CONFIG=true` merely to make the workflow more automatic. First import the existing `cloudflare_zero_trust_tunnel_cloudflared_config` resource into the authoritative R2-backed state, compare every live ingress entry with Terraform, and confirm the final catch-all rule. The existing `scripts/cloudflare-apply.sh` guard refuses tunnel management if that imported state evidence is absent.
-
-After that one-time adoption is complete, `MANAGE_TUNNEL_CONFIG=true` can be promoted through the same protected environment so Cloudflare DNS and tunnel ingress are both controlled by Terraform.
-
-## Runtime active/passive extension
-
-For true application-runtime failover, deploy a second zWorkforce API/worker/scheduler stack against the same managed HA-B data plane, give each runtime an independently monitored origin, and place them behind Cloudflare Load Balancing as primary/secondary pools. Do not point the secondary pool directly at Supabase; it must be another zWorkforce runtime implementing the same API and health contract.
+- **Do not point `ha-b.zeaz.dev` at Supabase.** It must resolve to VM-B's zWorkforce API runtime.
+- **Do not place `ha-a`, `ha-b`, `obs` in the Cloudflare Tunnel ingress.** They are private A records for internal operator access and observability only.
+- **Runtime HA is not achieved by making Supabase an HTTP origin.** The secondary pool must be another zWorkforce runtime implementing the same API and health contract.

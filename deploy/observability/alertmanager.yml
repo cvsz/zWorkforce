@@ -1,0 +1,7 @@
+route:
+  receiver: operator
+receivers:
+  - name: operator
+    webhook_configs:
+      - url: "${ALERTMANAGER_WEBHOOK_URL}"
+        send_resolved: true

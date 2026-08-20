@@ -1,0 +1,11 @@
+groups:
+  - name: zworkforce-release-evidence
+    rules:
+      - alert: ZWorkforceEvidenceHeartbeatMissing
+        expr: up{job=~"zworkforce-.*"} == 0
+        for: 30s
+        labels:
+          severity: test
+        annotations:
+          summary: "zWorkforce release evidence test alert"
+          description: "zWorkforce runtime {{ $labels.instance }} is unreachable for {{ $value | humanizeDuration }}."
