@@ -280,3 +280,89 @@ variable "laps_origin" {
     error_message = "laps_origin must use a loopback address."
   }
 }
+
+variable "ha_a_hostname" {
+  type        = string
+  default     = "ha-a.zeaz.dev"
+  description = "Private hostname for HA node A."
+  validation {
+    condition     = endswith(lower(var.ha_a_hostname), ".${lower(var.zone_name)}")
+    error_message = "ha_a_hostname must be a subdomain of zone_name."
+  }
+}
+
+variable "ha_a_ip" {
+  type        = string
+  default     = "192.168.74.134"
+  description = "Private IP for HA node A."
+}
+
+variable "ha_b_hostname" {
+  type        = string
+  default     = "ha-b.zeaz.dev"
+  description = "Private hostname for HA node B."
+  validation {
+    condition     = endswith(lower(var.ha_b_hostname), ".${lower(var.zone_name)}")
+    error_message = "ha_b_hostname must be a subdomain of zone_name."
+  }
+}
+
+variable "ha_b_ip" {
+  type        = string
+  default     = "192.168.74.135"
+  description = "Private IP for HA node B."
+}
+
+variable "obs_hostname" {
+  type        = string
+  default     = "obs.zeaz.dev"
+  description = "Private hostname for the observability host."
+  validation {
+    condition     = endswith(lower(var.obs_hostname), ".${lower(var.zone_name)}")
+    error_message = "obs_hostname must be a subdomain of zone_name."
+  }
+}
+
+variable "obs_ip" {
+  type        = string
+  default     = "192.168.74.134"
+  description = "Private IP for the observability host (defaults to HA node A until a dedicated obs host is provisioned)."
+}
+
+variable "core_hostname" {
+  type        = string
+  default     = "core.zeaz.dev"
+  description = "Private hostname for the Windows build host."
+  validation {
+    condition     = endswith(lower(var.core_hostname), ".${lower(var.zone_name)}")
+    error_message = "core_hostname must be a subdomain of zone_name."
+  }
+}
+
+variable "core_ip" {
+  type        = string
+  default     = "192.168.182.234"
+  description = "Private IP for the Windows build host."
+}
+
+variable "mcp_hostname" {
+  type        = string
+  default     = "mcp.zeaz.dev"
+  description = "Public hostname for the zWorkforce standard-MCP bridge used by Anthropic MCP connectors."
+
+  validation {
+    condition     = endswith(lower(var.mcp_hostname), ".${lower(var.zone_name)}")
+    error_message = "mcp_hostname must be a subdomain of zone_name."
+  }
+}
+
+variable "mcp_origin" {
+  type        = string
+  default     = "http://127.0.0.1:9580"
+  description = "Loopback origin published by the zWorkforce MCP HTTP bridge."
+
+  validation {
+    condition     = can(regex("^http://127\\.0\\.0\\.1:[0-9]+$", var.mcp_origin))
+    error_message = "mcp_origin must use a loopback address."
+  }
+}

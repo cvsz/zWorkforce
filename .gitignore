@@ -1,3 +1,4 @@
+backups/cloudflare/*
 __pycache__/
 *.py[cod]
 *.sqlite3
@@ -38,3 +39,9 @@ terraform.tfvars
 tfplan
 tfplan.*
 .terraform/
+.env.openai
+.env.release
+.env.supabase
+.release-evidence-logs/
+.release-evidence-state/
+deploy/observability/*.rendered.yml

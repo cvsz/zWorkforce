@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# zWorkforce v3.0.3 HA Runtime VM x2 release verification (Stage E)
+# Fail-closed verifier: PASS requires real shared-DB lease/outbox evidence.
+
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
+fail(){ echo "VERIFY-HA: FAIL: $*" >&2; exit 1; }
+note(){ echo "VERIFY-HA: $*"; }
+
+: "${HA_HOST_A:?set HA_HOST_A (ssh target)}"
+: "${HA_HOST_B:?set HA_HOST_B (ssh target)}"
+: "${HA_DEPLOY_DIR:?set HA_DEPLOY_DIR on remote hosts}"
+[[ "$HA_HOST_A" != "$HA_HOST_B" ]] || fail "HA_HOST_A and HA_HOST_B must differ"
+
+ssh_opts=(-o BatchMode=yes -o ConnectTimeout=10)
+
+note "checking host reachability"
+ssh "${ssh_opts[@]}" "$HA_HOST_A" hostname >/dev/null || fail "host A unreachable"
+ssh "${ssh_opts[@]}" "$HA_HOST_B" hostname >/dev/null || fail "host B unreachable"
+
+for pair in "A:$HA_HOST_A" "B:$HA_HOST_B"; do
+  label="${pair%%:*}"
+  host="${pair#*:}"
+  services="$(ssh "${ssh_opts[@]}" "$host" "cd '$HA_DEPLOY_DIR' && docker compose ps --services --filter status=running 2>/dev/null" || true)"
+  for svc in serve worker scheduler outbox; do
+    grep -qx "$svc" <<<"$services" || fail "host $label missing running service: $svc"
+  done
+  ssh "${ssh_opts[@]}" "$host" "curl -fsS http://127.0.0.1:9456/health >/dev/null" || fail "host $label API health failed"
+done
+note "both VMs have running serve+worker+scheduler+outbox services"
+
+# Runtime identity must be explicit and distinct; container names are not authority.
+a_instance="$(ssh "${ssh_opts[@]}" "$HA_HOST_A" "cd '$HA_DEPLOY_DIR' && docker compose exec -T serve sh -lc 'printf %s \"\${ZWORKFORCE_INSTANCE_ID:-}\"'" 2>/dev/null || true)"
+b_instance="$(ssh "${ssh_opts[@]}" "$HA_HOST_B" "cd '$HA_DEPLOY_DIR' && docker compose exec -T serve sh -lc 'printf %s \"\${ZWORKFORCE_INSTANCE_ID:-}\"'" 2>/dev/null || true)"
+[[ -n "$a_instance" ]] || fail "VM-A ZWORKFORCE_INSTANCE_ID is unset"
+[[ -n "$b_instance" ]] || fail "VM-B ZWORKFORCE_INSTANCE_ID is unset"
+[[ "$a_instance" != "$b_instance" ]] || fail "VM instance identities collide"
+note "distinct runtime identities confirmed: $a_instance / $b_instance"
+
+# Query the authoritative shared PostgreSQL schema from VM-A. No local secret file
+# is required and no DSN is printed. A release drill must create live lease/outbox
+# ownership evidence before this verifier is run.
+db_evidence="$(ssh "${ssh_opts[@]}" "$HA_HOST_A" "cd '$HA_DEPLOY_DIR' && docker compose exec -T serve python - <<'PY'
+import os, sys
+try:
+    import psycopg2
+except Exception as exc:
+    print('ERROR psycopg2 unavailable:', exc)
+    raise SystemExit(2)
+
+dsn = os.environ.get('ZWORKFORCE_DATABASE_URL', '').strip()
+if not dsn:
+    print('ERROR ZWORKFORCE_DATABASE_URL missing')
+    raise SystemExit(3)
+
+conn = psycopg2.connect(dsn, connect_timeout=5)
+cur = conn.cursor()
+cur.execute('SELECT name, owner, expires_at, heartbeat_at FROM service_leases3 ORDER BY name')
+leases = cur.fetchall()
+if not leases:
+    print('ERROR service_leases3 has no rows')
+    raise SystemExit(4)
+
+owners = {str(row[1]) for row in leases if row[1]}
+print('lease_rows=' + str(len(leases)))
+print('lease_owners=' + ','.join(sorted(owners)))
+
+cur.execute("SELECT claim_owner, COUNT(*) FROM outbox3 WHERE claim_owner IS NOT NULL AND claim_owner <> '' GROUP BY claim_owner ORDER BY claim_owner")
+outbox = cur.fetchall()
+if not outbox:
+    print('ERROR outbox3 has no claimed ownership evidence; run the HA outbox drill first')
+    raise SystemExit(5)
+print('outbox_claim_owners=' + ','.join(str(row[0]) for row in outbox))
+print('outbox_claim_rows=' + str(sum(int(row[1]) for row in outbox)))
+conn.close()
+PY" 2>&1)" || fail "shared PostgreSQL lease/outbox evidence query failed: $db_evidence"
+
+note "$db_evidence"
+
+grep -Fq "$a_instance" <<<"$db_evidence" || grep -Fq "$b_instance" <<<"$db_evidence" || \
+  fail "service_leases3 ownership does not match either runtime instance"
+grep -Fq "outbox_claim_owners=" <<<"$db_evidence" || fail "outbox3 claim_owner evidence missing"
+
+# Metrics are mandatory for Stage E evidence; health-only fallback is not enough.
+: "${ZWORKFORCE_METRICS_BEARER:?set ZWORKFORCE_METRICS_BEARER}"
+for pair in "A:$HA_HOST_A" "B:$HA_HOST_B"; do
+  label="${pair%%:*}"
+  host="${pair#*:}"
+  ssh "${ssh_opts[@]}" "$host" "curl -fsS -H 'Authorization: Bearer $ZWORKFORCE_METRICS_BEARER' http://127.0.0.1:9456/metrics | grep -E 'zworkforce_|provider_|queue_|task_' >/dev/null" || \
+    fail "host $label metrics endpoint missing expected series"
+done
+
+note "HA verification complete: shared lease/outbox ownership and both runtimes verified"
+echo "VERIFY-HA: PASS"

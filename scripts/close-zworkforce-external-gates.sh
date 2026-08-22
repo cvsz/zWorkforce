@@ -408,7 +408,10 @@ alerting:
 scrape_configs:
   - job_name: "zworkforce"
     metrics_path: "/metrics"
-    scheme: "https"
+    scheme: "http"
+    authorization:
+      type: Bearer
+      credentials: "${ZWORKFORCE_METRICS_BEARER}"
     static_configs:
       - targets: ["${ZWORKFORCE_METRICS_HOSTPORT:-localhost:9443}"]
   - job_name: "otel-collector"
@@ -430,7 +433,7 @@ groups:
 YAML
 
   # ALERTMANAGER_WEBHOOK_URL is used on the remote host from its secret environment.
-  cat > "$tmp/alertmanager.yml" <<'YAML'
+  cat > "$tmp/alertmanager.yml" <<YAML
 route:
   receiver: operator
 receivers:
@@ -446,6 +449,7 @@ YAML
 
   note "Stage G: deploying OTel/Prometheus/Alertmanager"
   ssh "$OBS_HOST" "cd '$OBS_DEPLOY_DIR' && docker compose -f compose.yml up -d"
+  ssh "$OBS_HOST" "docker exec zworkforce-observability-prometheus-1 sh -c 'kill -HUP 1' || true"
 
   note "Stage G: health/readiness"
   curl -fsS "$ZWORKFORCE_HEALTH_URL" >/dev/null
@@ -495,7 +499,7 @@ stage_h(){
   # Never copy/export PFX material from this script. It must already be securely
   # provisioned on the Windows host.
   note "Stage H: verifying Windows host"
-  ssh "$WINDOWS_HOST" 'pwsh -NoProfile -Command "$PSVersionTable.PSVersion.ToString()"'
+  ssh "$WINDOWS_HOST" "pwsh -NoProfile -Command \"\\$PSVersionTable.PSVersion.ToString()\""
 
   note "Stage H: build/test/sign package"
   ssh "$WINDOWS_HOST" \

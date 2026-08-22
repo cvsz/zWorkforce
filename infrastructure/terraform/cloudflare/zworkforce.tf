@@ -122,6 +122,14 @@ locals {
     { hostname = var.zarvis_hostname, service = var.zarvis_origin },
     { hostname = var.zider_hostname, service = var.zider_origin },
     { hostname = var.zworkforce_hostname, service = var.zworkforce_origin },
+    { hostname = var.mcp_hostname, service = var.mcp_origin },
+  ]
+
+  ha_ingress = [
+    { hostname = var.ha_a_hostname, service = "http://${var.ha_a_ip}:9456" },
+    { hostname = var.ha_b_hostname, service = "http://${var.ha_b_ip}:9456" },
+    { hostname = var.obs_hostname, service = "http://${var.obs_ip}:9456" },
+    { hostname = var.core_hostname, service = "http://${var.core_ip}:80" },
   ]
 }
 
@@ -173,6 +181,16 @@ resource "cloudflare_dns_record" "zworkforce" {
   ttl     = 1
   proxied = true
   comment = "zWorkforce production HTTPS endpoint via Cloudflare Tunnel"
+}
+
+resource "cloudflare_dns_record" "mcp" {
+  zone_id = var.cloudflare_zone_id
+  name    = var.mcp_hostname
+  type    = "CNAME"
+  content = local.tunnel_cname
+  ttl     = 1
+  proxied = true
+  comment = "zWorkforce standard-MCP bridge via Cloudflare Tunnel"
 }
 
 output "zwf_url" {
